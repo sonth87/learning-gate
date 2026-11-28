@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { DeviceLayout, useStore } from '@sonth87/device-layout';
-import { ALL_LEARNING_APPS } from '@/apps/appRegistry';
+import { getLearningApps } from '@/apps/appRegistry';
 import { LearningGateGlyph, LearningGateLogo } from '@/components/common/AppLogos';
 import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { useSettingsStore, resolveWorkbenchTheme } from '@/stores/useSettingsStore';
@@ -36,6 +36,8 @@ function detectHardwareFormFactor(): 'phone' | 'tablet' | 'desktop' {
 export const App: React.FC = () => {
   const shellRootRef = useRef<HTMLDivElement>(null);
   const workbenchTheme = useWorkbenchStore((s) => s.workbenchTheme);
+  const workbenchLang = useWorkbenchStore((s) => s.language);
+  const learningApps = useMemo(() => getLearningApps(workbenchLang), [workbenchLang]);
   const settingsTheme = useSettingsStore((s) => s.theme);
   const menuBarExtras = useCloudMenuBarExtras();
   const hasOpenWindow = useStore((s) =>
@@ -215,7 +217,7 @@ export const App: React.FC = () => {
       onKeyDown={handleShellKeyDown}
     >
       <DeviceLayout
-        apps={ALL_LEARNING_APPS}
+        apps={learningApps}
         builtInApps={false}
         menuBarExtras={menuBarExtras}
         macOSAppleIcon={<LearningGateGlyph />}

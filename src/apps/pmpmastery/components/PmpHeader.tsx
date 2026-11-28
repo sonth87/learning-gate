@@ -10,11 +10,13 @@ import {
 import { PmpMasteryLogo } from '@/components/common/AppLogos';
 import { ScaleAppHeader } from '@/components/scale-workbench/ScaleAppHeader';
 import { usePmpAppStore, usePmpNav } from '@/features/pmp-course/store';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 
 export const PmpHeader: React.FC<{ windowId?: string }> = ({ windowId }) => {
   const { activeTab, setActiveTab } = usePmpAppStore();
   const pmpView = usePmpNav((s) => s.view);
   const goPmp = usePmpNav((s) => s.go);
+  const lang = useWorkbenchStore((s) => s.language);
 
   const isLearnWorkbench = activeTab === 'learn' && pmpView.name === 'workbench';
   const isPracticeView = activeTab === 'learn' && pmpView.name !== 'workbench';
@@ -85,7 +87,7 @@ export const PmpHeader: React.FC<{ windowId?: string }> = ({ windowId }) => {
           labelVi: 'Mở PMP Mindmap (Web ngoài)',
           labelEn: 'Open PMP Mindmap Companion',
           icon: <Compass className="h-3.5 w-3.5 shrink-0" />,
-          href: 'https://pmp-mindmap.vercel.app/?lang=vi',
+          href: `https://pmp-mindmap.vercel.app/?lang=${lang}`,
         },
       ]}
     />

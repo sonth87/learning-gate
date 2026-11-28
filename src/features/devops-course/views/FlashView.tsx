@@ -4,12 +4,16 @@ import { useCourseCurriculum } from '../data';
 import { courseDueCards } from '../logic';
 import { COURSE_NAV_STORES, COURSE_PROGRESS_STORES } from '../store';
 import { useCourseMeta } from '../context';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { CourseMarkdown } from '../components/CourseMarkdown';
 import { CourseBar, CourseBtn } from '../components/CourseUi';
 import { Callout, PageHeader, Spinner } from '@/features/workpath/components/ui';
 
 export const FlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
   const { courseId, accent } = useCourseMeta();
+  const lang = useWorkbenchStore((s) => s.language);
+  const enOverlay = useCourseEnOverlay(courseId);
   const { data: cur } = useCourseCurriculum(courseId);
   const progressStore = COURSE_PROGRESS_STORES[courseId];
   const rate = progressStore((x) => x.rateCard);
@@ -51,49 +55,67 @@ export const FlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
 
   if (!cur) return <Spinner />;
 
+  const cardOv = lang === 'en' && card ? enOverlay?.modules?.[card.moduleId]?.cards?.[card.id] : undefined;
+  const cardFront = cardOv?.frontEn ?? card?.front ?? '';
+  const cardBack = cardOv?.backEn ?? card?.back ?? '';
+
   return (
     <div className="mx-auto max-w-3xl p-4 sm:p-6">
       <PageHeader
         title="Flashcard SRS"
-        sub="Lặp lại ngắt quãng (Leitner): nhớ → thẻ giãn lịch 1 · 2 · 4 · 8 · 16 ngày; quên → hỏi lại ngày mai."
+        sub={
+          lang === 'en'
+            ? 'Spaced repetition (Leitner): remembered → intervals of 1 · 2 · 4 · 8 · 16 days; forgot → review again tomorrow.'
+            : 'Lặp lại ngắt quãng (Leitner): nhớ → thẻ giãn lịch 1 · 2 · 4 · 8 · 16 ngày; quên → hỏi lại ngày mai.'
+        }
         right={
           <CourseBtn accent={accent} onClick={back}>
-            <ArrowLeft className="h-4 w-4" /> Quay lại
+            <ArrowLeft className="h-4 w-4" /> {lang === 'en' ? 'Back' : 'Quay lại'}
           </CourseBtn>
         }
       />
       {cards.length === 0 ? (
         <div className="space-y-3">
           <Callout tone="ok">
-            Không có thẻ nào đến hạn ôn hôm nay 🎉. Đọc thêm lesson để mở khoá thẻ mới, hoặc ôn trước bộ thẻ nhập môn.
+            {lang === 'en'
+              ? 'No cards due for review today 🎉. Read more lessons to unlock new cards, or practice the starter deck now.'
+              : 'Không có thẻ nào đến hạn ôn hôm nay 🎉. Đọc thêm lesson để mở khoá thẻ mới, hoặc ôn trước bộ thẻ nhập môn.'}
           </Callout>
           <CourseBtn variant="primary" accent={accent} onClick={() => setPracticeFirstModule(true)}>
-            Ôn thử ngay các thẻ có sẵn
+            {lang === 'en' ? 'Practice available cards now' : 'Ôn thử ngay các thẻ có sẵn'}
           </CourseBtn>
         </div>
       ) : i >= cards.length ? (
         <div className="space-y-3">
           <Callout tone="ok">
-            Hoàn tất phiên ôn: nhớ <b>{remembered}</b>/{cards.length} thẻ.
+            {lang === 'en' ? (
+              <>
+                Session complete: remembered <b>{remembered}</b>/{cards.length} cards.
+              </>
+            ) : (
+              <>
+                Hoàn tất phiên ôn: nhớ <b>{remembered}</b>/{cards.length} thẻ.
+              </>
+            )}
           </Callout>
           <CourseBtn variant="primary" accent={accent} onClick={() => go({ name: 'home' })}>
-            Về tổng quan
+            {lang === 'en' ? 'Back to Overview' : 'Về tổng quan'}
           </CourseBtn>
         </div>
       ) : (
         <>
           <div className="mb-2 flex items-center gap-3 text-xs text-slate-500">
             <span>
-              Thẻ {i + 1}/{cards.length} · {card.id}
+              {lang === 'en' ? 'Card' : 'Thẻ'} {i + 1}/{cards.length} · {card.id}
             </span>
             <CourseBar value={i / cards.length} accent={accent} className="max-w-[200px]" />
           </div>
           <div className="flex min-h-[260px] flex-col justify-center rounded-2xl border border-slate-700 bg-slate-900/70 p-6 sm:p-8">
-            <CourseMarkdown source={card.front} accent={accent} className="text-lg" />
+            <CourseMarkdown source={cardFront} accent={accent} className="text-lg" />
             {flipped && (
               <>
                 <hr className="my-4 border-slate-700" />
-                <CourseMarkdown source={card.back} accent={accent} className="text-emerald-200" />
+                <CourseMarkdown source={cardBack} accent={accent} className="text-emerald-200" />
               </>
             )}
           </div>
@@ -101,15 +123,18 @@ export const FlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
             {flipped ? (
               <>
                 <CourseBtn variant="danger" accent={accent} onClick={() => answer(false)}>
-                  😅 Quên <kbd className="ml-1 hidden rounded bg-black/30 px-1 text-[10px] sm:inline">1</kbd>
+                  {lang === 'en' ? '😅 Forgot' : '😅 Quên'}{' '}
+                  <kbd className="ml-1 hidden rounded bg-black/30 px-1 text-[10px] sm:inline">1</kbd>
                 </CourseBtn>
                 <CourseBtn variant="primary" accent={accent} onClick={() => answer(true)}>
-                  ✔ Nhớ <kbd className="ml-1 hidden rounded bg-black/20 px-1 text-[10px] sm:inline">2</kbd>
+                  {lang === 'en' ? '✔ Got it' : '✔ Nhớ'}{' '}
+                  <kbd className="ml-1 hidden rounded bg-black/20 px-1 text-[10px] sm:inline">2</kbd>
                 </CourseBtn>
               </>
             ) : (
               <CourseBtn variant="primary" accent={accent} onClick={() => setFlipped(true)}>
-                Lật thẻ <kbd className="ml-1 hidden rounded bg-black/20 px-1 text-[10px] sm:inline">Space</kbd>
+                {lang === 'en' ? 'Flip Card' : 'Lật thẻ'}{' '}
+                <kbd className="ml-1 hidden rounded bg-black/20 px-1 text-[10px] sm:inline">Space</kbd>
               </CourseBtn>
             )}
           </div>

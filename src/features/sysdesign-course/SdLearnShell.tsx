@@ -19,6 +19,7 @@ import {
   type ModuleStatusSnapshot,
 } from '@/components/scale-workbench/ScaleWorkbenchLayout';
 import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
 import { cn } from '@/utils/cn';
 
 const SD_PRACTICE_TABS: {
@@ -94,6 +95,7 @@ export const SdLearnShell: React.FC = () => {
 
   const { data: cur } = useSdCurriculum();
   const { data: sims } = useSdSims();
+  const enOverlay = useCourseEnOverlay('sysdesign');
 
   useEffect(() => {
     hydrate();
@@ -103,7 +105,7 @@ export const SdLearnShell: React.FC = () => {
     document.getElementById('course-scroll-sd')?.scrollTo({ top: 0 });
   }, [view]);
 
-  const scaleLessons = useMemo(() => (cur ? buildSdScaleLessons(cur, sims) : []), [cur, sims]);
+  const scaleLessons = useMemo(() => (cur ? buildSdScaleLessons(cur, sims, enOverlay) : []), [cur, sims, enOverlay]);
   const liveSimAdapter = useMemo(() => createSdLiveSimAdapter(sims), [sims]);
   const activitiesById = useMemo(() => {
     const map = new Map<string, Activity>();

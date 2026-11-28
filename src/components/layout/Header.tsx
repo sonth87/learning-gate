@@ -416,7 +416,7 @@ export const Header: React.FC<{ windowId?: string }> = ({ windowId }) => {
           <button
             type="button"
             onClick={() => setSettingsOpen(true)}
-            title="Cài đặt & Đăng nhập đồng bộ"
+            title={lang === 'en' ? 'Settings & Sync Login' : 'Cài đặt & Đăng nhập đồng bộ'}
             aria-label="Preferences & Backup"
             className="dts-btn-tactile inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)] cursor-pointer"
           >

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useUserDataStore } from '@/stores/useUserDataStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { LevelBadge } from './LevelBadge';
 
 export const NotesDrawer: React.FC = () => {
@@ -16,6 +17,7 @@ export const NotesDrawer: React.FC = () => {
     useNavigationStore();
   const { notes, bookmarks, addOrUpdateNote, removeNote, toggleBookmark } =
     useUserDataStore();
+  const lang = useWorkbenchStore((s) => s.language);
 
   const [draft, setDraft] = useState('');
   const [activeTab, setActiveTab] = useState<'current' | 'all_notes' | 'bookmarks'>('current');
@@ -53,7 +55,7 @@ export const NotesDrawer: React.FC = () => {
             <StickyNote className="h-5 w-5 text-amber-400 shrink-0" />
             <div className="min-w-0">
               <h3 className="text-sm font-bold text-white truncate">
-                Ghi chú & Đánh dấu (IndexedDB)
+                {lang === 'en' ? 'Notes & Bookmarks (IndexedDB)' : 'Ghi chú & Đánh dấu (IndexedDB)'}
               </h3>
               <p className="text-xs text-slate-400 truncate max-w-[220px] sm:max-w-[260px]">
                 {notesDrawerTarget.targetTitle}
@@ -65,7 +67,7 @@ export const NotesDrawer: React.FC = () => {
             className="inline-flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800/90 px-2.5 py-1.5 text-xs font-bold text-slate-200 hover:bg-rose-500/20 hover:text-rose-200 hover:border-rose-500/40 shrink-0"
           >
             <X className="h-4 w-4" />
-            <span>Đóng</span>
+            <span>{lang === 'en' ? 'Close' : 'Đóng'}</span>
           </button>
         </div>
 
@@ -79,7 +81,7 @@ export const NotesDrawer: React.FC = () => {
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            Mục đang xem ({targetNotes.length})
+            {lang === 'en' ? 'Current' : 'Mục đang xem'} ({targetNotes.length})
           </button>
           <button
             onClick={() => setActiveTab('all_notes')}
@@ -89,7 +91,7 @@ export const NotesDrawer: React.FC = () => {
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            Mọi ghi chú ({notes.length})
+            {lang === 'en' ? 'All Notes' : 'Mọi ghi chú'} ({notes.length})
           </button>
           <button
             onClick={() => setActiveTab('bookmarks')}
@@ -99,7 +101,7 @@ export const NotesDrawer: React.FC = () => {
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            Đã lưu ({bookmarks.length})
+            {lang === 'en' ? 'Bookmarks' : 'Đã lưu'} ({bookmarks.length})
           </button>
         </div>
 
@@ -109,7 +111,9 @@ export const NotesDrawer: React.FC = () => {
             <>
               <form onSubmit={handleSave} className="space-y-2.5">
                 <label className="block text-xs font-medium text-slate-300">
-                  Thêm ghi chú / bình luận cá nhân cho mục này:
+                  {lang === 'en'
+                    ? 'Add a personal note / comment for this item:'
+                    : 'Thêm ghi chú / bình luận cá nhân cho mục này:'}
                 </label>
                 <textarea
                   rows={4}
@@ -118,7 +122,11 @@ export const NotesDrawer: React.FC = () => {
                   onBlur={() => {
                     window.scrollTo(0, 0);
                   }}
-                  placeholder="Ghi lại ý tưởng, đoạn code mẫu hoặc điểm cần nhớ..."
+                  placeholder={
+                    lang === 'en'
+                      ? 'Write down ideas, code snippets, or key takeaways...'
+                      : 'Ghi lại ý tưởng, đoạn code mẫu hoặc điểm cần nhớ...'
+                  }
                   className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-slate-100 placeholder-slate-500 focus:border-amber-500 focus:outline-none"
                 />
                 <button
@@ -126,14 +134,16 @@ export const NotesDrawer: React.FC = () => {
                   className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-amber-400 transition-colors"
                 >
                   <Save className="h-3.5 w-3.5" />
-                  <span>Lưu vào IndexedDB</span>
+                  <span>{lang === 'en' ? 'Save to IndexedDB' : 'Lưu vào IndexedDB'}</span>
                 </button>
               </form>
 
               <div className="space-y-2.5 pt-2">
                 {targetNotes.length === 0 ? (
                   <p className="text-center text-xs text-slate-500 py-8">
-                    Chưa có ghi chú nào cho mục này.
+                    {lang === 'en'
+                      ? 'No notes yet for this item.'
+                      : 'Chưa có ghi chú nào cho mục này.'}
                   </p>
                 ) : (
                   targetNotes.map((n) => (
@@ -143,7 +153,7 @@ export const NotesDrawer: React.FC = () => {
                     >
                       <div className="flex items-center justify-between text-[11px] text-slate-500">
                         <span>
-                          {new Date(n.updatedAt).toLocaleString('vi-VN')}
+                          {new Date(n.updatedAt).toLocaleString(lang === 'en' ? 'en-US' : 'vi-VN')}
                         </span>
                         <button
                           onClick={() => removeNote(n.id)}
@@ -166,7 +176,7 @@ export const NotesDrawer: React.FC = () => {
             <div className="space-y-2.5">
               {notes.length === 0 ? (
                 <p className="text-center text-xs text-slate-500 py-8">
-                  Bạn chưa tạo ghi chú nào.
+                  {lang === 'en' ? "You haven't created any notes yet." : 'Bạn chưa tạo ghi chú nào.'}
                 </p>
               ) : (
                 notes.map((n) => (
@@ -198,7 +208,7 @@ export const NotesDrawer: React.FC = () => {
             <div className="space-y-2.5">
               {bookmarks.length === 0 ? (
                 <p className="text-center text-xs text-slate-500 py-8">
-                  Chưa có mục đánh dấu (Bookmark) nào.
+                  {lang === 'en' ? 'No bookmarks yet.' : 'Chưa có mục đánh dấu (Bookmark) nào.'}
                 </p>
               ) : (
                 bookmarks.map((bm) => (

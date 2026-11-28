@@ -20,6 +20,7 @@ import {
 } from './pythonModeCurator';
 import { choreographProgressiveScene } from '@/features/devops-course/scale/courseLessonBuilder';
 import curatedReadingsRaw from '@/data/workpath/readings.json';
+import type { CourseEnOverlay } from '@/data/i18n/types';
 
 const CURATED_READINGS_CODE = curatedReadingsRaw as Record<string, string>;
 
@@ -535,8 +536,10 @@ function buildEnglishStepNarrative(
 export function buildPythonScaleModule(
   mod: WpModule,
   orderInLevel: number,
-  totalInLevel: number
+  totalInLevel: number,
+  enOverlay?: CourseEnOverlay | null
 ): ScaleModuleLesson {
+  const modEn = enOverlay?.modules?.[mod.id];
   const spec: PyModuleVisualSpec = ALL_PY_SPECS[mod.id] ?? ALL_PY_SPECS.M00;
   const primaryMode: StageRenderMode = PYTHON_PRIMARY_MODE[mod.id] ?? 'code-trace';
   const rawSections = splitMarkdownSections(mod.lesson);
@@ -545,6 +548,8 @@ export function buildPythonScaleModule(
   const validReadings = (mod.readings ?? []).filter(
     (r) => typeof CURATED_READINGS_CODE[r.path] === 'string'
   );
+  let readingSectionIndex = -1;
+  let readingBodyEn: string | undefined;
   if (validReadings.length > 0) {
     const blocks = validReadings.slice(0, 3).map((r, i) => {
       const snippet = CURATED_READINGS_CODE[r.path].trim();
@@ -562,11 +567,30 @@ export function buildPythonScaleModule(
       return parts.join('\n\n');
     });
 
+    const blocksEn = validReadings.slice(0, 3).map((r, i) => {
+      const rEn = modEn?.readings?.[i];
+      const snippet = CURATED_READINGS_CODE[r.path].trim();
+      const parts = [
+        `### Example ${i + 1}: \`${r.path}\``,
+        rEn?.noteEn ?? r.note,
+        '```python\n' + snippet + '\n```',
+      ];
+      if (r.task) {
+        parts.push(`**Analysis Question:** ${rEn?.taskEn ?? r.task}`);
+      }
+      if (r.answer) {
+        parts.push(`> **Suggested Answer:** ${rEn?.answerEn ?? r.answer}`);
+      }
+      return parts.join('\n\n');
+    });
+    readingBodyEn = blocksEn.join('\n\n---\n\n');
+
     const readingSection = {
       heading: 'Ví dụ áp dụng thực tế trong bài học',
       body: blocks.join('\n\n---\n\n'),
     };
     const insertAt = Math.max(1, rawSections.length - 1);
+    readingSectionIndex = insertAt;
     rawSections.splice(insertAt, 0, readingSection);
   }
 
@@ -578,13 +602,32 @@ export function buildPythonScaleModule(
 
   const steps: ScaleLessonStep[] = rawSections.map((sec, idx) => {
     const category = inferStepCategory(sec.heading, idx, totalSteps);
-    const shortLabel = makeShortStepperLabel(sec.heading, idx, totalSteps);
+    const shortLabelBase = makeShortStepperLabel(sec.heading, idx, totalSteps);
     const codeSnippet = extractFirstPythonCode(sec.body);
     const frame = spec.buildFrame(idx, totalSteps);
     const cleanHeadingVi = sec.heading
       .replace(/^\d+[.)]\s*/, '')
       .replace(/`/g, '')
       .trim();
+
+    // Map overlay step index accounting for the injected reading section
+    const origIdx =
+      readingSectionIndex >= 0 && idx > readingSectionIndex
+        ? idx - 1
+        : idx;
+    const stepEn =
+      idx === readingSectionIndex
+        ? {
+            headingEn: 'Real-World Examples in This Lesson',
+            shortEn: 'Case Study',
+            bodyEn: readingBodyEn,
+          }
+        : modEn?.steps?.[origIdx];
+
+    const shortLabel: BilingualText = {
+      vi: shortLabelBase.vi,
+      en: stepEn?.shortEn ?? shortLabelBase.en,
+    };
 
     // Giữ nhất quán sân khấu trực quan xuyên suốt toàn bộ bài học:
     // - Nhóm A giữ sân khấu 'isometric' xuyên suốt mọi bước (morph mượt mà)
@@ -617,18 +660,8 @@ export function buildPythonScaleModule(
       stepMode = 'code-trace';
     }
 
-    const { titleEn, summaryEn } = buildEnglishStepNarrative(
-      spec,
-      sec.heading,
-      shortLabel.en,
-      category,
-      stepMode,
-      codeSnippet,
-      sec.body,
-      frame,
-      idx,
-      totalSteps
-    );
+    const titleEn = stepEn?.headingEn ?? cleanHeadingVi;
+    const summaryEn = stepEn?.bodyEn ?? sec.body;
 
     const codeTrace = buildCodeTraceScene(
       mod.id,
@@ -668,11 +701,11 @@ export function buildPythonScaleModule(
     totalInLevel,
     title: {
       vi: mod.title,
-      en: spec.titleEn,
+      en: modEn?.titleEn ?? spec.titleEn,
     },
     subtitle: {
       vi: mod.summary,
-      en: spec.subtitleEn,
+      en: modEn?.summaryEn ?? spec.subtitleEn,
     },
     durationMin: spec.durationMin,
     difficulty: spec.difficulty,
@@ -687,7 +720,8 @@ export function buildPythonScaleModule(
 }
 
 export function buildAllPythonScaleLessons(
-  curriculum: WpCurriculum
+  curriculum: WpCurriculum,
+  enOverlay?: CourseEnOverlay | null
 ): ScaleModuleLesson[] {
   const sorted = [...curriculum.modules].sort(
     (a, b) => a.level - b.level || a.order - b.order
@@ -705,7 +739,8 @@ export function buildAllPythonScaleLessons(
     return buildPythonScaleModule(
       m,
       nextIdx,
-      countByLevel.get(m.level) ?? 1
+      countByLevel.get(m.level) ?? 1,
+      enOverlay
     );
   });
 }

@@ -5,6 +5,7 @@ import { ExamQuestion, ExamSet } from '@/types/assessment.types';
 import { SkillLevel, StageId } from '@/types/curriculum.types';
 import { useUserDataStore } from '@/stores/useUserDataStore';
 import { useNavigationStore } from '@/stores/useNavigationStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { LevelBadge } from '@/components/common/LevelBadge';
 import { RichTextWithTerms } from '@/components/common/RichTextWithTerms';
 import { renderHighlightedPython } from '@/utils/pythonHighlighter';
@@ -47,10 +48,11 @@ import {
 
 const LEVEL_META: Record<
   SkillLevel,
-  { label: string; shortLabel: string; pillClass: string; activeClass: string; order: number }
+  { label: string; labelEn: string; shortLabel: string; pillClass: string; activeClass: string; order: number }
 > = {
   fundamental: {
     label: 'Fundamental (Zero → Cơ bản)',
+    labelEn: 'Fundamental (Zero → Basics)',
     shortLabel: 'Fundamental',
     pillClass: 'bg-sky-500/15 text-sky-300 border-sky-500/35',
     activeClass: 'bg-sky-500 text-[#020617] border-sky-400 shadow-sm',
@@ -58,6 +60,7 @@ const LEVEL_META: Record<
   },
   basic: {
     label: 'Basic (Cấu trúc & Stdlib)',
+    labelEn: 'Basic (Structures & Stdlib)',
     shortLabel: 'Basic',
     pillClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35',
     activeClass: 'bg-emerald-500 text-[#020617] border-emerald-400 shadow-sm',
@@ -65,6 +68,7 @@ const LEVEL_META: Record<
   },
   advanced: {
     label: 'Advanced (Internals & Async)',
+    labelEn: 'Advanced (Internals & Async)',
     shortLabel: 'Advanced',
     pillClass: 'bg-amber-500/15 text-amber-300 border-amber-500/35',
     activeClass: 'bg-amber-500 text-[#020617] border-amber-400 shadow-sm',
@@ -72,6 +76,7 @@ const LEVEL_META: Record<
   },
   pro: {
     label: 'Pro (Backend Production)',
+    labelEn: 'Pro (Backend Production)',
     shortLabel: 'Pro',
     pillClass: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/35',
     activeClass: 'bg-indigo-500 text-[#ffffff] border-indigo-400 shadow-sm',
@@ -79,6 +84,7 @@ const LEVEL_META: Record<
   },
   master: {
     label: 'Master / Hero (Data, AI & Rust)',
+    labelEn: 'Master / Hero (Data, AI & Rust)',
     shortLabel: 'Master',
     pillClass: 'bg-purple-500/15 text-purple-300 border-purple-500/35',
     activeClass: 'bg-purple-500 text-[#ffffff] border-purple-400 shadow-sm',
@@ -94,6 +100,16 @@ const STAGE_LABELS: Record<StageId, string> = {
   'stage-5': 'GĐ 5 • GIL & AsyncIO',
   'stage-6': 'GĐ 6 • FastAPI & Production',
   'stage-7': 'GĐ 7 • Data, AI & Rust',
+};
+
+const STAGE_LABELS_EN: Record<StageId, string> = {
+  'stage-1': 'Stage 1 • Zero & Syntax',
+  'stage-2': 'Stage 2 • Structures & OOP',
+  'stage-3': 'Stage 3 • Stdlib & Pytest',
+  'stage-4': 'Stage 4 • CPython & Typing',
+  'stage-5': 'Stage 5 • GIL & AsyncIO',
+  'stage-6': 'Stage 6 • FastAPI & Production',
+  'stage-7': 'Stage 7 • Data, AI & Rust',
 };
 
 /**
@@ -208,6 +224,8 @@ type QuestionDisplayMode = 'single' | 'list';
 type ReviewFilter = 'all' | 'wrong' | 'correct' | 'unanswered' | 'flagged';
 
 export const ExamCenter: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
+  const stageLabels = lang === 'en' ? STAGE_LABELS_EN : STAGE_LABELS;
   const { showTermPopover } = useNavigationStore();
   const { examHistory: pastAttempts, recordExamAttempt } = useUserDataStore();
 
@@ -372,12 +390,20 @@ export const ExamCenter: React.FC = () => {
     if (builderLevel !== 'all') parts.push(LEVEL_META[builderLevel].shortLabel);
     if (builderCategory !== 'all') parts.push(builderCategory);
     if (builderTags.length > 0) parts.push(builderTags.map((t) => `#${t}`).join(', '));
-    const titleSuffix = parts.length > 0 ? parts.join(' • ') : 'Tổng hợp Đa Cấp độ';
+    const titleSuffix =
+      parts.length > 0
+        ? parts.join(' • ')
+        : lang === 'en'
+          ? 'Multi-Level Mix'
+          : 'Tổng hợp Đa Cấp độ';
 
     const customExam: ExamSet = {
       id: `custom-quiz-${Date.now()}`,
-      title: `Đề Tự Chọn: ${titleSuffix}`,
-      description: `Bộ đề kiểm tra gồm ${chosen.length} câu hỏi được trích xuất từ ngân hàng ${allQuestionsBank.length} câu hỏi theo bộ lọc của bạn.`,
+      title: lang === 'en' ? `Custom Quiz: ${titleSuffix}` : `Đề Tự Chọn: ${titleSuffix}`,
+      description:
+        lang === 'en'
+          ? `Custom quiz with ${chosen.length} questions drawn from the ${allQuestionsBank.length}-question bank matching your filters.`
+          : `Bộ đề kiểm tra gồm ${chosen.length} câu hỏi được trích xuất từ ngân hàng ${allQuestionsBank.length} câu hỏi theo bộ lọc của bạn.`,
       targetLevel: builderLevel,
       ...(builderStage !== 'all' ? { targetStage: builderStage } : {}),
       durationMinutes: Math.max(10, Math.round(chosen.length * 1.2)),
@@ -387,6 +413,7 @@ export const ExamCenter: React.FC = () => {
 
     startExamSet(customExam);
   }, [
+    lang,
     builderMatchingQuestions,
     builderShuffle,
     builderCount,
@@ -511,15 +538,18 @@ export const ExamCenter: React.FC = () => {
     if (wrongOrMissed.length === 0) return;
     const retryExam: ExamSet = {
       id: `${activeExam.id}-retry-${Date.now()}`,
-      title: `Ôn lại câu sai: ${activeExam.title}`,
-      description: `Tập trung làm lại ${wrongOrMissed.length} câu làm sai hoặc bỏ trống trong lần thi vừa rồi.`,
+      title: lang === 'en' ? `Retry Missed: ${activeExam.title}` : `Ôn lại câu sai: ${activeExam.title}`,
+      description:
+        lang === 'en'
+          ? `Focused retry on ${wrongOrMissed.length} missed or unanswered questions from your last attempt.`
+          : `Tập trung làm lại ${wrongOrMissed.length} câu làm sai hoặc bỏ trống trong lần thi vừa rồi.`,
       targetLevel: activeExam.targetLevel,
       durationMinutes: Math.max(5, wrongOrMissed.length),
       passingScorePercent: 80,
       questions: wrongOrMissed,
     };
     startExamSet(retryExam);
-  }, [activeExam, selectedAnswers, startExamSet]);
+  }, [lang, activeExam, selectedAnswers, startExamSet]);
 
   // Filtered questions when reviewing after submission
   const displayedQuestions = useMemo(() => {
@@ -649,11 +679,11 @@ export const ExamCenter: React.FC = () => {
         <div className="px-4 sm:px-6 py-3.5 bg-slate-950/70 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-emerald-500 text-[#020617] font-mono text-xs font-extrabold">
-              Câu #{originalIdx + 1} / {activeExam.questions.length}
+              {lang === 'en' ? `Q #${originalIdx + 1}` : `Câu #${originalIdx + 1}`} / {activeExam.questions.length}
             </span>
             <LevelBadge level={q.level} size="sm" />
             <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-md bg-slate-900 border border-slate-700/80 text-slate-300">
-              {STAGE_LABELS[q.stageId] || q.stageId}
+              {stageLabels[q.stageId] || q.stageId}
             </span>
             {q.category && (
               <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-md bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
@@ -674,11 +704,21 @@ export const ExamCenter: React.FC = () => {
                     ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                     : 'bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800'
                 )}
-                title="Xem gợi ý & giải thích cho câu này"
+                title={
+                  lang === 'en'
+                    ? 'Show hint & explanation for this question'
+                    : 'Xem gợi ý & giải thích cho câu này'
+                }
               >
                 <HelpCircle className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">
-                  {revealedQuestions[q.id] ? 'Ẩn đáp án' : 'Xem đáp án'}
+                  {revealedQuestions[q.id]
+                    ? lang === 'en'
+                      ? 'Hide Answer'
+                      : 'Ẩn đáp án'
+                    : lang === 'en'
+                      ? 'Show Answer'
+                      : 'Xem đáp án'}
                 </span>
               </button>
             )}
@@ -691,10 +731,22 @@ export const ExamCenter: React.FC = () => {
                   ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
                   : 'bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800'
               )}
-              title="Đánh dấu câu hỏi để xem lại (Phím tắt: F)"
+              title={
+                lang === 'en'
+                  ? 'Flag question for review (Shortcut: F)'
+                  : 'Đánh dấu câu hỏi để xem lại (Phím tắt: F)'
+              }
             >
               <Flag className={cn('w-3.5 h-3.5', isFlagged && 'fill-amber-400 text-amber-400')} />
-              <span>{isFlagged ? 'Đã đánh dấu' : 'Đánh dấu'}</span>
+              <span>
+                {isFlagged
+                  ? lang === 'en'
+                    ? 'Flagged'
+                    : 'Đã đánh dấu'
+                  : lang === 'en'
+                    ? 'Flag'
+                    : 'Đánh dấu'}
+              </span>
             </button>
           </div>
         </div>
@@ -736,7 +788,9 @@ export const ExamCenter: React.FC = () => {
                   {copiedId === q.id ? (
                     <>
                       <Check className="w-3 h-3 text-emerald-400" />
-                      <span className="text-emerald-300">Đã chép</span>
+                      <span className="text-emerald-300">
+                        {lang === 'en' ? 'Copied' : 'Đã chép'}
+                      </span>
                     </>
                   ) : (
                     <>
@@ -812,12 +866,16 @@ export const ExamCenter: React.FC = () => {
                           {isCorrectOption ? (
                             <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                              <span className="hidden sm:inline">Đáp án đúng</span>
+                              <span className="hidden sm:inline">
+                                {lang === 'en' ? 'Correct Answer' : 'Đáp án đúng'}
+                              </span>
                             </span>
                           ) : isSelected ? (
                             <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40">
                               <XCircle className="w-3.5 h-3.5 text-rose-400" />
-                              <span className="hidden sm:inline">Bạn chọn sai</span>
+                              <span className="hidden sm:inline">
+                                {lang === 'en' ? 'Your Choice (Wrong)' : 'Bạn chọn sai'}
+                              </span>
                             </span>
                           ) : null}
                         </span>
@@ -850,11 +908,15 @@ export const ExamCenter: React.FC = () => {
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-400">
                   <Sparkles className="w-4 h-4" />
-                  <span>Giải thích Bản chất & Cơ chế Python</span>
+                  <span>
+                    {lang === 'en'
+                      ? 'Technical Explanation & Python Mechanics'
+                      : 'Giải thích Bản chất & Cơ chế Python'}
+                  </span>
                 </div>
                 {!isAnswered && (
                   <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    Câu này chưa chọn đáp án
+                    {lang === 'en' ? 'Unanswered' : 'Câu này chưa chọn đáp án'}
                   </span>
                 )}
               </div>
@@ -865,7 +927,11 @@ export const ExamCenter: React.FC = () => {
                 <div className="pt-2.5 border-t border-slate-800 text-xs text-amber-300 flex items-start gap-2 leading-relaxed">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
                   <span>
-                    <strong className="text-amber-300">Góc nhìn từ JS/TS & Ghi nhớ nhanh:</strong>{' '}
+                    <strong className="text-amber-300">
+                      {lang === 'en'
+                        ? 'JS/TS Perspective & Quick Tip:'
+                        : 'Góc nhìn từ JS/TS & Ghi nhớ nhanh:'}
+                    </strong>{' '}
                     <RichTextWithTerms text={q.analogyReminder} />
                   </span>
                 </div>
@@ -875,7 +941,7 @@ export const ExamCenter: React.FC = () => {
               {q.relatedTermIds && q.relatedTermIds.length > 0 && (
                 <div className="pt-2.5 border-t border-slate-800 flex flex-wrap items-center gap-1.5">
                   <span className="text-[11px] text-slate-400 font-semibold mr-1">
-                    Thuật ngữ liên quan:
+                    {lang === 'en' ? 'Related terms:' : 'Thuật ngữ liên quan:'}
                   </span>
                   {q.relatedTermIds.map((termId) => {
                     const term = GLOSSARY_BY_ID[termId];
@@ -914,23 +980,23 @@ export const ExamCenter: React.FC = () => {
                 className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-950 hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none text-xs sm:text-sm font-bold text-slate-200 transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
-                <span>Câu trước</span>
+                <span>{lang === 'en' ? 'Previous' : 'Câu trước'}</span>
               </button>
 
               <span className="hidden sm:inline-block text-xs text-slate-400 font-medium">
-                Phím tắt:{' '}
+                {lang === 'en' ? 'Shortcuts:' : 'Phím tắt:'}{' '}
                 <kbd className="px-1.5 py-0.5 rounded bg-slate-950 border border-slate-700 text-slate-300 font-mono">
                   1-4
                 </kbd>{' '}
-                chọn đáp án •{' '}
+                {lang === 'en' ? 'select' : 'chọn đáp án'} •{' '}
                 <kbd className="px-1.5 py-0.5 rounded bg-slate-950 border border-slate-700 text-slate-300 font-mono">
                   ←/→
                 </kbd>{' '}
-                chuyển câu •{' '}
+                {lang === 'en' ? 'navigate' : 'chuyển câu'} •{' '}
                 <kbd className="px-1.5 py-0.5 rounded bg-slate-950 border border-slate-700 text-slate-300 font-mono">
                   F
                 </kbd>{' '}
-                đánh dấu
+                {lang === 'en' ? 'flag' : 'đánh dấu'}
               </span>
 
               {currentQuestionIdx < displayedQuestions.length - 1 ? (
@@ -943,7 +1009,7 @@ export const ExamCenter: React.FC = () => {
                   }
                   className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#020617] text-xs sm:text-sm font-extrabold shadow-sm transition-colors"
                 >
-                  <span>Câu tiếp theo</span>
+                  <span>{lang === 'en' ? 'Next Question' : 'Câu tiếp theo'}</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
               ) : !isSubmitted ? (
@@ -953,7 +1019,7 @@ export const ExamCenter: React.FC = () => {
                   className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#020617] text-xs sm:text-sm font-extrabold shadow-sm transition-colors"
                 >
                   <Trophy className="w-4 h-4" />
-                  <span>Nộp bài & Chấm điểm</span>
+                  <span>{lang === 'en' ? 'Submit & Grade' : 'Nộp bài & Chấm điểm'}</span>
                 </button>
               ) : (
                 <button
@@ -962,7 +1028,7 @@ export const ExamCenter: React.FC = () => {
                   className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs sm:text-sm font-bold transition-colors"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Về câu đầu</span>
+                  <span>{lang === 'en' ? 'Back to First' : 'Về câu đầu'}</span>
                 </button>
               )}
             </div>
@@ -1029,19 +1095,27 @@ export const ExamCenter: React.FC = () => {
         <div className="pt-2 border-t border-slate-800 grid grid-cols-2 gap-1.5 text-[11px] text-slate-400">
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-indigo-500 inline-block" />
-            <span>Đã chọn ({answeredCount})</span>
+            <span>
+              {lang === 'en' ? `Answered (${answeredCount})` : `Đã chọn (${answeredCount})`}
+            </span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-slate-950 border border-slate-700 inline-block" />
-            <span>Chưa làm ({activeExam.questions.length - answeredCount})</span>
+            <span>
+              {lang === 'en'
+                ? `Unanswered (${activeExam.questions.length - answeredCount})`
+                : `Chưa làm (${activeExam.questions.length - answeredCount})`}
+            </span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full bg-amber-400 inline-block" />
-            <span>Đánh dấu ({flaggedCount})</span>
+            <span>
+              {lang === 'en' ? `Flagged (${flaggedCount})` : `Đánh dấu (${flaggedCount})`}
+            </span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-emerald-500/30 border border-emerald-500/60 inline-block" />
-            <span>Đúng / Sai</span>
+            <span>{lang === 'en' ? 'Correct / Wrong' : 'Đúng / Sai'}</span>
           </div>
         </div>
       </div>
@@ -1068,18 +1142,32 @@ export const ExamCenter: React.FC = () => {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <h1 className="text-xs sm:text-xl font-extrabold text-slate-100 tracking-tight">
-                  Trung tâm Thi Sát Hạch & Ngân Hàng Câu Hỏi
+                  {lang === 'en'
+                    ? 'Exam Center & Question Bank'
+                    : 'Trung tâm Thi Sát Hạch & Ngân Hàng Câu Hỏi'}
                 </h1>
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/35 px-2 py-0.5 font-mono text-[10px] sm:text-xs font-bold text-emerald-300">
-                  {allQuestionsBank.length} Câu Hỏi
+                  {allQuestionsBank.length} {lang === 'en' ? 'Questions' : 'Câu Hỏi'}
                 </span>
               </div>
               <p className="hidden sm:block text-xs sm:text-sm text-slate-400 mt-1 max-w-3xl leading-relaxed">
-                Hệ thống kiểm tra kiến thức toàn diện phân tầng theo{' '}
-                <strong className="text-slate-200">5 Level</strong> (Fundamental → Master),{' '}
-                <strong className="text-slate-200">{categoryStats.length} Chuyên đề</strong> và{' '}
-                <strong className="text-slate-200">{tagStats.length}+ Tags</strong> kèm giải thích
-                đáp án chuyên sâu & liên hệ từ JS/TS.
+                {lang === 'en' ? (
+                  <>
+                    Comprehensive knowledge assessment across{' '}
+                    <strong className="text-slate-200">5 Levels</strong> (Fundamental → Master),{' '}
+                    <strong className="text-slate-200">{categoryStats.length} Categories</strong> and{' '}
+                    <strong className="text-slate-200">{tagStats.length}+ Tags</strong> with deep
+                    explanations & JS/TS comparisons.
+                  </>
+                ) : (
+                  <>
+                    Hệ thống kiểm tra kiến thức toàn diện phân tầng theo{' '}
+                    <strong className="text-slate-200">5 Level</strong> (Fundamental → Master),{' '}
+                    <strong className="text-slate-200">{categoryStats.length} Chuyên đề</strong> và{' '}
+                    <strong className="text-slate-200">{tagStats.length}+ Tags</strong> kèm giải thích
+                    đáp án chuyên sâu & liên hệ từ JS/TS.
+                  </>
+                )}
               </p>
             </div>
           </div>
@@ -1091,7 +1179,7 @@ export const ExamCenter: React.FC = () => {
                 {allQuestionsBank.length}
               </div>
               <div className="text-[10px] sm:text-[11px] text-slate-400 font-medium">
-                Câu hỏi
+                {lang === 'en' ? 'Questions' : 'Câu hỏi'}
               </div>
             </div>
             <div className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-slate-950 border border-slate-800 text-center">
@@ -1099,7 +1187,7 @@ export const ExamCenter: React.FC = () => {
                 {enrichedExamSets.length}
               </div>
               <div className="text-[10px] sm:text-[11px] text-slate-400 font-medium">
-                Bộ đề chuẩn
+                {lang === 'en' ? 'Exam Sets' : 'Bộ đề chuẩn'}
               </div>
             </div>
             <div className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-slate-950 border border-slate-800 text-center">
@@ -1126,7 +1214,7 @@ export const ExamCenter: React.FC = () => {
             )}
           >
             <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-            <span className="truncate">Phòng Thi</span>
+            <span className="truncate">{lang === 'en' ? 'Exam Room' : 'Phòng Thi'}</span>
             <span
               className={cn(
                 'px-1.5 py-0.5 rounded-full text-[10px] font-mono font-extrabold shrink-0',
@@ -1150,8 +1238,14 @@ export const ExamCenter: React.FC = () => {
             )}
           >
             <SlidersHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-            <span className="sm:hidden truncate">Tạo Đề Tự Chọn</span>
-            <span className="hidden sm:inline">Tạo Đề Theo Level / Category / Tag</span>
+            <span className="sm:hidden truncate">
+              {lang === 'en' ? 'Custom Quiz' : 'Tạo Đề Tự Chọn'}
+            </span>
+            <span className="hidden sm:inline">
+              {lang === 'en'
+                ? 'Build Quiz by Level / Category / Tag'
+                : 'Tạo Đề Theo Level / Category / Tag'}
+            </span>
           </button>
 
           <button
@@ -1166,7 +1260,11 @@ export const ExamCenter: React.FC = () => {
             )}
           >
             <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-            <span className="truncate">Bộ Đề Chuẩn ({enrichedExamSets.length})</span>
+            <span className="truncate">
+              {lang === 'en'
+                ? `Curated Sets (${enrichedExamSets.length})`
+                : `Bộ Đề Chuẩn (${enrichedExamSets.length})`}
+            </span>
           </button>
 
           {pastAttempts.length > 0 && (
@@ -1181,7 +1279,11 @@ export const ExamCenter: React.FC = () => {
               )}
             >
               <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="truncate">Lịch sử ({pastAttempts.length})</span>
+              <span className="truncate">
+                {lang === 'en'
+                  ? `History (${pastAttempts.length})`
+                  : `Lịch sử (${pastAttempts.length})`}
+              </span>
             </button>
           )}
         </div>
@@ -1194,11 +1296,16 @@ export const ExamCenter: React.FC = () => {
             <div>
               <h3 className="text-lg font-extrabold text-slate-100 flex items-center gap-2">
                 <SlidersHorizontal className="w-5 h-5 text-emerald-400" />
-                <span>Thiết Kế Đề Kiểm Tra Theo Cấp Độ, Category & Tag</span>
+                <span>
+                  {lang === 'en'
+                    ? 'Build Custom Quiz by Level, Category & Tag'
+                    : 'Thiết Kế Đề Kiểm Tra Theo Cấp Độ, Category & Tag'}
+                </span>
               </h3>
               <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-                Chọn tổ hợp Level, Chuyên đề hoặc Tag bạn muốn ôn luyện để hệ thống trích xuất đề thi
-                tương ứng từ {allQuestionsBank.length} câu hỏi.
+                {lang === 'en'
+                  ? `Combine Skill Levels, Categories, or Tags to generate a custom quiz from the ${allQuestionsBank.length}-question bank.`
+                  : `Chọn tổ hợp Level, Chuyên đề hoặc Tag bạn muốn ôn luyện để hệ thống trích xuất đề thi tương ứng từ ${allQuestionsBank.length} câu hỏi.`}
               </p>
             </div>
             <button
@@ -1213,14 +1320,14 @@ export const ExamCenter: React.FC = () => {
               className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-950 text-xs font-bold text-slate-300 hover:bg-slate-800"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Xóa bộ lọc</span>
+              <span>{lang === 'en' ? 'Clear filters' : 'Xóa bộ lọc'}</span>
             </button>
           </div>
 
           {/* 1. Filter by Level */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-              1. Chọn Cấp Độ (Skill Level)
+              {lang === 'en' ? '1. Select Skill Level' : '1. Chọn Cấp Độ (Skill Level)'}
             </label>
             <div className="flex flex-wrap gap-2">
               <button
@@ -1233,7 +1340,9 @@ export const ExamCenter: React.FC = () => {
                     : 'bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800'
                 )}
               >
-                Tất cả Level ({levelCounts.all})
+                {lang === 'en'
+                  ? `All Levels (${levelCounts.all})`
+                  : `Tất cả Level (${levelCounts.all})`}
               </button>
               {(Object.keys(LEVEL_META) as SkillLevel[]).map((lvl) => {
                 const meta = LEVEL_META[lvl];
@@ -1248,7 +1357,7 @@ export const ExamCenter: React.FC = () => {
                       isSelected ? meta.activeClass : `${meta.pillClass} hover:opacity-90`
                     )}
                   >
-                    {meta.label} ({levelCounts[lvl] || 0})
+                    {lang === 'en' ? meta.labelEn : meta.label} ({levelCounts[lvl] || 0})
                   </button>
                 );
               })}
@@ -1259,17 +1368,23 @@ export const ExamCenter: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                2. Lọc theo Giai đoạn Lộ trình (Stage 1 – 7)
+                {lang === 'en'
+                  ? '2. Filter by Roadmap Stage (Stage 1 – 7)'
+                  : '2. Lọc theo Giai đoạn Lộ trình (Stage 1 – 7)'}
               </label>
               <select
                 value={builderStage}
                 onChange={(e) => setBuilderStage(e.target.value as StageId | 'all')}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-800 bg-slate-950 text-xs sm:text-sm font-semibold text-slate-200 focus:outline-none focus:border-emerald-500"
               >
-                <option value="all">Tất cả Giai đoạn (Stages 1 – 7)</option>
-                {(Object.keys(STAGE_LABELS) as StageId[]).map((stg) => (
+                <option value="all">
+                  {lang === 'en'
+                    ? 'All Stages (Stages 1 – 7)'
+                    : 'Tất cả Giai đoạn (Stages 1 – 7)'}
+                </option>
+                {(Object.keys(stageLabels) as StageId[]).map((stg) => (
                   <option key={stg} value={stg}>
-                    {STAGE_LABELS[stg]}
+                    {stageLabels[stg]}
                   </option>
                 ))}
               </select>
@@ -1277,7 +1392,9 @@ export const ExamCenter: React.FC = () => {
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                3. Tìm theo Từ khóa (Câu hỏi / Code / Khái niệm)
+                {lang === 'en'
+                  ? '3. Search by Keyword (Question / Code / Concept)'
+                  : '3. Tìm theo Từ khóa (Câu hỏi / Code / Khái niệm)'}
               </label>
               <div className="relative">
                 <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -1285,7 +1402,11 @@ export const ExamCenter: React.FC = () => {
                   type="text"
                   value={builderSearch}
                   onChange={(e) => setBuilderSearch(e.target.value)}
-                  placeholder="VD: uv.lock, asyncio, FastAPI, list comprehension, GIL..."
+                  placeholder={
+                    lang === 'en'
+                      ? 'e.g. uv.lock, asyncio, FastAPI, list comprehension, GIL...'
+                      : 'VD: uv.lock, asyncio, FastAPI, list comprehension, GIL...'
+                  }
                   className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-800 bg-slate-950 text-xs sm:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
                 />
               </div>
@@ -1295,7 +1416,9 @@ export const ExamCenter: React.FC = () => {
           {/* 4. Filter by Category */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-              4. Chọn Chuyên đề Kiến thức (Category — {categoryStats.length} chuyên đề)
+              {lang === 'en'
+                ? `4. Select Category (${categoryStats.length} categories)`
+                : `4. Chọn Chuyên đề Kiến thức (Category — ${categoryStats.length} chuyên đề)`}
             </label>
             <div className="flex flex-wrap gap-2 max-h-56 overflow-y-auto pr-1">
               <button
@@ -1308,7 +1431,9 @@ export const ExamCenter: React.FC = () => {
                     : 'bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800'
                 )}
               >
-                Tất cả Chuyên đề ({allQuestionsBank.length})
+                {lang === 'en'
+                  ? `All Categories (${allQuestionsBank.length})`
+                  : `Tất cả Chuyên đề (${allQuestionsBank.length})`}
               </button>
               {categoryStats.map((cat) => (
                 <button
@@ -1335,7 +1460,9 @@ export const ExamCenter: React.FC = () => {
               <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                 <Tag className="w-3.5 h-3.5 text-emerald-400" />
                 <span>
-                  5. Lọc theo Tags ({tagStats.length} tags — Có thể chọn nhiều tag cùng lúc)
+                  {lang === 'en'
+                    ? `5. Filter by Tags (${tagStats.length} tags — Multi-select supported)`
+                    : `5. Lọc theo Tags (${tagStats.length} tags — Có thể chọn nhiều tag cùng lúc)`}
                 </span>
               </label>
               <div className="flex items-center gap-2">
@@ -1343,7 +1470,11 @@ export const ExamCenter: React.FC = () => {
                   type="text"
                   value={tagSearchQuery}
                   onChange={(e) => setTagSearchQuery(e.target.value)}
-                  placeholder="Tìm nhanh tag (#uv, #pytest...)"
+                  placeholder={
+                    lang === 'en'
+                      ? 'Quick find tag (#uv, #pytest...)'
+                      : 'Tìm nhanh tag (#uv, #pytest...)'
+                  }
                   className="px-2.5 py-1 rounded-lg border border-slate-800 text-xs bg-slate-950 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
                 />
                 {builderTags.length > 0 && (
@@ -1352,7 +1483,9 @@ export const ExamCenter: React.FC = () => {
                     onClick={() => setBuilderTags([])}
                     className="text-xs text-rose-400 font-bold hover:underline"
                   >
-                    Bỏ chọn ({builderTags.length})
+                    {lang === 'en'
+                      ? `Clear (${builderTags.length})`
+                      : `Bỏ chọn (${builderTags.length})`}
                   </button>
                 )}
               </div>
@@ -1387,7 +1520,13 @@ export const ExamCenter: React.FC = () => {
                   onClick={() => setShowAllTags((prev) => !prev)}
                   className="px-2.5 py-1 rounded-lg text-xs font-bold text-emerald-300 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30"
                 >
-                  {showAllTags ? 'Thu gọn bớt tags' : `+ Xem tất cả ${tagStats.length} tags`}
+                  {showAllTags
+                    ? lang === 'en'
+                      ? 'Show fewer tags'
+                      : 'Thu gọn bớt tags'
+                    : lang === 'en'
+                      ? `+ View all ${tagStats.length} tags`
+                      : `+ Xem tất cả ${tagStats.length} tags`}
                 </button>
               )}
             </div>
@@ -1397,7 +1536,9 @@ export const ExamCenter: React.FC = () => {
           <div className="pt-4 border-t border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-950/80 p-4 rounded-xl border border-slate-800/80">
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-300">Số câu muốn làm:</span>
+                <span className="text-xs font-bold text-slate-300">
+                  {lang === 'en' ? 'Question count:' : 'Số câu muốn làm:'}
+                </span>
                 <div className="flex flex-wrap items-center gap-1">
                   {([10, 15, 20, 30, 50, 100, 'all'] as const).map((cnt) => (
                     <button
@@ -1411,7 +1552,7 @@ export const ExamCenter: React.FC = () => {
                           : 'bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800'
                       )}
                     >
-                      {cnt === 'all' ? 'Tất cả' : cnt}
+                      {cnt === 'all' ? (lang === 'en' ? 'All' : 'Tất cả') : cnt}
                     </button>
                   ))}
                 </div>
@@ -1428,17 +1569,25 @@ export const ExamCenter: React.FC = () => {
                 )}
               >
                 <Shuffle className="w-3.5 h-3.5" />
-                <span>{builderShuffle ? 'Đang bật trộn đề ngẫu nhiên' : 'Giữ nguyên thứ tự'}</span>
+                <span>
+                  {builderShuffle
+                    ? lang === 'en'
+                      ? 'Shuffle Enabled'
+                      : 'Đang bật trộn đề ngẫu nhiên'
+                    : lang === 'en'
+                      ? 'Keep Original Order'
+                      : 'Giữ nguyên thứ tự'}
+                </span>
               </button>
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <span className="text-xs font-semibold text-slate-400">
-                Tìm thấy{' '}
+                {lang === 'en' ? 'Found' : 'Tìm thấy'}{' '}
                 <strong className="text-emerald-400 font-extrabold">
                   {builderMatchingQuestions.length}
                 </strong>{' '}
-                câu hỏi khớp bộ lọc
+                {lang === 'en' ? 'matching questions' : 'câu hỏi khớp bộ lọc'}
               </span>
               <button
                 type="button"
@@ -1448,11 +1597,11 @@ export const ExamCenter: React.FC = () => {
               >
                 <Zap className="w-4 h-4" />
                 <span>
-                  Bắt đầu Làm Đề (
+                  {lang === 'en' ? 'Start Quiz' : 'Bắt đầu Làm Đề'} (
                   {builderCount === 'all'
                     ? builderMatchingQuestions.length
                     : Math.min(builderCount, builderMatchingQuestions.length)}{' '}
-                  câu)
+                  {lang === 'en' ? 'questions' : 'câu'})
                 </span>
               </button>
             </div>
@@ -1467,11 +1616,16 @@ export const ExamCenter: React.FC = () => {
             <div>
               <h3 className="text-lg font-extrabold text-slate-100 flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-emerald-400" />
-                <span>Danh Sách {enrichedExamSets.length} Bộ Đề Sát Hạch Theo Chuyên Đề</span>
+                <span>
+                  {lang === 'en'
+                    ? `Curated Assessment Sets (${enrichedExamSets.length} Sets)`
+                    : `Danh Sách ${enrichedExamSets.length} Bộ Đề Sát Hạch Theo Chuyên Đề`}
+                </span>
               </h3>
               <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-                Mỗi bộ đề được biên soạn có hệ thống theo từng chặng kiến thức từ Zero Setup (`uv`,
-                `pyenv`, `.venv`) tới Production Backend, Data Engineering & AI.
+                {lang === 'en'
+                  ? 'Each set is systematically structured by learning stage from Zero Setup (`uv`, `pyenv`, `.venv`) to Production Backend, Data Engineering & AI.'
+                  : 'Mỗi bộ đề được biên soạn có hệ thống theo từng chặng kiến thức từ Zero Setup (`uv`, `pyenv`, `.venv`) tới Production Backend, Data Engineering & AI.'}
               </p>
             </div>
 
@@ -1481,7 +1635,7 @@ export const ExamCenter: React.FC = () => {
                 type="text"
                 value={curatedSearch}
                 onChange={(e) => setCuratedSearch(e.target.value)}
-                placeholder="Tìm tên bộ đề..."
+                placeholder={lang === 'en' ? 'Search exam title...' : 'Tìm tên bộ đề...'}
                 className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-800 bg-slate-950 text-xs sm:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
               />
             </div>
@@ -1499,7 +1653,9 @@ export const ExamCenter: React.FC = () => {
                   : 'bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800'
               )}
             >
-              Tất cả ({enrichedExamSets.length} bộ đề)
+              {lang === 'en'
+                ? `All (${enrichedExamSets.length} sets)`
+                : `Tất cả (${enrichedExamSets.length} bộ đề)`}
             </button>
             {(Object.keys(LEVEL_META) as SkillLevel[]).map((lvl) => {
               const count = enrichedExamSets.filter((e) => e.targetLevel === lvl).length;
@@ -1514,7 +1670,7 @@ export const ExamCenter: React.FC = () => {
                     curatedLevelFilter === lvl ? meta.activeClass : meta.pillClass
                   )}
                 >
-                  {meta.shortLabel} ({count} đề)
+                  {meta.shortLabel} ({count} {lang === 'en' ? 'sets' : 'đề'})
                 </button>
               );
             })}
@@ -1547,7 +1703,7 @@ export const ExamCenter: React.FC = () => {
                         <LevelBadge level={exam.targetLevel} size="sm" />
                       ) : (
                         <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                          Tổng hợp
+                          {lang === 'en' ? 'Mixed' : 'Tổng hợp'}
                         </span>
                       )}
                       {bestAttempt ? (
@@ -1559,10 +1715,12 @@ export const ExamCenter: React.FC = () => {
                               : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                           )}
                         >
-                          Cao nhất: {bestAttempt.scorePercent}%
+                          {lang === 'en' ? 'Best:' : 'Cao nhất:'} {bestAttempt.scorePercent}%
                         </span>
                       ) : (
-                        <span className="text-[11px] font-medium text-slate-500">Chưa làm</span>
+                        <span className="text-[11px] font-medium text-slate-500">
+                          {lang === 'en' ? 'Not attempted' : 'Chưa làm'}
+                        </span>
                       )}
                     </div>
 
@@ -1589,11 +1747,17 @@ export const ExamCenter: React.FC = () => {
 
                   <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
                     <div className="text-[11px] font-semibold text-slate-400 flex items-center gap-2">
-                      <span>{exam.questions.length} câu</span>
+                      <span>
+                        {exam.questions.length} {lang === 'en' ? 'Q' : 'câu'}
+                      </span>
                       <span>•</span>
-                      <span>{exam.durationMinutes} phút</span>
+                      <span>
+                        {exam.durationMinutes} {lang === 'en' ? 'min' : 'phút'}
+                      </span>
                       <span>•</span>
-                      <span>Đạt {exam.passingScorePercent}%</span>
+                      <span>
+                        {lang === 'en' ? 'Pass' : 'Đạt'} {exam.passingScorePercent}%
+                      </span>
                     </div>
                     <button
                       type="button"
@@ -1601,7 +1765,7 @@ export const ExamCenter: React.FC = () => {
                       className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#020617] text-xs font-extrabold transition-colors"
                     >
                       <Play className="w-3.5 h-3.5" />
-                      <span>Vào thi</span>
+                      <span>{lang === 'en' ? 'Start Exam' : 'Vào thi'}</span>
                     </button>
                   </div>
                 </div>
@@ -1616,7 +1780,11 @@ export const ExamCenter: React.FC = () => {
         <div className="bg-slate-900/90 rounded-2xl border border-slate-800/90 p-4 sm:p-6 shadow-md space-y-4">
           <h3 className="text-lg font-extrabold text-slate-100 flex items-center gap-2">
             <History className="w-5 h-5 text-emerald-400" />
-            <span>Lịch Sử Làm Bài Kiểm Tra ({pastAttempts.length} lượt)</span>
+            <span>
+              {lang === 'en'
+                ? `Exam Attempt History (${pastAttempts.length} attempts)`
+                : `Lịch Sử Làm Bài Kiểm Tra (${pastAttempts.length} lượt)`}
+            </span>
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {pastAttempts.map((att) => (
@@ -1629,7 +1797,7 @@ export const ExamCenter: React.FC = () => {
                     {att.examTitle}
                   </div>
                   <div className="text-[11px] text-slate-400 mt-1">
-                    {new Date(att.completedAt).toLocaleString('vi-VN')} •{' '}
+                    {new Date(att.completedAt).toLocaleString(lang === 'en' ? 'en-US' : 'vi-VN')} •{' '}
                     {formatTime(att.timeSpentSeconds)}
                   </div>
                 </div>
@@ -1662,19 +1830,19 @@ export const ExamCenter: React.FC = () => {
                     {activeExam.title}
                   </h3>
                   <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                    Đạt ≥ {activeExam.passingScorePercent}%
+                    {lang === 'en' ? 'Pass' : 'Đạt'} ≥ {activeExam.passingScorePercent}%
                   </span>
                 </div>
                 <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400 mt-1">
                   <span>
-                    Đã trả lời:{' '}
+                    {lang === 'en' ? 'Answered:' : 'Đã trả lời:'}{' '}
                     <strong className="text-slate-100">
                       {answeredCount} / {activeExam.questions.length}
                     </strong>
                   </span>
                   {flaggedCount > 0 && (
                     <span className="text-amber-300 font-semibold">
-                      🚩 Đánh dấu: {flaggedCount}
+                      {lang === 'en' ? `🚩 Flagged: ${flaggedCount}` : `🚩 Đánh dấu: ${flaggedCount}`}
                     </span>
                   )}
                   <span className="inline-flex items-center gap-1 font-mono text-emerald-300 font-semibold">
@@ -1699,7 +1867,7 @@ export const ExamCenter: React.FC = () => {
                     )}
                   >
                     <LayoutGrid className="w-3.5 h-3.5" />
-                    <span>Từng câu</span>
+                    <span>{lang === 'en' ? 'Single View' : 'Từng câu'}</span>
                   </button>
                   <button
                     type="button"
@@ -1712,7 +1880,7 @@ export const ExamCenter: React.FC = () => {
                     )}
                   >
                     <ListOrdered className="w-3.5 h-3.5" />
-                    <span>Toàn bộ đề</span>
+                    <span>{lang === 'en' ? 'Full Paper' : 'Toàn bộ đề'}</span>
                   </button>
                 </div>
 
@@ -1731,12 +1899,20 @@ export const ExamCenter: React.FC = () => {
                     {instantFeedbackMode ? (
                       <>
                         <Eye className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Luyện tập (Biết đáp án ngay)</span>
+                        <span>
+                          {lang === 'en'
+                            ? 'Practice (Instant Feedback)'
+                            : 'Luyện tập (Biết đáp án ngay)'}
+                        </span>
                       </>
                     ) : (
                       <>
                         <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Thi sát hạch (Nộp cuối giờ)</span>
+                        <span>
+                          {lang === 'en'
+                            ? 'Exam Mode (Grade on Submit)'
+                            : 'Thi sát hạch (Nộp cuối giờ)'}
+                        </span>
                       </>
                     )}
                   </button>
@@ -1749,7 +1925,9 @@ export const ExamCenter: React.FC = () => {
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#020617] font-extrabold text-xs shadow-sm transition-colors"
                   >
                     <Trophy className="w-3.5 h-3.5" />
-                    <span>Nộp bài ({answeredCount}/{activeExam.questions.length})</span>
+                    <span>
+                      {lang === 'en' ? 'Submit' : 'Nộp bài'} ({answeredCount}/{activeExam.questions.length})
+                    </span>
                   </button>
                 ) : (
                   <button
@@ -1758,7 +1936,7 @@ export const ExamCenter: React.FC = () => {
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold text-xs transition-colors"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Làm lại đề này</span>
+                    <span>{lang === 'en' ? 'Retake Exam' : 'Làm lại đề này'}</span>
                   </button>
                 )}
               </div>
@@ -1801,27 +1979,45 @@ export const ExamCenter: React.FC = () => {
                   >
                     <span className="text-xl sm:text-2xl">{scoreSummary.percent}%</span>
                     <span className="text-[10px] uppercase tracking-wider opacity-90">
-                      {scoreSummary.passed ? 'ĐẠT' : 'CHƯA ĐẠT'}
+                      {scoreSummary.passed
+                        ? lang === 'en'
+                          ? 'PASSED'
+                          : 'ĐẠT'
+                        : lang === 'en'
+                          ? 'FAILED'
+                          : 'CHƯA ĐẠT'}
                     </span>
                   </div>
                   <div>
                     <h4 className="text-lg sm:text-xl font-extrabold text-slate-100">
                       {scoreSummary.passed
-                        ? 'Chúc mừng! Bạn đã vượt qua bài kiểm tra sát hạch!'
-                        : 'Cần củng cố thêm! Xem chi tiết giải thích từng câu bên dưới.'}
+                        ? lang === 'en'
+                          ? 'Congratulations! You passed the assessment!'
+                          : 'Chúc mừng! Bạn đã vượt qua bài kiểm tra sát hạch!'
+                        : lang === 'en'
+                          ? 'Needs more practice! Review detailed explanations below.'
+                          : 'Cần củng cố thêm! Xem chi tiết giải thích từng câu bên dưới.'}
                     </h4>
                     <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-slate-300 mt-1">
                       <span className="font-bold text-emerald-300">
-                        ✓ Đúng: {scoreSummary.correct} câu
+                        {lang === 'en'
+                          ? `✓ Correct: ${scoreSummary.correct}`
+                          : `✓ Đúng: ${scoreSummary.correct} câu`}
                       </span>
                       <span className="font-bold text-rose-300">
-                        ✗ Sai: {scoreSummary.wrong} câu
+                        {lang === 'en'
+                          ? `✗ Wrong: ${scoreSummary.wrong}`
+                          : `✗ Sai: ${scoreSummary.wrong} câu`}
                       </span>
                       <span className="font-semibold text-amber-300">
-                        ○ Bỏ trống: {scoreSummary.unanswered} câu
+                        {lang === 'en'
+                          ? `○ Unanswered: ${scoreSummary.unanswered}`
+                          : `○ Bỏ trống: ${scoreSummary.unanswered} câu`}
                       </span>
                       <span className="text-slate-400">
-                        ⏱ Thời gian: {formatTime(elapsedSeconds)}
+                        {lang === 'en'
+                          ? `⏱ Time: ${formatTime(elapsedSeconds)}`
+                          : `⏱ Thời gian: ${formatTime(elapsedSeconds)}`}
                       </span>
                     </div>
                   </div>
@@ -1837,7 +2033,9 @@ export const ExamCenter: React.FC = () => {
                     >
                       <Zap className="w-4 h-4" />
                       <span>
-                        Làm lại {scoreSummary.wrong + scoreSummary.unanswered} câu sai / bỏ trống
+                        {lang === 'en'
+                          ? `Retry ${scoreSummary.wrong + scoreSummary.unanswered} missed / unanswered`
+                          : `Làm lại ${scoreSummary.wrong + scoreSummary.unanswered} câu sai / bỏ trống`}
                       </span>
                     </button>
                   )}
@@ -1847,7 +2045,7 @@ export const ExamCenter: React.FC = () => {
                     className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold text-xs transition-colors"
                   >
                     <RotateCcw className="w-4 h-4" />
-                    <span>Làm lại toàn bộ đề</span>
+                    <span>{lang === 'en' ? 'Retake Full Exam' : 'Làm lại toàn bộ đề'}</span>
                   </button>
                 </div>
               </div>
@@ -1857,7 +2055,11 @@ export const ExamCenter: React.FC = () => {
                 <div className="bg-slate-900/90 rounded-xl p-4 border border-slate-800 space-y-2.5">
                   <div className="text-xs font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                     <BarChart3 className="w-4 h-4 text-emerald-400" />
-                    <span>Phân tích Độ chính xác theo Chuyên đề (Category)</span>
+                    <span>
+                      {lang === 'en'
+                        ? 'Accuracy Breakdown by Category'
+                        : 'Phân tích Độ chính xác theo Chuyên đề (Category)'}
+                    </span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                     {scoreSummary.byCategory.map((cat) => (
@@ -1894,15 +2096,30 @@ export const ExamCenter: React.FC = () => {
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <span className="text-xs font-bold text-slate-300 flex items-center gap-1">
                   <Filter className="w-3.5 h-3.5" />
-                  <span>Lọc xem lại:</span>
+                  <span>{lang === 'en' ? 'Filter review:' : 'Lọc xem lại:'}</span>
                 </span>
                 {(
                   [
-                    { id: 'all', label: `Tất cả (${activeExam.questions.length})` },
-                    { id: 'wrong', label: `Câu làm sai (${scoreSummary.wrong})` },
-                    { id: 'unanswered', label: `Bỏ trống (${scoreSummary.unanswered})` },
-                    { id: 'correct', label: `Câu làm đúng (${scoreSummary.correct})` },
-                    { id: 'flagged', label: `Đã đánh dấu (${flaggedCount})` },
+                    {
+                      id: 'all',
+                      label: lang === 'en' ? `All (${activeExam.questions.length})` : `Tất cả (${activeExam.questions.length})`,
+                    },
+                    {
+                      id: 'wrong',
+                      label: lang === 'en' ? `Wrong (${scoreSummary.wrong})` : `Câu làm sai (${scoreSummary.wrong})`,
+                    },
+                    {
+                      id: 'unanswered',
+                      label: lang === 'en' ? `Unanswered (${scoreSummary.unanswered})` : `Bỏ trống (${scoreSummary.unanswered})`,
+                    },
+                    {
+                      id: 'correct',
+                      label: lang === 'en' ? `Correct (${scoreSummary.correct})` : `Câu làm đúng (${scoreSummary.correct})`,
+                    },
+                    {
+                      id: 'flagged',
+                      label: lang === 'en' ? `Flagged (${flaggedCount})` : `Đã đánh dấu (${flaggedCount})`,
+                    },
                   ] as const
                 ).map((tab) => (
                   <button
@@ -1933,14 +2150,16 @@ export const ExamCenter: React.FC = () => {
               {displayedQuestions.length === 0 ? (
                 <div className="bg-slate-900 rounded-2xl border border-slate-800 p-8 text-center space-y-3">
                   <p className="text-sm font-bold text-slate-300">
-                    Không có câu hỏi nào trong bộ lọc xem lại này.
+                    {lang === 'en'
+                      ? 'No questions match this review filter.'
+                      : 'Không có câu hỏi nào trong bộ lọc xem lại này.'}
                   </p>
                   <button
                     type="button"
                     onClick={() => setReviewFilter('all')}
                     className="px-4 py-2 rounded-xl bg-emerald-500 text-[#020617] text-xs font-extrabold"
                   >
-                    Xem toàn bộ câu hỏi
+                    {lang === 'en' ? 'View all questions' : 'Xem toàn bộ câu hỏi'}
                   </button>
                 </div>
               ) : displayMode === 'single' ? (
@@ -1960,7 +2179,7 @@ export const ExamCenter: React.FC = () => {
               <div className="bg-slate-900/90 rounded-2xl border border-slate-800/90 p-4 shadow-md space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-300">
-                    Bảng Điều Hướng Câu Hỏi
+                    {lang === 'en' ? 'Question Navigator' : 'Bảng Điều Hướng Câu Hỏi'}
                   </h4>
                   <span className="text-xs font-mono font-bold text-emerald-400">
                     {answeredCount}/{activeExam.questions.length}
@@ -1977,7 +2196,7 @@ export const ExamCenter: React.FC = () => {
                       className="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#020617] font-extrabold text-xs shadow-sm transition-colors flex items-center justify-center gap-1.5"
                     >
                       <Trophy className="w-4 h-4" />
-                      <span>Nộp Bài & Chấm Điểm</span>
+                      <span>{lang === 'en' ? 'Submit & Grade' : 'Nộp Bài & Chấm Điểm'}</span>
                     </button>
                   ) : (
                     <button
@@ -1986,7 +2205,7 @@ export const ExamCenter: React.FC = () => {
                       className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
                     >
                       <RotateCcw className="w-4 h-4" />
-                      <span>Làm Lại Đề Này</span>
+                      <span>{lang === 'en' ? 'Retake Exam' : 'Làm Lại Đề Này'}</span>
                     </button>
                   )}
 
@@ -1996,7 +2215,9 @@ export const ExamCenter: React.FC = () => {
                     className="w-full py-2 px-3 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-800 text-slate-300 font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
                   >
                     <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Tạo Đề Khác Theo Level / Tag</span>
+                    <span>
+                      {lang === 'en' ? 'Build Custom Quiz' : 'Tạo Đề Khác Theo Level / Tag'}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -2014,7 +2235,7 @@ export const ExamCenter: React.FC = () => {
                   className="px-3 py-2 rounded-xl border border-slate-800 bg-slate-900 disabled:opacity-40 text-xs font-bold text-slate-200 flex items-center gap-1"
                 >
                   <ChevronLeft className="w-4 h-4" />
-                  <span>Trước</span>
+                  <span>{lang === 'en' ? 'Prev' : 'Trước'}</span>
                 </button>
               )}
 
@@ -2025,7 +2246,7 @@ export const ExamCenter: React.FC = () => {
               >
                 <LayoutGrid className="w-3.5 h-3.5 text-emerald-400" />
                 <span>
-                  Bảng câu hỏi ({answeredCount}/{activeExam.questions.length})
+                  {lang === 'en' ? 'Questions' : 'Bảng câu hỏi'} ({answeredCount}/{activeExam.questions.length})
                 </span>
                 {mobilePaletteOpen ? (
                   <ChevronDown className="w-3.5 h-3.5" />
@@ -2044,7 +2265,7 @@ export const ExamCenter: React.FC = () => {
                       ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
                       : 'bg-slate-900 border-slate-800 text-slate-400'
                   )}
-                  aria-label="Đánh dấu câu hỏi"
+                  aria-label={lang === 'en' ? 'Flag question' : 'Đánh dấu câu hỏi'}
                 >
                   <Flag className="w-4 h-4" />
                 </button>
@@ -2061,7 +2282,7 @@ export const ExamCenter: React.FC = () => {
                   }
                   className="px-3.5 py-2 rounded-xl bg-emerald-500 text-[#020617] text-xs font-extrabold flex items-center gap-1"
                 >
-                  <span>Tiếp</span>
+                  <span>{lang === 'en' ? 'Next' : 'Tiếp'}</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
               ) : !isSubmitted ? (
@@ -2071,7 +2292,7 @@ export const ExamCenter: React.FC = () => {
                   className="px-3.5 py-2 rounded-xl bg-emerald-500 text-[#020617] text-xs font-extrabold flex items-center gap-1"
                 >
                   <Trophy className="w-3.5 h-3.5" />
-                  <span>Nộp bài</span>
+                  <span>{lang === 'en' ? 'Submit' : 'Nộp bài'}</span>
                 </button>
               ) : null}
             </div>
@@ -2090,10 +2311,14 @@ export const ExamCenter: React.FC = () => {
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                   <div>
                     <h4 className="text-sm font-extrabold text-slate-100">
-                      Bảng Điều Hướng Câu Hỏi ({answeredCount}/{activeExam.questions.length} đã làm)
+                      {lang === 'en'
+                        ? `Question Navigator (${answeredCount}/${activeExam.questions.length} answered)`
+                        : `Bảng Điều Hướng Câu Hỏi (${answeredCount}/${activeExam.questions.length} đã làm)`}
                     </h4>
                     <p className="text-xs text-slate-400">
-                      Chạm vào số thứ tự câu hỏi để chuyển nhanh tới câu đó
+                      {lang === 'en'
+                        ? 'Tap any question number to jump directly to it'
+                        : 'Chạm vào số thứ tự câu hỏi để chuyển nhanh tới câu đó'}
                     </p>
                   </div>
                   <button
@@ -2115,7 +2340,9 @@ export const ExamCenter: React.FC = () => {
                       className="flex-1 py-3 rounded-xl bg-emerald-500 text-[#020617] font-extrabold text-xs flex items-center justify-center gap-1.5"
                     >
                       <Trophy className="w-4 h-4" />
-                      <span>Nộp Bài & Chấm Điểm Ngay</span>
+                      <span>
+                        {lang === 'en' ? 'Submit & Grade Now' : 'Nộp Bài & Chấm Điểm Ngay'}
+                      </span>
                     </button>
                   ) : (
                     <button
@@ -2124,7 +2351,7 @@ export const ExamCenter: React.FC = () => {
                       className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-100 font-bold text-xs flex items-center justify-center gap-1.5"
                     >
                       <RotateCcw className="w-4 h-4" />
-                      <span>Làm Lại Từ Đầu</span>
+                      <span>{lang === 'en' ? 'Start Over' : 'Làm Lại Từ Đầu'}</span>
                     </button>
                   )}
                   <button
@@ -2135,7 +2362,7 @@ export const ExamCenter: React.FC = () => {
                     }}
                     className="py-3 px-4 rounded-xl border border-slate-700 bg-slate-950 text-slate-200 font-bold text-xs"
                   >
-                    Đổi đề / Lọc
+                    {lang === 'en' ? 'Switch / Filter' : 'Đổi đề / Lọc'}
                   </button>
                 </div>
               </div>

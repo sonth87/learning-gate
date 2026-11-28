@@ -18,6 +18,7 @@ import {
   type ModuleStatusSnapshot,
 } from '@/components/scale-workbench/ScaleWorkbenchLayout';
 import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
 import { cn } from '@/utils/cn';
 
 const PMP_PRACTICE_TABS: {
@@ -95,6 +96,7 @@ export const PmpLearnShell: React.FC = () => {
   const setExpandedLevel = useWorkbenchStore((s) => s.setExpandedLevel);
 
   const { data: cur } = usePmpCurriculum();
+  const enOverlay = useCourseEnOverlay('pmp');
 
   useEffect(() => {
     hydrate();
@@ -117,8 +119,8 @@ export const PmpLearnShell: React.FC = () => {
   }, [view]);
 
   const scaleLessons = useMemo(
-    () => (cur ? buildPmpScaleLessons(cur, PMP_LEVEL_TITLES, PMP_BLUEPRINTS) : []),
-    [cur]
+    () => (cur ? buildPmpScaleLessons(cur, PMP_LEVEL_TITLES, PMP_BLUEPRINTS, enOverlay) : []),
+    [cur, enOverlay]
   );
 
   const getModuleStatus = useCallback(

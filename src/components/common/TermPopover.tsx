@@ -18,6 +18,7 @@ import {
 } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useUserDataStore } from '@/stores/useUserDataStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { CategoryBadge, LevelBadge } from './LevelBadge';
 import { getAppContainerWidth, getAppContainerHeight } from '@/utils/viewport';
 import { cn } from '@/utils/cn';
@@ -102,6 +103,7 @@ const TermPopoverCard: React.FC<TermCardInstanceProps> = ({
   const showJsTsComparison = useSettingsStore((s) => s.showJsTsComparison);
   const bookmarks = useUserDataStore((s) => s.bookmarks);
   const toggleBookmark = useUserDataStore((s) => s.toggleBookmark);
+  const lang = useWorkbenchStore((s) => s.language);
 
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -231,7 +233,7 @@ const TermPopoverCard: React.FC<TermCardInstanceProps> = ({
             <LevelBadge level={term.level} />
             {pinned && !isTouchOrTablet && (
               <span className="inline-flex items-center gap-1 rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-medium text-amber-300">
-                <Pin className="h-2.5 w-2.5" aria-hidden="true" /> Đã ghim
+                <Pin className="h-2.5 w-2.5" aria-hidden="true" /> {lang === 'en' ? 'Pinned' : 'Đã ghim'}
               </span>
             )}
           </div>
@@ -252,8 +254,8 @@ const TermPopoverCard: React.FC<TermCardInstanceProps> = ({
                 e.stopPropagation();
                 onPinFromHover();
               }}
-              aria-label="Ghim popup thuật ngữ"
-              title="Ghim để giữ mở và kéo di chuyển"
+              aria-label={lang === 'en' ? 'Pin term popup' : 'Ghim popup thuật ngữ'}
+              title={lang === 'en' ? 'Pin to keep open and drag to move' : 'Ghim để giữ mở và kéo di chuyển'}
               className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-amber-300 transition-colors"
             >
               <Pin className="h-4 w-4" aria-hidden="true" />
@@ -269,8 +271,8 @@ const TermPopoverCard: React.FC<TermCardInstanceProps> = ({
                 level: term.level,
               })
             }
-            aria-label="Đánh dấu thuật ngữ"
-            title="Đánh dấu thuật ngữ này"
+            aria-label={lang === 'en' ? 'Bookmark term' : 'Đánh dấu thuật ngữ'}
+            title={lang === 'en' ? 'Bookmark this term' : 'Đánh dấu thuật ngữ này'}
             className={cn(
               'rounded-lg p-1.5 transition-colors',
               isBookmarked
@@ -284,10 +286,10 @@ const TermPopoverCard: React.FC<TermCardInstanceProps> = ({
             type="button"
             onClick={() => {
               onClose();
-              openNotesDrawer('glossary', term.id, `Thuật ngữ: ${term.term}`);
+              openNotesDrawer('glossary', term.id, `${lang === 'en' ? 'Term' : 'Thuật ngữ'}: ${term.term}`);
             }}
-            aria-label="Thêm ghi chú"
-            title="Thêm ghi chú cá nhân cho thuật ngữ này"
+            aria-label={lang === 'en' ? 'Add note' : 'Thêm ghi chú'}
+            title={lang === 'en' ? 'Add personal note for this term' : 'Thêm ghi chú cá nhân cho thuật ngữ này'}
             className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors"
           >
             <MessageSquarePlus className="h-4 w-4" aria-hidden="true" />
@@ -295,8 +297,8 @@ const TermPopoverCard: React.FC<TermCardInstanceProps> = ({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Đóng"
-            title="Đóng"
+            aria-label={lang === 'en' ? 'Close' : 'Đóng'}
+            title={lang === 'en' ? 'Close' : 'Đóng'}
             className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
           >
             <X className="h-4 w-4" aria-hidden="true" />
@@ -313,7 +315,7 @@ const TermPopoverCard: React.FC<TermCardInstanceProps> = ({
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5">
           <div className="flex items-center gap-1.5 font-semibold text-amber-300 mb-1">
             <Lightbulb className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            <span>Hình tượng hóa (Mental Model):</span>
+            <span>{lang === 'en' ? 'Mental Model:' : 'Hình tượng hóa (Mental Model):'}</span>
           </div>
           <p className="text-amber-100/90">{term.analogy}</p>
         </div>
@@ -322,7 +324,7 @@ const TermPopoverCard: React.FC<TermCardInstanceProps> = ({
         <div className="rounded-lg border border-slate-800 bg-slate-950 p-2.5">
           <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 mb-1">
             <Code2 className="h-3.5 w-3.5 text-sky-400" aria-hidden="true" />
-            <span>Ví dụ cú pháp chuẩn:</span>
+            <span>{lang === 'en' ? 'Syntax Example:' : 'Ví dụ cú pháp chuẩn:'}</span>
           </div>
           <pre className="overflow-x-auto font-mono text-[11px] text-sky-200">
             <code>{term.syntaxExample}</code>
@@ -334,7 +336,7 @@ const TermPopoverCard: React.FC<TermCardInstanceProps> = ({
           <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-2.5">
             <div className="flex items-center gap-1.5 font-semibold text-rose-300 mb-0.5">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span>Cẩn thận Bẫy / Lỗi phổ biến:</span>
+              <span>{lang === 'en' ? 'Common Gotcha:' : 'Cẩn thận Bẫy / Lỗi phổ biến:'}</span>
             </div>
             <p className="text-rose-100/90">{term.commonGotcha}</p>
           </div>
@@ -345,7 +347,7 @@ const TermPopoverCard: React.FC<TermCardInstanceProps> = ({
           <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-2">
             <div className="flex items-center gap-1.5 font-semibold text-cyan-300">
               <ArrowRightLeft className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span>Đối chiếu JS/TS:</span>
+              <span>{lang === 'en' ? 'JS/TS Equivalent:' : 'Đối chiếu JS/TS:'}</span>
               <code className="font-mono text-cyan-100">{term.jsEquivalent}</code>
             </div>
           </div>
@@ -354,7 +356,7 @@ const TermPopoverCard: React.FC<TermCardInstanceProps> = ({
         {/* Related Terms */}
         {term.relatedTerms.length > 0 && (
           <div className="pt-1 flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] text-slate-400">Liên quan:</span>
+            <span className="text-[11px] text-slate-400">{lang === 'en' ? 'Related:' : 'Liên quan:'}</span>
             {term.relatedTerms.map((relId) => {
               const rel = GLOSSARY_BY_ID[relId];
               if (!rel) return null;

@@ -21,6 +21,7 @@ import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useUserDataStore } from '@/stores/useUserDataStore';
 import { useCloudSyncStore } from '@/stores/useCloudSyncStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { useWpProgress } from '@/features/workpath/store';
 import { useKubeProgress, useCicdProgress, useRedisProgress } from '@/features/devops-course/store';
 import { usePmpProgress } from '@/features/pmp-course/store';
@@ -32,6 +33,7 @@ import { cn } from '@/utils/cn';
 export const SettingsModal: React.FC = () => {
   const { isSettingsOpen, setSettingsOpen } = useNavigationStore();
   const settings = useSettingsStore();
+  const lang = useWorkbenchStore((s) => s.language);
   const hydrateAll = useUserDataStore((s) => s.hydrateAll);
   const wpState = useWpProgress((s) => s.state);
   const wpMeta = useWpProgress((s) => s.syncMeta);
@@ -83,7 +85,11 @@ export const SettingsModal: React.FC = () => {
     a.download = `pymastery-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    setStatusMessage('Đã xuất toàn bộ dữ liệu IndexedDB & Settings ra file JSON!');
+    setStatusMessage(
+      lang === 'en'
+        ? 'Exported all IndexedDB data & Settings to JSON!'
+        : 'Đã xuất toàn bộ dữ liệu IndexedDB & Settings ra file JSON!'
+    );
   };
 
   const handleImportJson = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,10 +112,12 @@ export const SettingsModal: React.FC = () => {
         useSdProgress.getState().hydrate(true),
       ]);
       setStatusMessage(
-        'Khôi phục thành công toàn bộ tiến độ, ghi chú, SRS Flashcard & Cài đặt!'
+        lang === 'en'
+          ? 'Successfully restored all progress, notes, SRS Flashcards & Settings!'
+          : 'Khôi phục thành công toàn bộ tiến độ, ghi chú, SRS Flashcard & Cài đặt!'
       );
     } catch {
-      setStatusMessage('Lỗi: File JSON không hợp lệ.');
+      setStatusMessage(lang === 'en' ? 'Error: Invalid JSON file.' : 'Lỗi: File JSON không hợp lệ.');
     }
   };
 
@@ -128,21 +136,23 @@ export const SettingsModal: React.FC = () => {
             <Sliders className="h-5 w-5 text-amber-400 shrink-0" />
             <div className="min-w-0">
               <h3 className="text-sm sm:text-base font-bold text-white truncate">
-                Cài đặt Hệ thống & Dữ liệu
+                {lang === 'en' ? 'System Settings & Data' : 'Cài đặt Hệ thống & Dữ liệu'}
               </h3>
               <p className="text-[11px] text-slate-400 hidden sm:block truncate">
-                Tùy chỉnh hiển thị, giao diện & đồng bộ LocalStorage + IndexedDB
+                {lang === 'en'
+                  ? 'Customize display, theme & LocalStorage + IndexedDB sync'
+                  : 'Tùy chỉnh hiển thị, giao diện & đồng bộ LocalStorage + IndexedDB'}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => setSettingsOpen(false)}
-            aria-label="Đóng cài đặt"
+            aria-label={lang === 'en' ? 'Close settings' : 'Đóng cài đặt'}
             className="inline-flex items-center gap-1 rounded-xl border border-rose-500/40 bg-rose-500/15 px-2.5 py-1.5 text-xs font-extrabold text-rose-200 hover:bg-rose-500/25 hover:text-white transition-colors shrink-0 cursor-pointer"
           >
             <X className="h-4 w-4 text-rose-400 shrink-0" />
-            <span>Đóng</span>
+            <span>{lang === 'en' ? 'Close' : 'Đóng'}</span>
           </button>
         </div>
 
@@ -152,7 +162,11 @@ export const SettingsModal: React.FC = () => {
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
               <Cloud className="h-3.5 w-3.5 text-sky-400" />
-              <span>Tài khoản Google & Đồng bộ toàn Learning Gate</span>
+              <span>
+                {lang === 'en'
+                  ? 'Google Account & Learning Gate Sync'
+                  : 'Tài khoản Google & Đồng bộ toàn Learning Gate'}
+              </span>
             </h4>
 
             <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3.5 sm:p-4 space-y-3">
@@ -161,14 +175,28 @@ export const SettingsModal: React.FC = () => {
                   <AlertCircle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
                   <div className="space-y-1">
                     <p className="font-semibold text-amber-200">
-                      Chưa cấu hình Firebase cho đồng bộ Google
+                      {lang === 'en'
+                        ? 'Firebase is not configured for Google sync'
+                        : 'Chưa cấu hình Firebase cho đồng bộ Google'}
                     </p>
                     <p className="text-[11px] text-slate-400 leading-relaxed">
-                      Tiến độ vẫn đang được lưu an toàn tại LocalStorage &amp; IndexedDB. Để bật
-                      đăng nhập Google, hãy điền các biến{' '}
-                      <code className="text-slate-200 font-mono">VITE_FIREBASE_*</code> vào{' '}
-                      <code className="text-slate-200 font-mono">.env.local</code> (hoặc Vercel
-                      Environment Variables).
+                      {lang === 'en' ? (
+                        <>
+                          Progress is still safely saved in LocalStorage &amp; IndexedDB. To enable
+                          Google sign-in, add{' '}
+                          <code className="text-slate-200 font-mono">VITE_FIREBASE_*</code> variables to{' '}
+                          <code className="text-slate-200 font-mono">.env.local</code> (or Vercel
+                          Environment Variables).
+                        </>
+                      ) : (
+                        <>
+                          Tiến độ vẫn đang được lưu an toàn tại LocalStorage &amp; IndexedDB. Để bật
+                          đăng nhập Google, hãy điền các biến{' '}
+                          <code className="text-slate-200 font-mono">VITE_FIREBASE_*</code> vào{' '}
+                          <code className="text-slate-200 font-mono">.env.local</code> (hoặc Vercel
+                          Environment Variables).
+                        </>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -190,7 +218,7 @@ export const SettingsModal: React.FC = () => {
                       )}
                       <div className="min-w-0">
                         <p className="text-xs font-bold text-white truncate">
-                          {cloudUser.displayName || 'Tài khoản Google'}
+                          {cloudUser.displayName || (lang === 'en' ? 'Google Account' : 'Tài khoản Google')}
                         </p>
                         <p className="text-[11px] text-slate-400 truncate">
                           {cloudUser.email || cloudUser.uid}
@@ -212,7 +240,13 @@ export const SettingsModal: React.FC = () => {
                           )}
                         />
                         <span>
-                          {cloudSyncStatus === 'syncing' ? 'Đang đồng bộ...' : 'Đồng bộ ngay'}
+                          {cloudSyncStatus === 'syncing'
+                            ? lang === 'en'
+                              ? 'Syncing...'
+                              : 'Đang đồng bộ...'
+                            : lang === 'en'
+                              ? 'Sync now'
+                              : 'Đồng bộ ngay'}
                         </span>
                       </button>
 
@@ -222,7 +256,7 @@ export const SettingsModal: React.FC = () => {
                         className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:border-rose-500/40 hover:text-rose-200 transition-colors cursor-pointer"
                       >
                         <LogOut className="h-3.5 w-3.5" />
-                        <span>Đăng xuất</span>
+                        <span>{lang === 'en' ? 'Sign out' : 'Đăng xuất'}</span>
                       </button>
                     </div>
                   </div>
@@ -230,14 +264,20 @@ export const SettingsModal: React.FC = () => {
                   <div className="flex items-center justify-between gap-2 text-[11px] text-slate-400 border-t border-slate-800/80 pt-2.5">
                     <span>
                       {cloudSyncStatus === 'syncing'
-                        ? 'Đang hợp nhất & đồng bộ tất cả app (Python, K8s, CI/CD, Redis, PMP, System Design)...'
+                        ? lang === 'en'
+                          ? 'Merging & syncing all apps (Python, K8s, CI/CD, Redis, PMP, System Design)...'
+                          : 'Đang hợp nhất & đồng bộ tất cả app (Python, K8s, CI/CD, Redis, PMP, System Design)...'
                         : cloudSyncStatus === 'error'
-                          ? `Lỗi đồng bộ: ${cloudError || 'Không xác định'}`
-                          : 'Tự động lưu Local + đồng bộ Google Cloud cho toàn bộ Learning Gate.'}
+                          ? lang === 'en'
+                            ? `Sync error: ${cloudError || 'Unknown'}`
+                            : `Lỗi đồng bộ: ${cloudError || 'Không xác định'}`
+                          : lang === 'en'
+                            ? 'Auto-saving locally + syncing Google Cloud for all of Learning Gate.'
+                            : 'Tự động lưu Local + đồng bộ Google Cloud cho toàn bộ Learning Gate.'}
                     </span>
                     {lastCloudSyncAt && (
                       <span className="font-mono text-[10px] text-emerald-300 shrink-0">
-                        {new Date(lastCloudSyncAt).toLocaleTimeString('vi-VN')}
+                        {new Date(lastCloudSyncAt).toLocaleTimeString(lang === 'en' ? 'en-US' : 'vi-VN')}
                       </span>
                     )}
                   </div>
@@ -246,11 +286,14 @@ export const SettingsModal: React.FC = () => {
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-semibold text-white">
-                      Đăng nhập Google để học liền mạch mọi thiết bị
+                      {lang === 'en'
+                        ? 'Sign in with Google to learn seamlessly across devices'
+                        : 'Đăng nhập Google để học liền mạch mọi thiết bị'}
                     </p>
                     <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
-                      Đăng nhập một lần cho toàn bộ Learning Gate (Python, K8s, CI/CD, Redis, PMP, System Design).
-                      Vẫn giữ nguyên lưu LocalStorage + IndexedDB khi ngoại tuyến.
+                      {lang === 'en'
+                        ? 'Sign in once for all of Learning Gate (Python, K8s, CI/CD, Redis, PMP, System Design). LocalStorage + IndexedDB offline saving remains active.'
+                        : 'Đăng nhập một lần cho toàn bộ Learning Gate (Python, K8s, CI/CD, Redis, PMP, System Design). Vẫn giữ nguyên lưu LocalStorage + IndexedDB khi ngoại tuyến.'}
                     </p>
                   </div>
 
@@ -261,7 +304,15 @@ export const SettingsModal: React.FC = () => {
                     className="inline-flex items-center gap-2 rounded-xl border border-sky-400/40 bg-sky-500/20 px-3.5 py-2 text-xs font-bold text-white hover:bg-sky-500/30 disabled:opacity-50 transition-colors shrink-0 cursor-pointer"
                   >
                     <LogIn className="h-3.5 w-3.5 text-sky-300" />
-                    <span>{cloudSigningIn ? 'Đang mở Google...' : 'Đăng nhập Google'}</span>
+                    <span>
+                      {cloudSigningIn
+                        ? lang === 'en'
+                          ? 'Opening Google...'
+                          : 'Đang mở Google...'
+                        : lang === 'en'
+                          ? 'Sign in with Google'
+                          : 'Đăng nhập Google'}
+                    </span>
                   </button>
                 </div>
               )}
@@ -277,32 +328,36 @@ export const SettingsModal: React.FC = () => {
           {/* Section 1: Display & Mode */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              1. Giao diện (Theme), Chế độ Lộ trình & Đối chiếu Ngôn ngữ
+              {lang === 'en'
+                ? '1. Theme, Learning Path Mode & Language Comparison'
+                : '1. Giao diện (Theme), Chế độ Lộ trình & Đối chiếu Ngôn ngữ'}
             </h4>
 
             {/* Theme Switcher Row - Identical to Header */}
             <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/60 p-3 sm:p-3.5">
               <div>
                 <p className="text-xs font-semibold text-white">
-                  Chế độ Giao diện (Theme Mode)
+                  {lang === 'en' ? 'Theme Mode' : 'Chế độ Giao diện (Theme Mode)'}
                 </p>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  Sáng (Light), Tối (Dark) hoặc Tự động theo hệ thống (Auto).
+                  {lang === 'en'
+                    ? 'Light, Dark, or follow system preference (Auto).'
+                    : 'Sáng (Light), Tối (Dark) hoặc Tự động theo hệ thống (Auto).'}
                 </p>
               </div>
 
               {/* Theme Switcher: Exact Same as Header */}
               <div
                 role="group"
-                aria-label="Chế độ giao diện Sáng / Tối / Tự động"
+                aria-label={lang === 'en' ? 'Theme mode Light / Dark / Auto' : 'Chế độ giao diện Sáng / Tối / Tự động'}
                 className="flex items-center rounded-lg border border-slate-800 bg-slate-900 p-0.5 shrink-0"
               >
                 <button
                   type="button"
                   onClick={() => settings.setTheme('light')}
-                  aria-label="Giao diện Sáng (Light)"
+                  aria-label={lang === 'en' ? 'Light Theme' : 'Giao diện Sáng (Light)'}
                   aria-pressed={settings.theme === 'light'}
-                  title="Giao diện Sáng (Light)"
+                  title={lang === 'en' ? 'Light Theme' : 'Giao diện Sáng (Light)'}
                   className={cn(
                     'inline-flex h-8 w-8 sm:h-7 sm:w-7 items-center justify-center rounded-md transition-colors',
                     settings.theme === 'light'
@@ -315,9 +370,9 @@ export const SettingsModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => settings.setTheme('dark')}
-                  aria-label="Giao diện Tối (Dark)"
+                  aria-label={lang === 'en' ? 'Dark Theme' : 'Giao diện Tối (Dark)'}
                   aria-pressed={settings.theme === 'dark'}
-                  title="Giao diện Tối (Dark)"
+                  title={lang === 'en' ? 'Dark Theme' : 'Giao diện Tối (Dark)'}
                   className={cn(
                     'inline-flex h-8 w-8 sm:h-7 sm:w-7 items-center justify-center rounded-md transition-colors',
                     settings.theme === 'dark'
@@ -330,9 +385,9 @@ export const SettingsModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => settings.setTheme('system')}
-                  aria-label="Tự động theo hệ thống (Auto)"
+                  aria-label={lang === 'en' ? 'Follow System (Auto)' : 'Tự động theo hệ thống (Auto)'}
                   aria-pressed={settings.theme === 'system'}
-                  title="Tự động theo hệ thống (Auto)"
+                  title={lang === 'en' ? 'Follow System (Auto)' : 'Tự động theo hệ thống (Auto)'}
                   className={cn(
                     'inline-flex h-8 w-8 sm:h-7 sm:w-7 items-center justify-center rounded-md transition-colors',
                     settings.theme === 'system'
@@ -349,10 +404,14 @@ export const SettingsModal: React.FC = () => {
             <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/60 p-3 sm:p-3.5">
               <div>
                 <p className="text-xs font-semibold text-white">
-                  Hiển thị phần Đối chiếu JS / TypeScript ↔ Python
+                  {lang === 'en'
+                    ? 'Show JS / TypeScript ↔ Python Comparison'
+                    : 'Hiển thị phần Đối chiếu JS / TypeScript ↔ Python'}
                 </p>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  Bật/tắt thẻ so sánh tư duy và bảng quy đổi cú pháp từ JS/TS.
+                  {lang === 'en'
+                    ? 'Toggle mental-model comparison cards and JS/TS syntax conversion tables.'
+                    : 'Bật/tắt thẻ so sánh tư duy và bảng quy đổi cú pháp từ JS/TS.'}
                 </p>
               </div>
 
@@ -363,7 +422,11 @@ export const SettingsModal: React.FC = () => {
                   settings.setShowJsTsComparison(!settings.showJsTsComparison)
                 }
                 aria-pressed={settings.showJsTsComparison}
-                title="Bật/Tắt chế độ đối chiếu cú pháp & tư duy với JavaScript/TypeScript"
+                title={
+                  lang === 'en'
+                    ? 'Toggle syntax & mental-model comparison with JavaScript/TypeScript'
+                    : 'Bật/Tắt chế độ đối chiếu cú pháp & tư duy với JavaScript/TypeScript'
+                }
                 className={cn(
                   'inline-flex h-9 sm:h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors shrink-0',
                   settings.showJsTsComparison
@@ -385,10 +448,12 @@ export const SettingsModal: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-3 rounded-xl border border-slate-800 bg-slate-950/60 p-3 sm:p-3.5">
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-white">
-                  Cách tổ chức thanh lộ trình
+                  {lang === 'en' ? 'Roadmap Organization' : 'Cách tổ chức thanh lộ trình'}
                 </p>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  Chuyển đổi linh hoạt giữa 7 Giai đoạn hoặc 5 Cấp độ.
+                  {lang === 'en'
+                    ? 'Switch between 7 Stages or 5 Mastery Levels.'
+                    : 'Chuyển đổi linh hoạt giữa 7 Giai đoạn hoặc 5 Cấp độ.'}
                 </p>
               </div>
               <select
@@ -400,9 +465,13 @@ export const SettingsModal: React.FC = () => {
                 }
                 className="w-full sm:w-auto max-w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white"
               >
-                <option value="by-stage">Theo 7 Giai đoạn (Stage 1 → 7)</option>
+                <option value="by-stage">
+                  {lang === 'en' ? 'By 7 Stages (Stage 1 → 7)' : 'Theo 7 Giai đoạn (Stage 1 → 7)'}
+                </option>
                 <option value="by-level">
-                  Theo 5 Cấp độ (Fundamental → Master)
+                  {lang === 'en'
+                    ? 'By 5 Levels (Fundamental → Master)'
+                    : 'Theo 5 Cấp độ (Fundamental → Master)'}
                 </option>
               </select>
             </div>
@@ -412,12 +481,18 @@ export const SettingsModal: React.FC = () => {
         <div className="space-y-3">
           <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
             <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-            <span>2. Hệ thống Highlight & Hover Preview Thuật ngữ</span>
+            <span>
+              {lang === 'en'
+                ? '2. Term Highlighting & Hover Preview'
+                : '2. Hệ thống Highlight & Hover Preview Thuật ngữ'}
+            </span>
           </div>
 
           <label className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/60 p-3 cursor-pointer">
             <span className="min-w-0 text-xs font-semibold text-white">
-              Tự động Highlight & Xem nhanh khi di chuột (Hover Preview)
+              {lang === 'en'
+                ? 'Auto-Highlight & Hover Preview'
+                : 'Tự động Highlight & Xem nhanh khi di chuột (Hover Preview)'}
             </span>
             <input
               type="checkbox"
@@ -441,7 +516,7 @@ export const SettingsModal: React.FC = () => {
                   }
                   className="accent-fuchsia-500"
                 />
-                <span>Từ khóa (def, yield...)</span>
+                <span>{lang === 'en' ? 'Keywords (def, yield...)' : 'Từ khóa (def, yield...)'}</span>
               </label>
               <label className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-xs text-slate-300 cursor-pointer">
                 <input
@@ -455,7 +530,7 @@ export const SettingsModal: React.FC = () => {
                   }
                   className="accent-cyan-500"
                 />
-                <span>Hàm & Dunder</span>
+                <span>{lang === 'en' ? 'Built-ins & Dunder' : 'Hàm & Dunder'}</span>
               </label>
               <label className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-xs text-slate-300 cursor-pointer">
                 <input
@@ -469,7 +544,7 @@ export const SettingsModal: React.FC = () => {
                   }
                   className="accent-indigo-500"
                 />
-                <span>Thuật ngữ & Công cụ</span>
+                <span>{lang === 'en' ? 'Concepts & Tools' : 'Thuật ngữ & Công cụ'}</span>
               </label>
             </div>
           )}
@@ -479,14 +554,32 @@ export const SettingsModal: React.FC = () => {
         <div className="space-y-3 border-t border-slate-800 pt-4">
           <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
             <Database className="h-3.5 w-3.5 text-emerald-400" />
-            <span>3. Trạng thái Lưu trữ Kép (LocalStorage + IndexedDB) & Sao lưu JSON</span>
+            <span>
+              {lang === 'en'
+                ? '3. Dual Storage Status (LocalStorage + IndexedDB) & JSON Backup'
+                : '3. Trạng thái Lưu trữ Kép (LocalStorage + IndexedDB) & Sao lưu JSON'}
+            </span>
           </div>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Mọi thao tác học tập được <b>ghi đồng bộ tức thì vào LocalStorage</b> và <b>đồng bộ song song vào IndexedDB</b> trên địa chỉ hiện tại (
-            <code className="rounded bg-slate-800 px-1 py-0.5 font-mono text-[11px] text-emerald-300">
-              {typeof window !== 'undefined' ? window.location.origin : 'localhost'}
-            </code>
-            ). Nếu bạn đổi trình duyệt hoặc đổi cổng chạy (ví dụ <code>:5173</code> sang <code>:5174</code>), hãy dùng nút Export/Import JSON bên dưới để mang tiến trình theo.
+            {lang === 'en' ? (
+              <>
+                All learning progress is <b>instantly synced to LocalStorage</b> and{' '}
+                <b>mirrored to IndexedDB</b> on the current origin (
+                <code className="rounded bg-slate-800 px-1 py-0.5 font-mono text-[11px] text-emerald-300">
+                  {typeof window !== 'undefined' ? window.location.origin : 'localhost'}
+                </code>
+                ). If you switch browsers or ports (e.g. <code>:5173</code> to{' '}
+                <code>:5174</code>), use Export/Import JSON below to carry your progress over.
+              </>
+            ) : (
+              <>
+                Mọi thao tác học tập được <b>ghi đồng bộ tức thì vào LocalStorage</b> và <b>đồng bộ song song vào IndexedDB</b> trên địa chỉ hiện tại (
+                <code className="rounded bg-slate-800 px-1 py-0.5 font-mono text-[11px] text-emerald-300">
+                  {typeof window !== 'undefined' ? window.location.origin : 'localhost'}
+                </code>
+                ). Nếu bạn đổi trình duyệt hoặc đổi cổng chạy (ví dụ <code>:5173</code> sang <code>:5174</code>), hãy dùng nút Export/Import JSON bên dưới để mang tiến trình theo.
+              </>
+            )}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -520,14 +613,22 @@ export const SettingsModal: React.FC = () => {
                       )}
                       title={
                         item.meta.localOk && item.meta.idbOk
-                          ? 'Đã lưu cả LocalStorage + IndexedDB'
-                          : 'Đã lưu LocalStorage'
+                          ? lang === 'en'
+                            ? 'Saved to both LocalStorage + IndexedDB'
+                            : 'Đã lưu cả LocalStorage + IndexedDB'
+                          : lang === 'en'
+                            ? 'Saved to LocalStorage'
+                            : 'Đã lưu LocalStorage'
                       }
                     />
                   </div>
                   <div className="mt-1 font-mono text-[11px] text-slate-400">
-                    {item.st.xp} XP · {Object.keys(item.st.lessons ?? {}).length} bài · {passedEx} đạt
-                    {skippedCount > 0 ? ` · ${skippedCount} bỏ qua` : ''}
+                    {item.st.xp} XP · {Object.keys(item.st.lessons ?? {}).length}{' '}
+                    {lang === 'en' ? 'lessons' : 'bài'} · {passedEx}{' '}
+                    {lang === 'en' ? 'passed' : 'đạt'}
+                    {skippedCount > 0
+                      ? ` · ${skippedCount} ${lang === 'en' ? 'skipped' : 'bỏ qua'}`
+                      : ''}
                   </div>
                 </div>
               );
@@ -540,7 +641,7 @@ export const SettingsModal: React.FC = () => {
               className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-emerald-400 transition-colors"
             >
               <Download className="h-4 w-4" />
-              <span>Export ra file JSON</span>
+              <span>{lang === 'en' ? 'Export to JSON file' : 'Export ra file JSON'}</span>
             </button>
 
             <button
@@ -548,7 +649,7 @@ export const SettingsModal: React.FC = () => {
               className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700 transition-colors"
             >
               <Upload className="h-4 w-4" />
-              <span>Import từ file JSON</span>
+              <span>{lang === 'en' ? 'Import from JSON file' : 'Import từ file JSON'}</span>
             </button>
             <input
               ref={fileInputRef}
@@ -576,7 +677,7 @@ export const SettingsModal: React.FC = () => {
           className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-extrabold text-slate-950 hover:bg-emerald-400 transition-all shadow-md cursor-pointer"
         >
           <X className="h-4 w-4 shrink-0" />
-          <span>Đóng Cài đặt & Quay lại</span>
+          <span>{lang === 'en' ? 'Close Settings & Return' : 'Đóng Cài đặt & Quay lại'}</span>
         </button>
       </div>
     </div>

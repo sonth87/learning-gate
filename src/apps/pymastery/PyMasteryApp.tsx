@@ -25,6 +25,7 @@ import { useCurriculum } from '@/features/workpath/data';
 import { useWpNav, useWpProgress } from '@/features/workpath/store';
 import { ScaleCommandPalette } from '@/components/scale-workbench/ScaleCommandPalette';
 import { buildAllPythonScaleLessons } from '@/apps/pymastery/data/pythonLessonBuilder';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
 import { cn } from '@/utils/cn';
 
 export interface PyMasteryAppProps {
@@ -57,9 +58,10 @@ export const PyMasteryApp: React.FC<PyMasteryAppProps> = ({ windowId }) => {
   const setExpandedLevel = useWorkbenchStore((s) => s.setExpandedLevel);
 
   const { data: wpCur } = useCurriculum();
+  const enOverlay = useCourseEnOverlay('python');
   const scaleLessons = useMemo(
-    () => (wpCur ? buildAllPythonScaleLessons(wpCur) : []),
-    [wpCur]
+    () => (wpCur ? buildAllPythonScaleLessons(wpCur, enOverlay) : []),
+    [wpCur, enOverlay]
   );
 
   useEffect(() => {

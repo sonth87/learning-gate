@@ -36,6 +36,8 @@ import {
 } from '../logic';
 import { COURSE_NAV_STORES, COURSE_PROGRESS_STORES } from '../store';
 import { useCourseMeta } from '../context';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { Card, PageHeader, Spinner } from '@/features/workpath/components/ui';
 import { CourseBar } from '../components/CourseUi';
 import type { DevOpsAccent, DevOpsModule } from '../types';
@@ -61,6 +63,8 @@ const Stat: React.FC<{
 export const HomeView: React.FC = () => {
   const meta = useCourseMeta();
   const { courseId, accent } = meta;
+  const lang = useWorkbenchStore((s) => s.language);
+  const enOverlay = useCourseEnOverlay(courseId);
   const { data: cur } = useCourseCurriculum(courseId);
   const { data: cat } = useCourseCatalog(courseId);
   const s = COURSE_PROGRESS_STORES[courseId]((x) => x.state);
@@ -120,9 +124,15 @@ export const HomeView: React.FC = () => {
       ? [
           {
             key: 'docker',
-            badge: 'PHẦN 1 · DOCKER (K00 – K06)',
-            title: 'Cẩm Nang Trực Quan Docker Engine, Dockerfile & Compose v2',
-            subtitle: 'Vòng đời Container, Ports/Env/Logs, Namespaces & cgroups, Layer Cache, Multi-stage Non-root & Compose Healthcheck',
+            badge: lang === 'en' ? 'PART 1 · DOCKER (K00 – K06)' : 'PHẦN 1 · DOCKER (K00 – K06)',
+            title:
+              lang === 'en'
+                ? 'Visual Study Guide: Docker Engine, Dockerfile & Compose v2'
+                : 'Cẩm Nang Trực Quan Docker Engine, Dockerfile & Compose v2',
+            subtitle:
+              lang === 'en'
+                ? 'Container Lifecycle, Ports/Env/Logs, Namespaces & cgroups, Layer Cache, Multi-stage Non-root & Compose Healthcheck'
+                : 'Vòng đời Container, Ports/Env/Logs, Namespaces & cgroups, Layer Cache, Multi-stage Non-root & Compose Healthcheck',
             borderCls: 'border-sky-500/35 bg-sky-500/[0.05]',
             badgeCls: 'border-sky-500/40 bg-sky-500/15 text-sky-300',
             icon: <Container className="h-4 w-4 text-sky-400" aria-hidden="true" />,
@@ -130,9 +140,15 @@ export const HomeView: React.FC = () => {
           },
           {
             key: 'k8s',
-            badge: 'PHẦN 2 · KUBERNETES (K07 – K19)',
-            title: 'Cẩm nang Trực quan Kiến trúc Cụm, Mạng, Lưu trữ & Xử lý Sự cố K8s',
-            subtitle: 'Control Loop, Pod/Deployment, Service/Ingress/Gateway, ConfigMap/Secret, PVC/StatefulSet, Probes, HPA, RBAC & Troubleshoot',
+            badge: lang === 'en' ? 'PART 2 · KUBERNETES (K07 – K19)' : 'PHẦN 2 · KUBERNETES (K07 – K19)',
+            title:
+              lang === 'en'
+                ? 'Visual Study Guide: Cluster Architecture, Networking, Storage & K8s Troubleshooting'
+                : 'Cẩm nang Trực quan Kiến trúc Cụm, Mạng, Lưu trữ & Xử lý Sự cố K8s',
+            subtitle:
+              lang === 'en'
+                ? 'Control Loop, Pod/Deployment, Service/Ingress/Gateway, ConfigMap/Secret, PVC/StatefulSet, Probes, HPA, RBAC & Troubleshooting'
+                : 'Control Loop, Pod/Deployment, Service/Ingress/Gateway, ConfigMap/Secret, PVC/StatefulSet, Probes, HPA, RBAC & Troubleshoot',
             borderCls: 'border-indigo-500/35 bg-indigo-500/[0.05]',
             badgeCls: 'border-indigo-500/40 bg-indigo-500/15 text-indigo-300',
             icon: <Boxes className="h-4 w-4 text-indigo-400" aria-hidden="true" />,
@@ -143,9 +159,18 @@ export const HomeView: React.FC = () => {
         ? [
             {
               key: 'redis-core',
-              badge: 'PHẦN 1 · CORE STRUCTURES, LUA & STREAMS (R00 – R08)',
-              title: 'Cẩm Nang Trực Quan Single-Thread Event Loop, SkipList, Lua & Streams',
-              subtitle: 'RESP3, String/TTL, Hash HEXPIRE, List/Set, ZSet SkipList, Bitmap/HLL/Bloom/Geo, Pipelining, Lua EVAL & Consumer Groups PEL',
+              badge:
+                lang === 'en'
+                  ? 'PART 1 · CORE STRUCTURES, LUA & STREAMS (R00 – R08)'
+                  : 'PHẦN 1 · CORE STRUCTURES, LUA & STREAMS (R00 – R08)',
+              title:
+                lang === 'en'
+                  ? 'Visual Study Guide: Single-Thread Event Loop, SkipList, Lua & Streams'
+                  : 'Cẩm Nang Trực Quan Single-Thread Event Loop, SkipList, Lua & Streams',
+              subtitle:
+                lang === 'en'
+                  ? 'RESP3, String/TTL, Hash HEXPIRE, List/Set, ZSet SkipList, Bitmap/HLL/Bloom/Geo, Pipelining, Lua EVAL & Consumer Groups PEL'
+                  : 'RESP3, String/TTL, Hash HEXPIRE, List/Set, ZSet SkipList, Bitmap/HLL/Bloom/Geo, Pipelining, Lua EVAL & Consumer Groups PEL',
               borderCls: 'border-rose-500/35 bg-rose-500/[0.05]',
               badgeCls: 'border-rose-500/40 bg-rose-500/15 text-rose-300',
               icon: <Zap className="h-4 w-4 text-rose-400" aria-hidden="true" />,
@@ -153,9 +178,18 @@ export const HomeView: React.FC = () => {
             },
             {
               key: 'redis-scale',
-              badge: 'PHẦN 2 · CACHING, PERSISTENCE, SENTINEL & CLUSTER (R09 – R17)',
-              title: 'Cẩm nang Trực quan Chống Stampede, RDB/AOF, 16384 Hash Slots & Xử lý Sự cố',
-              subtitle: 'Cache-Aside, Stampede/Penetration/Avalanche, Distributed Locks, Rate Limiting, Eviction LFU, RDB/AOF COW, Sentinel, Cluster & ACL',
+              badge:
+                lang === 'en'
+                  ? 'PART 2 · CACHING, PERSISTENCE, SENTINEL & CLUSTER (R09 – R17)'
+                  : 'PHẦN 2 · CACHING, PERSISTENCE, SENTINEL & CLUSTER (R09 – R17)',
+              title:
+                lang === 'en'
+                  ? 'Visual Study Guide: Anti-Stampede, RDB/AOF, 16384 Hash Slots & Troubleshooting'
+                  : 'Cẩm nang Trực quan Chống Stampede, RDB/AOF, 16384 Hash Slots & Xử lý Sự cố',
+              subtitle:
+                lang === 'en'
+                  ? 'Cache-Aside, Stampede/Penetration/Avalanche, Distributed Locks, Rate Limiting, LFU Eviction, RDB/AOF COW, Sentinel, Cluster & ACL'
+                  : 'Cache-Aside, Stampede/Penetration/Avalanche, Distributed Locks, Rate Limiting, Eviction LFU, RDB/AOF COW, Sentinel, Cluster & ACL',
               borderCls: 'border-amber-500/35 bg-amber-500/[0.05]',
               badgeCls: 'border-amber-500/40 bg-amber-500/15 text-amber-300',
               icon: <Database className="h-4 w-4 text-amber-400" aria-hidden="true" />,
@@ -165,9 +199,18 @@ export const HomeView: React.FC = () => {
         : [
           {
             key: 'ci-core',
-            badge: 'PHẦN 1 · CI PIPELINE & DAG (C00 – C08)',
-            title: 'Cẩm nang Trực quan CI Pipeline, Ephemeral Runner & Tối ưu DAG',
-            subtitle: 'Exit Codes, 6 Thực thể Pipeline, Trunk-based Git, GitHub Actions v4, Env/Outputs, Matrix, Services, Cache/Artifact & Sharding',
+            badge:
+              lang === 'en'
+                ? 'PART 1 · CI PIPELINE & DAG (C00 – C08)'
+                : 'PHẦN 1 · CI PIPELINE & DAG (C00 – C08)',
+            title:
+              lang === 'en'
+                ? 'Visual Study Guide: CI Pipeline, Ephemeral Runners & DAG Optimization'
+                : 'Cẩm nang Trực quan CI Pipeline, Ephemeral Runner & Tối ưu DAG',
+            subtitle:
+              lang === 'en'
+                ? 'Exit Codes, 6 Pipeline Entities, Trunk-based Git, GitHub Actions v4, Env/Outputs, Matrix, Services, Cache/Artifact & Sharding'
+                : 'Exit Codes, 6 Thực thể Pipeline, Trunk-based Git, GitHub Actions v4, Env/Outputs, Matrix, Services, Cache/Artifact & Sharding',
             borderCls: 'border-cyan-500/35 bg-cyan-500/[0.05]',
             badgeCls: 'border-cyan-500/40 bg-cyan-500/15 text-cyan-300',
             icon: <Workflow className="h-4 w-4 text-cyan-400" aria-hidden="true" />,
@@ -175,9 +218,18 @@ export const HomeView: React.FC = () => {
           },
           {
             key: 'devsecops-gitops',
-            badge: 'PHẦN 2 · DEVSECOPS, OIDC & GITOPS (C09 – C17)',
-            title: 'Cẩm Nang Trực Quan GitLab CI, Bảo Mật 5 Lớp, Keyless OIDC & ArgoCD',
-            subtitle: 'GitLab DAG, Chống Script Injection, Gitleaks/Semgrep/Trivy, OIDC JWT, Environments, Canary Rollback, ArgoCD & Expand-Contract DB',
+            badge:
+              lang === 'en'
+                ? 'PART 2 · DEVSECOPS, OIDC & GITOPS (C09 – C17)'
+                : 'PHẦN 2 · DEVSECOPS, OIDC & GITOPS (C09 – C17)',
+            title:
+              lang === 'en'
+                ? 'Visual Study Guide: GitLab CI, 5-Layer Security, Keyless OIDC & ArgoCD'
+                : 'Cẩm Nang Trực Quan GitLab CI, Bảo Mật 5 Lớp, Keyless OIDC & ArgoCD',
+            subtitle:
+              lang === 'en'
+                ? 'GitLab DAG, Anti-Script Injection, Gitleaks/Semgrep/Trivy, OIDC JWT, Environments, Canary Rollback, ArgoCD & Expand-Contract DB'
+                : 'GitLab DAG, Chống Script Injection, Gitleaks/Semgrep/Trivy, OIDC JWT, Environments, Canary Rollback, ArgoCD & Expand-Contract DB',
             borderCls: 'border-emerald-500/35 bg-emerald-500/[0.05]',
             badgeCls: 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300',
             icon: <ShieldCheck className="h-4 w-4 text-emerald-400" aria-hidden="true" />,
@@ -185,40 +237,92 @@ export const HomeView: React.FC = () => {
           },
         ];
 
+  const welcomeTitleEn =
+    courseId === 'redis' ? `Welcome to ${meta.appTitle}` : `Welcome to ${meta.appTitle} 👋`;
+  const levelLabel =
+    (lang === 'en' ? enOverlay?.levels?.[String(level)] : undefined) ?? cur.levels[String(level)];
+  const stepStepsEn: Record<typeof courseId, [string, string, string, string, string]> = {
+    kube: [
+      'Read lesson (mapped from Node.js/npm)',
+      'Take quiz (need ≥ 70%)',
+      'Do exercises — graded by AST / live Terminal',
+      'Read real configs & spot bugs',
+      'Review SRS flashcards & missed questions daily',
+    ],
+    cicd: [
+      'Read lesson (mapped from npm scripts)',
+      'Take quiz (need ≥ 70%)',
+      'Do exercises — graded by YAML AST / live state',
+      'Read real workflows & analyze',
+      'Review SRS flashcards & missed questions daily',
+    ],
+    redis: [
+      'Read visual lesson (mapped from JS Map / Python dict)',
+      'Take quiz on mindset & Big-O complexity (≥ 70%)',
+      'Practice on Redis 8 VM & redis.conf AST grader',
+      'Read real configs & diagnose production incidents',
+      'Review SRS flashcards & drill commands daily',
+    ],
+  };
+  const stepSteps = lang === 'en' ? stepStepsEn[courseId] : meta.stepSteps;
+
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
       <PageHeader
-        title={fresh ? meta.welcomeTitle : 'Chào mừng quay lại lộ trình học'}
-        sub={`Cấp độ ${level}: ${cur.levels[String(level)] ?? 'Đã hoàn thành toàn bộ lộ trình'}`}
+        title={
+          fresh
+            ? lang === 'en'
+              ? welcomeTitleEn
+              : meta.welcomeTitle
+            : lang === 'en'
+              ? 'Welcome back to your learning path'
+              : 'Chào mừng quay lại lộ trình học'
+        }
+        sub={
+          lang === 'en'
+            ? `Level ${level}: ${levelLabel ?? 'All levels completed'}`
+            : `Cấp độ ${level}: ${levelLabel ?? 'Đã hoàn thành toàn bộ lộ trình'}`
+        }
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <Stat
           accent={accent}
           icon={<Star className="h-6 w-6" />}
-          label="XP · danh hiệu"
+          label={lang === 'en' ? 'XP · rank' : 'XP · danh hiệu'}
           value={s.xp}
-          sub={`${rank.name}${rank.toNext ? ` · còn ${rank.toNext} XP lên hạng` : ''}`}
+          sub={`${rank.name}${
+            rank.toNext
+              ? lang === 'en'
+                ? ` · ${rank.toNext} XP to next rank`
+                : ` · còn ${rank.toNext} XP lên hạng`
+              : ''
+          }`}
         />
-        <Stat accent={accent} icon={<Flame className="h-6 w-6" />} label="Chuỗi ngày học" value={`${streak(s)} ngày`} />
+        <Stat
+          accent={accent}
+          icon={<Flame className="h-6 w-6" />}
+          label={lang === 'en' ? 'Study streak' : 'Chuỗi ngày học'}
+          value={lang === 'en' ? `${streak(s)} days` : `${streak(s)} ngày`}
+        />
         <Stat
           accent={accent}
           icon={<BookOpen className="h-6 w-6" />}
-          label="Module hoàn thành"
+          label={lang === 'en' ? 'Modules completed' : 'Module hoàn thành'}
           value={`${modsDone}/${mods.length}`}
           bar={mods.length ? modsDone / mods.length : 0}
         />
         <Stat
           accent={accent}
           icon={<Code2 className="h-6 w-6" />}
-          label="Bài thực hành đạt"
+          label={lang === 'en' ? 'Exercises passed' : 'Bài thực hành đạt'}
           value={`${exPassed}/${exs.length}`}
           bar={exs.length ? exPassed / exs.length : 0}
         />
         <Stat
           accent={accent}
           icon={<Library className="h-6 w-6" />}
-          label="Cấu hình thật đã đọc"
+          label={lang === 'en' ? 'Real configs read' : 'Cấu hình thật đã đọc'}
           value={`${readDone}/${cat?.items.length ?? '…'}`}
           bar={cat && cat.items.length ? readDone / cat.items.length : 0}
         />
@@ -229,14 +333,18 @@ export const HomeView: React.FC = () => {
         <div className="mb-2.5 flex items-center justify-between gap-2">
           <h2 id="visual-tracks" className="flex items-center gap-2 text-base font-bold text-white">
             <Sparkles className="h-4 w-4 text-amber-400" aria-hidden="true" />
-            <span>Bản đồ Cẩm nang Lý thuyết Trực quan (Mở nhanh theo nhóm)</span>
+            <span>
+              {lang === 'en'
+                ? 'Visual Study Guide Map (Quick Open by Group)'
+                : 'Bản đồ Cẩm nang Lý thuyết Trực quan (Mở nhanh theo nhóm)'}
+            </span>
           </h2>
           <button
             type="button"
             onClick={() => go({ name: 'roadmap' })}
             className="text-xs font-semibold text-sky-400 hover:text-sky-300 cursor-pointer"
           >
-            Xem toàn bộ lộ trình →
+            {lang === 'en' ? 'View full roadmap →' : 'Xem toàn bộ lộ trình →'}
           </button>
         </div>
 
@@ -248,7 +356,9 @@ export const HomeView: React.FC = () => {
                   {track.icon}
                   <span>{track.badge}</span>
                 </span>
-                <span className="font-mono text-xs text-slate-400">{track.modules.length} bài</span>
+                <span className="font-mono text-xs text-slate-400">
+                  {track.modules.length} {lang === 'en' ? 'modules' : 'bài'}
+                </span>
               </div>
               <div>
                 <h3 className="text-sm sm:text-base font-bold text-white leading-snug">{track.title}</h3>
@@ -259,12 +369,13 @@ export const HomeView: React.FC = () => {
                   const skipped = isModuleSkipped(s, m.id);
                   const done = courseModuleDone(s, m, cur.passQuiz);
                   const read = lessonRead(s, m.id);
+                  const modTitle = (lang === 'en' ? enOverlay?.modules?.[m.id]?.titleEn : undefined) ?? m.title;
                   return (
                     <button
                       key={m.id}
                       type="button"
                       onClick={() => go({ name: 'module', id: m.id })}
-                      title={`${m.id} · ${m.title}${skipped ? ' (đã bỏ qua)' : ''}`}
+                      title={`${m.id} · ${modTitle}${skipped ? (lang === 'en' ? ' (skipped)' : ' (đã bỏ qua)') : ''}`}
                       className={cn(
                         'inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border px-2.5 py-1 text-left text-xs transition-colors cursor-pointer',
                         skipped
@@ -282,7 +393,7 @@ export const HomeView: React.FC = () => {
                         done && <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-400" aria-hidden="true" />
                       )}
                       <span className="font-mono font-bold">{m.id}</span>
-                      <span className="max-w-[155px] truncate">{m.title}</span>
+                      <span className="max-w-[155px] truncate">{modTitle}</span>
                     </button>
                   );
                 })}
@@ -294,7 +405,7 @@ export const HomeView: React.FC = () => {
 
       <section aria-labelledby="next-steps">
         <h2 id="next-steps" className="mb-2 text-base font-semibold text-white">
-          Việc nên làm tiếp
+          {lang === 'en' ? 'Recommended Next Steps' : 'Việc nên làm tiếp'}
         </h2>
         <div className="space-y-2">
           {steps.map((st, i) => (
@@ -328,11 +439,15 @@ export const HomeView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => applySkipTarget(st.skipTarget!)}
-                  title="Đã làm rồi / đã biết — Bỏ qua bước này để sang phần kế tiếp"
+                  title={
+                    lang === 'en'
+                      ? 'Already done / know this — Skip to next step'
+                      : 'Đã làm rồi / đã biết — Bỏ qua bước này để sang phần kế tiếp'
+                  }
                   className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-700 bg-slate-950/80 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white cursor-pointer"
                 >
                   <SkipForward className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span className="hidden sm:inline">Bỏ qua</span>
+                  <span className="hidden sm:inline">{lang === 'en' ? 'Skip' : 'Bỏ qua'}</span>
                 </button>
               )}
             </div>
@@ -343,10 +458,13 @@ export const HomeView: React.FC = () => {
       {fresh && (
         <Card>
           <h2 className="mb-2 flex items-center gap-2 text-base font-semibold text-white">
-            <Trophy className="h-4 w-4 text-amber-400" aria-hidden="true" /> Cách học trong 5 bước (lặp lại cho mỗi module)
+            <Trophy className="h-4 w-4 text-amber-400" aria-hidden="true" />{' '}
+            {lang === 'en'
+              ? 'How to learn in 5 steps (repeat for each module)'
+              : 'Cách học trong 5 bước (lặp lại cho mỗi module)'}
           </h2>
           <ol className="grid gap-2 text-sm text-slate-300 sm:grid-cols-5">
-            {meta.stepSteps.map((t, i) => (
+            {stepSteps.map((t, i) => (
               <li key={t} className="rounded-lg bg-slate-800/60 p-2.5">
                 <span className={cn('mr-1.5 font-bold', stepNumTone)}>{i + 1}.</span>
                 {t}
@@ -354,14 +472,26 @@ export const HomeView: React.FC = () => {
             ))}
           </ol>
           <p className="mt-3 text-sm text-slate-400">
-            Mọi bài học được trình bày dạng <b>cẩm nang trực quan (sơ đồ luồng, phân tầng, bảng tra cứu, đối chiếu sai/đúng)</b> từ góc nhìn lập trình viên Node.js/npm.
+            {lang === 'en' ? (
+              <>
+                Every lesson is presented as a{' '}
+                <b>visual study guide (flowcharts, layered diagrams, cheat sheets, wrong/right comparisons)</b> from a
+                Node.js/npm developer&apos;s perspective.
+              </>
+            ) : (
+              <>
+                Mọi bài học được trình bày dạng{' '}
+                <b>cẩm nang trực quan (sơ đồ luồng, phân tầng, bảng tra cứu, đối chiếu sai/đúng)</b> từ góc nhìn lập
+                trình viên Node.js/npm.
+              </>
+            )}
           </p>
         </Card>
       )}
 
       <section aria-labelledby="heat">
         <h2 id="heat" className="mb-2 text-base font-semibold text-white">
-          Hoạt động 16 tuần
+          {lang === 'en' ? '16-Week Activity' : 'Hoạt động 16 tuần'}
         </h2>
         <Card className="overflow-x-auto">
           <div className="grid grid-flow-col grid-rows-7 gap-1" style={{ width: 'max-content' }}>
@@ -406,7 +536,11 @@ export const HomeView: React.FC = () => {
       {courseDueCards(s, cur).length === 0 && s.log.length > 0 && (
         <p className="flex items-center gap-1.5 text-sm text-slate-500">
           <CheckCircle2 className="h-4 w-4 text-emerald-400" aria-hidden="true" />
-          <span>Không có thẻ nào đến hạn ôn hôm nay (ngày kế tiếp: {addDays(todayStr(), 1)}).</span>
+          <span>
+            {lang === 'en'
+              ? `No cards due for review today (next review: ${addDays(todayStr(), 1)}).`
+              : `Không có thẻ nào đến hạn ôn hôm nay (ngày kế tiếp: ${addDays(todayStr(), 1)}).`}
+          </span>
         </p>
       )}
     </div>

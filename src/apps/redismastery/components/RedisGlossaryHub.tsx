@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { AlertTriangle, BookMarked, Code2, Search, Sparkles, Terminal } from 'lucide-react';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { REDIS_GLOSSARY_ENTRIES } from '../data/redisGlossaryData';
 import type { RedisComplexityClass, RedisGlossaryCategory } from '../types/redis.types';
 import { cn } from '@/utils/cn';
@@ -21,6 +22,7 @@ const COMPLEXITY_BADGE: Record<RedisComplexityClass, string> = {
 };
 
 export const RedisGlossaryHub: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<'Tất cả' | RedisGlossaryCategory>('Tất cả');
   const [sdkLang, setSdkLang] = useState<'cli' | 'node' | 'python'>('cli');
@@ -49,10 +51,24 @@ export const RedisGlossaryHub: React.FC = () => {
             <span>REDIS 8 COMMANDS · BIG-O · NODE & PYTHON SDK</span>
           </div>
           <h1 className="mt-1.5 text-lg sm:text-2xl font-extrabold text-white tracking-tight">
-            Từ điển Liên tưởng, Độ phức tạp Big-O & Mẫu Code Thực chiến
+            {lang === 'vi'
+              ? 'Từ điển Liên tưởng, Độ phức tạp Big-O & Mẫu Code Thực chiến'
+              : 'Analogy Glossary, Big-O Complexity & Production Code Snippets'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-400">
-            Mọi lệnh trên Redis chạy tuần tự trên Main Thread — kiểm tra Big-O trước khi đưa lên Production và đối chiếu trực tiếp sang <code className="font-mono text-rose-300">ioredis</code> (Node/TS) & <code className="font-mono text-emerald-300">redis-py</code> (Python).
+            {lang === 'vi' ? (
+              <>
+                Mọi lệnh trên Redis chạy tuần tự trên Main Thread — kiểm tra Big-O trước khi đưa lên Production và đối chiếu trực tiếp sang{' '}
+                <code className="font-mono text-rose-300">ioredis</code> (Node/TS) &amp;{' '}
+                <code className="font-mono text-emerald-300">redis-py</code> (Python).
+              </>
+            ) : (
+              <>
+                Every Redis command runs sequentially on the Main Thread — check Big-O before shipping to Production and compare directly with{' '}
+                <code className="font-mono text-rose-300">ioredis</code> (Node/TS) &amp;{' '}
+                <code className="font-mono text-emerald-300">redis-py</code> (Python).
+              </>
+            )}
           </p>
         </div>
 
@@ -102,7 +118,11 @@ export const RedisGlossaryHub: React.FC = () => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Tìm lệnh hoặc khái niệm: HEXPIRE, ZRANGE, BF.EXISTS, XAUTOCLAIM, HashTag, LFU..."
+            placeholder={
+              lang === 'vi'
+                ? 'Tìm lệnh hoặc khái niệm: HEXPIRE, ZRANGE, BF.EXISTS, XAUTOCLAIM, HashTag, LFU...'
+                : 'Search commands or concepts: HEXPIRE, ZRANGE, BF.EXISTS, XAUTOCLAIM, HashTag, LFU...'
+            }
             className="w-full rounded-xl border border-slate-800 bg-slate-900/90 py-2.5 pl-10 pr-4 text-xs sm:text-sm text-white placeholder-slate-400 focus:border-rose-500/50 focus:outline-none"
           />
         </div>
@@ -120,7 +140,7 @@ export const RedisGlossaryHub: React.FC = () => {
                   : 'border-slate-800 bg-slate-900/70 text-slate-400 hover:text-slate-200'
               )}
             >
-              {cat}
+              {cat === 'Tất cả' ? (lang === 'vi' ? 'Tất cả' : 'All') : cat}
             </button>
           ))}
         </div>
@@ -158,7 +178,11 @@ export const RedisGlossaryHub: React.FC = () => {
                       COMPLEXITY_BADGE[entry.complexity]
                     )}
                   >
-                    {entry.complexity}
+                    {entry.complexity === 'O(N) Cẩn trọng'
+                      ? lang === 'vi'
+                        ? 'O(N) Cẩn trọng'
+                        : 'O(N) Caution'
+                      : entry.complexity}
                   </span>
                 </div>
 
@@ -169,7 +193,8 @@ export const RedisGlossaryHub: React.FC = () => {
                 <div className="rounded-xl border border-sky-500/25 bg-sky-500/10 px-3 py-2 text-xs text-sky-200 flex items-start gap-2">
                   <Sparkles className="h-3.5 w-3.5 text-sky-400 shrink-0 mt-0.5" />
                   <span>
-                    <strong>Liên tưởng JS/Python:</strong> {entry.analogy}
+                    <strong>{lang === 'vi' ? 'Liên tưởng JS/Python:' : 'JS/Python Analogy:'}</strong>{' '}
+                    {entry.analogy}
                   </span>
                 </div>
 
@@ -177,7 +202,8 @@ export const RedisGlossaryHub: React.FC = () => {
                   <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 flex items-start gap-2">
                     <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
                     <span>
-                      <strong>Lưu ý Production:</strong> {entry.productionDanger}
+                      <strong>{lang === 'vi' ? 'Lưu ý Production:' : 'Production Warning:'}</strong>{' '}
+                      {entry.productionDanger}
                     </span>
                   </div>
                 )}

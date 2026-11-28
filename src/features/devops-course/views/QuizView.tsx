@@ -4,6 +4,8 @@ import { useCourseCurriculum } from '../data';
 import { courseAllQuestions, gradeQuestion, isQuizSkipped, quizBest, type QuestionResult } from '../logic';
 import { COURSE_NAV_STORES, COURSE_PROGRESS_STORES } from '../store';
 import { useCourseMeta } from '../context';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import type { DevOpsCurriculum, EditorLanguage, WpQuestion } from '../types';
 import { ConfigCodeView, CourseInline } from '../components/CourseMarkdown';
 import { CourseBar, CourseBtn } from '../components/CourseUi';
@@ -56,6 +58,8 @@ const QuizRound: React.FC<Props & { cur: DevOpsCurriculum; onRestart: () => void
   onRestart,
 }) => {
   const { courseId, accent } = useCourseMeta();
+  const lang = useWorkbenchStore((s) => s.language);
+  const enOverlay = useCourseEnOverlay(courseId);
   const s = COURSE_PROGRESS_STORES[courseId]((x) => x.state);
   const record = COURSE_PROGRESS_STORES[courseId]((x) => x.recordQuiz);
   const toggleSkipQuiz = COURSE_PROGRESS_STORES[courseId]((x) => x.toggleSkipQuiz);
@@ -69,33 +73,55 @@ const QuizRound: React.FC<Props & { cur: DevOpsCurriculum; onRestart: () => void
     recordNew: boolean;
   } | null>(null);
 
-  const { title, questions } = useMemo(() => {
+  const questions = useMemo(() => {
     if (mode === 'module') {
       const m = cur.modules.find((x) => x.id === moduleId);
-      return { title: m ? `Quiz ${m.id} · ${m.title}` : 'Quiz', questions: shuffle(m?.quiz ?? []) };
+      return shuffle(m?.quiz ?? []);
     }
     if (mode === 'review') {
       const map = courseAllQuestions(cur);
-      return {
-        title: 'Ôn lại câu từng sai',
-        questions: s.quizWrong.map((id) => map.get(id)).filter((q): q is WpQuestion => !!q),
-      };
+      return s.quizWrong.map((id) => map.get(id)).filter((q): q is WpQuestion => !!q);
     }
     const readPool = cur.modules.filter((m) => m.id in s.lessons).flatMap((m) => m.quiz);
     const pool = readPool.length ? readPool : cur.modules.slice(0, 2).flatMap((m) => m.quiz);
-    return { title: 'Quiz trộn tổng hợp', questions: shuffle(pool).slice(0, 15) };
+    return shuffle(pool).slice(0, 15);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const qModMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const m of cur.modules) {
+      for (const q of m.quiz) map.set(q.id, m.id);
+    }
+    return map;
+  }, [cur]);
+
+  const title = useMemo(() => {
+    if (mode === 'module') {
+      const m = cur.modules.find((x) => x.id === moduleId);
+      if (!m) return 'Quiz';
+      const modTitle = (lang === 'en' ? enOverlay?.modules?.[m.id]?.titleEn : undefined) ?? m.title;
+      return `Quiz ${m.id} · ${modTitle}`;
+    }
+    if (mode === 'review') return lang === 'en' ? 'Review Missed Questions' : 'Ôn lại câu từng sai';
+    return lang === 'en' ? 'Mixed Practice Quiz' : 'Quiz trộn tổng hợp';
+  }, [mode, moduleId, cur, lang, enOverlay]);
 
   if (!questions.length) {
     return (
       <div className="mx-auto max-w-3xl p-6">
         <h1 className="mb-3 text-xl font-bold text-white">{title}</h1>
         <Callout tone="ok">
-          {mode === 'review' ? 'Không có câu nào cần ôn lại 🎉' : 'Chưa có câu hỏi nào khả dụng.'}
+          {mode === 'review'
+            ? lang === 'en'
+              ? 'No questions to review 🎉'
+              : 'Không có câu nào cần ôn lại 🎉'
+            : lang === 'en'
+              ? 'No questions available yet.'
+              : 'Chưa có câu hỏi nào khả dụng.'}
         </Callout>
         <CourseBtn accent={accent} className="mt-4" onClick={back}>
-          <ArrowLeft className="h-4 w-4" /> Quay lại
+          <ArrowLeft className="h-4 w-4" /> {lang === 'en' ? 'Back' : 'Quay lại'}
         </CourseBtn>
       </div>
     );
@@ -126,11 +152,15 @@ const QuizRound: React.FC<Props & { cur: DevOpsCurriculum; onRestart: () => void
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <CourseBtn accent={accent} onClick={back}>
-            <ArrowLeft className="h-4 w-4" /> Quay lại
+            <ArrowLeft className="h-4 w-4" /> {lang === 'en' ? 'Back' : 'Quay lại'}
           </CourseBtn>
           <div>
             <h1 className="text-xl font-bold text-white sm:text-2xl">{title}</h1>
-            <p className="text-sm text-slate-400">{questions.length} câu · trắc nghiệm, đúng/sai và dự đoán kết quả</p>
+            <p className="text-sm text-slate-400">
+              {lang === 'en'
+                ? `${questions.length} questions · multiple choice, true/false & output prediction`
+                : `${questions.length} câu · trắc nghiệm, đúng/sai và dự đoán kết quả`}
+            </p>
           </div>
         </div>
         {mode === 'module' && moduleId && quizBest(s, moduleId) < cur.passQuiz && (
@@ -143,11 +173,11 @@ const QuizRound: React.FC<Props & { cur: DevOpsCurriculum; onRestart: () => void
           >
             {isQuizSkipped(s, moduleId) ? (
               <>
-                <Undo2 className="h-4 w-4" /> Hoàn tác bỏ qua Quiz
+                <Undo2 className="h-4 w-4" /> {lang === 'en' ? 'Undo Skip Quiz' : 'Hoàn tác bỏ qua Quiz'}
               </>
             ) : (
               <>
-                <SkipForward className="h-4 w-4" /> Đã nắm vững — Bỏ qua Quiz
+                <SkipForward className="h-4 w-4" /> {lang === 'en' ? 'Mastered — Skip Quiz' : 'Đã nắm vững — Bỏ qua Quiz'}
               </>
             )}
           </CourseBtn>
@@ -159,6 +189,16 @@ const QuizRound: React.FC<Props & { cur: DevOpsCurriculum; onRestart: () => void
           const r = result?.items.get(q.id);
           const state = !r ? 'idle' : r.ok ? 'ok' : r.skipped ? 'skip' : 'bad';
           const given = answers[q.id];
+          const qModId = moduleId ?? qModMap.get(q.id);
+          const qOv = lang === 'en' && qModId ? enOverlay?.modules?.[qModId]?.quizzes?.[q.id] : undefined;
+          const qText = qOv?.qEn ?? q.q;
+          const qChoices =
+            q.type === 'mc'
+              ? qOv?.choicesEn ?? q.choices
+              : lang === 'en'
+                ? ['True', 'False']
+                : ['Đúng', 'Sai'];
+          const qExplain = (lang === 'en' ? qOv?.explainEn : undefined) ?? r?.explain;
           return (
             <div
               key={q.id}
@@ -180,19 +220,23 @@ const QuizRound: React.FC<Props & { cur: DevOpsCurriculum; onRestart: () => void
                   >
                     {state === 'ok' ? (
                       <>
-                        <Check className="h-3 w-3" /> ĐÚNG
+                        <Check className="h-3 w-3" /> {lang === 'en' ? 'CORRECT' : 'ĐÚNG'}
                       </>
                     ) : state === 'skip' ? (
-                      '⚠ BỎ TRỐNG'
+                      lang === 'en' ? (
+                        '⚠ SKIPPED'
+                      ) : (
+                        '⚠ BỎ TRỐNG'
+                      )
                     ) : (
                       <>
-                        <X className="h-3 w-3" /> SAI
+                        <X className="h-3 w-3" /> {lang === 'en' ? 'WRONG' : 'SAI'}
                       </>
                     )}
                   </span>
                 )}
                 <span>
-                  {n + 1}. <CourseInline text={q.q} accent={accent} />{' '}
+                  {n + 1}. <CourseInline text={qText} accent={accent} />{' '}
                   <span className="font-mono text-xs font-normal text-slate-600">[{q.id}]</span>
                 </span>
               </div>
@@ -200,7 +244,7 @@ const QuizRound: React.FC<Props & { cur: DevOpsCurriculum; onRestart: () => void
 
               {(q.type === 'mc' || q.type === 'tf') && (
                 <div className="space-y-1.5">
-                  {(q.type === 'mc' ? q.choices : ['Đúng', 'Sai']).map((choice, k) => {
+                  {qChoices.map((choice, k) => {
                     const value = q.type === 'mc' ? k : k === 0;
                     const chosen = given === value;
                     const isRight = !!r && (q.type === 'mc' ? k === r.rightIndex : value === r.rightBool);
@@ -229,10 +273,20 @@ const QuizRound: React.FC<Props & { cur: DevOpsCurriculum; onRestart: () => void
                         </span>
                         {isRight && (
                           <span className="whitespace-nowrap text-xs font-bold text-emerald-400">
-                            {chosen ? '✔ Bạn chọn đúng' : '✔ Đáp án đúng'}
+                            {chosen
+                              ? lang === 'en'
+                                ? '✔ Your correct pick'
+                                : '✔ Bạn chọn đúng'
+                              : lang === 'en'
+                                ? '✔ Correct answer'
+                                : '✔ Đáp án đúng'}
                           </span>
                         )}
-                        {isWrongPick && <span className="whitespace-nowrap text-xs font-bold text-rose-400">✘ Bạn đã chọn</span>}
+                        {isWrongPick && (
+                          <span className="whitespace-nowrap text-xs font-bold text-rose-400">
+                            {lang === 'en' ? '✘ Your pick' : '✘ Bạn đã chọn'}
+                          </span>
+                        )}
                       </label>
                     );
                   })}
@@ -246,13 +300,15 @@ const QuizRound: React.FC<Props & { cur: DevOpsCurriculum; onRestart: () => void
                     disabled={!!r}
                     onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })}
                     rows={2}
-                    placeholder="Gõ kết quả dự đoán chính xác"
+                    placeholder={lang === 'en' ? 'Type the exact predicted output' : 'Gõ kết quả dự đoán chính xác'}
                     className="w-full rounded-lg border border-slate-700 bg-slate-950 p-2.5 font-mono text-[13px] text-slate-100 outline-none focus:border-sky-500/70 disabled:opacity-70"
                   />
                   {r && (
                     <div className="mt-2 grid gap-3 sm:grid-cols-2">
                       <div>
-                        <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Bạn trả lời</div>
+                        <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                          {lang === 'en' ? 'Your answer' : 'Bạn trả lời'}
+                        </div>
                         <pre
                           className={cn(
                             'overflow-auto whitespace-pre-wrap rounded-lg border-2 p-2 font-mono text-[13px]',
@@ -261,12 +317,14 @@ const QuizRound: React.FC<Props & { cur: DevOpsCurriculum; onRestart: () => void
                               : 'border-rose-500 bg-rose-500/10 text-rose-300'
                           )}
                         >
-                          {String(given ?? '').trim() || '(để trống)'}
+                          {String(given ?? '').trim() || (lang === 'en' ? '(empty)' : '(để trống)')}
                         </pre>
                       </div>
                       {!r.ok && (
                         <div>
-                          <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Đáp án đúng</div>
+                          <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                            {lang === 'en' ? 'Correct answer' : 'Đáp án đúng'}
+                          </div>
                           <pre className="overflow-auto whitespace-pre-wrap rounded-lg border-2 border-emerald-500 bg-emerald-500/10 p-2 font-mono text-[13px] text-emerald-300">
                             {r.right}
                           </pre>
@@ -277,9 +335,9 @@ const QuizRound: React.FC<Props & { cur: DevOpsCurriculum; onRestart: () => void
                 </>
               )}
 
-              {r?.explain && (
+              {r && qExplain && (
                 <div className="mt-2 rounded-lg bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
-                  💡 <CourseInline text={r.explain} accent={accent} />
+                  💡 <CourseInline text={qExplain} accent={accent} />
                 </div>
               )}
             </div>
@@ -289,37 +347,41 @@ const QuizRound: React.FC<Props & { cur: DevOpsCurriculum; onRestart: () => void
 
       {!result ? (
         <CourseBtn variant="primary" accent={accent} className="mt-5" onClick={submit}>
-          Nộp bài
+          {lang === 'en' ? 'Submit' : 'Nộp bài'}
         </CourseBtn>
       ) : (
         <div id="quiz-result" className="mt-6 space-y-3">
           <Callout tone={passed === false ? 'bad' : 'ok'}>
             <b>
-              Đúng {result.correct}/{result.total}
+              {lang === 'en' ? `Correct ${result.correct}/${result.total}` : `Đúng ${result.correct}/${result.total}`}
             </b>{' '}
             ({Math.round((result.correct / result.total) * 100)}%) · +{result.xp} XP
-            {result.recordNew && ' · 🏆 kỷ lục mới'}
+            {result.recordNew && (lang === 'en' ? ' · 🏆 new record' : ' · 🏆 kỷ lục mới')}
             {mode === 'module' &&
               (passed
-                ? ' · đạt yêu cầu quiz'
-                : ` · cần ≥ ${Math.round(cur.passQuiz * 100)}% để qua, đọc lại lesson rồi thử lại nhé`)}
+                ? lang === 'en'
+                  ? ' · quiz passed'
+                  : ' · đạt yêu cầu quiz'
+                : lang === 'en'
+                  ? ` · need ≥ ${Math.round(cur.passQuiz * 100)}% to pass, review the lesson and try again`
+                  : ` · cần ≥ ${Math.round(cur.passQuiz * 100)}% để qua, đọc lại lesson rồi thử lại nhé`)}
             <CourseBar value={result.correct / result.total} accent={accent} className="mt-2" />
             {wrongNums.length > 0 && (
               <div className="mt-2 text-xs">
-                Câu sai / bỏ trống: <b>{wrongNums.join(', ')}</b>
+                {lang === 'en' ? 'Wrong / skipped:' : 'Câu sai / bỏ trống:'} <b>{wrongNums.join(', ')}</b>
               </div>
             )}
           </Callout>
           <div className="flex flex-wrap gap-2">
             <CourseBtn variant="primary" accent={accent} onClick={onRestart}>
-              Làm lại
+              {lang === 'en' ? 'Retry' : 'Làm lại'}
             </CourseBtn>
             <CourseBtn accent={accent} onClick={() => go({ name: 'quiz', mode: 'review' })}>
-              Ôn câu sai
+              {lang === 'en' ? 'Review Missed' : 'Ôn câu sai'}
             </CourseBtn>
             {moduleId && (
               <CourseBtn accent={accent} onClick={() => go({ name: 'module', id: moduleId })}>
-                Về module
+                {lang === 'en' ? 'Back to Module' : 'Về module'}
               </CourseBtn>
             )}
           </div>

@@ -11,6 +11,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useRedisNav } from '@/features/devops-course/store';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { REDIS_FLOW_SCENARIOS } from '../data/redisFlowsData';
 import { useRedisStore } from '../store/useRedisStore';
 import type { RedisFlowNode } from '../types/redis.types';
@@ -45,6 +46,7 @@ const TONE_STYLES: Record<RedisFlowNode['tone'], { active: string; idle: string;
 };
 
 export const RedisFlowStudio: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
   const { selectedFlowId, openFlowInStudio, setActiveTab } = useRedisStore();
   const goRedis = useRedisNav((s) => s.go);
   const scenario = REDIS_FLOW_SCENARIOS.find((f) => f.id === selectedFlowId) ?? REDIS_FLOW_SCENARIOS[0];
@@ -85,10 +87,14 @@ export const RedisFlowStudio: React.FC = () => {
             <span>REDIS ARCHITECTURE FLOW STUDIO</span>
           </div>
           <h1 className="mt-1.5 text-lg sm:text-2xl font-extrabold text-white tracking-tight">
-            Mô phỏng Từng bước 6 Luồng Kiến trúc Cốt lõi của Redis
+            {lang === 'vi'
+              ? 'Mô phỏng Từng bước 6 Luồng Kiến trúc Cốt lõi của Redis'
+              : 'Step-by-Step Simulation of 6 Core Redis Architecture Flows'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-400">
-            Bấm Chạy tự động hoặc Tiến/Lùi từng nhịp để quan sát cách gói tin, khoá nguyên tử và vùng nhớ vận hành bên dưới nắp máy.
+            {lang === 'vi'
+              ? 'Bấm Chạy tự động hoặc Tiến/Lùi từng nhịp để quan sát cách gói tin, khoá nguyên tử và vùng nhớ vận hành bên dưới nắp máy.'
+              : 'Click Auto Play or Step Forward/Back to watch how packets, atomic locks, and memory regions operate under the hood.'}
           </p>
         </div>
 
@@ -100,7 +106,7 @@ export const RedisFlowStudio: React.FC = () => {
           }}
           className="inline-flex items-center gap-1.5 self-start rounded-xl border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-xs font-bold text-rose-300 hover:bg-rose-500/25 transition-colors cursor-pointer"
         >
-          <span>Đọc bài học {scenario.moduleRef}</span>
+          <span>{lang === 'vi' ? `Đọc bài học ${scenario.moduleRef}` : `Read lesson ${scenario.moduleRef}`}</span>
           <ArrowRight className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -125,7 +131,9 @@ export const RedisFlowStudio: React.FC = () => {
                 <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-rose-300">
                   {item.badge}
                 </span>
-                <span className="text-[10px] text-slate-400">{item.steps.length} bước</span>
+                <span className="text-[10px] text-slate-400">
+                  {item.steps.length} {lang === 'vi' ? 'bước' : 'steps'}
+                </span>
               </div>
               <div className="mt-1 text-xs sm:text-sm font-bold text-white line-clamp-2">{item.title}</div>
             </button>
@@ -149,7 +157,7 @@ export const RedisFlowStudio: React.FC = () => {
                 setPlaying(false);
                 setStepIdx(0);
               }}
-              title="Đặt lại về Bước 1"
+              title={lang === 'vi' ? 'Đặt lại về Bước 1' : 'Reset to Step 1'}
               className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white cursor-pointer"
             >
               <RotateCcw className="h-4 w-4" />
@@ -164,7 +172,7 @@ export const RedisFlowStudio: React.FC = () => {
               className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2.5 text-xs font-semibold text-slate-200 disabled:opacity-40 cursor-pointer"
             >
               <ChevronLeft className="h-4 w-4" />
-              <span>Trước</span>
+              <span>{lang === 'vi' ? 'Trước' : 'Prev'}</span>
             </button>
             <button
               type="button"
@@ -175,7 +183,15 @@ export const RedisFlowStudio: React.FC = () => {
               className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 text-xs font-bold text-white hover:bg-rose-500 cursor-pointer"
             >
               {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-              <span>{playing ? 'Tạm dừng' : 'Chạy tự động'}</span>
+              <span>
+                {playing
+                  ? lang === 'vi'
+                    ? 'Tạm dừng'
+                    : 'Pause'
+                  : lang === 'vi'
+                  ? 'Chạy tự động'
+                  : 'Auto Play'}
+              </span>
             </button>
             <button
               type="button"
@@ -186,7 +202,7 @@ export const RedisFlowStudio: React.FC = () => {
               }}
               className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2.5 text-xs font-semibold text-slate-200 disabled:opacity-40 cursor-pointer"
             >
-              <span>Tiếp</span>
+              <span>{lang === 'vi' ? 'Tiếp' : 'Next'}</span>
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
@@ -212,7 +228,7 @@ export const RedisFlowStudio: React.FC = () => {
               )}
             >
               <div className="font-mono text-[10px] font-bold uppercase">
-                Bước {idx + 1}/{scenario.steps.length}
+                {lang === 'vi' ? 'Bước' : 'Step'} {idx + 1}/{scenario.steps.length}
               </div>
               <div className="mt-0.5 text-xs font-semibold line-clamp-1">{s.latencyBadge}</div>
             </button>
@@ -279,7 +295,7 @@ export const RedisFlowStudio: React.FC = () => {
           <div className="lg:col-span-5 rounded-xl border border-slate-800 bg-slate-950 p-3.5 flex flex-col">
             <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-rose-400 mb-2">
               <Terminal className="h-3.5 w-3.5" />
-              <span>Lệnh / Mã nguồn minh họa</span>
+              <span>{lang === 'vi' ? 'Lệnh / Mã nguồn minh họa' : 'Command / Code Snippet'}</span>
             </div>
             <pre className="flex-1 overflow-x-auto font-mono text-xs leading-relaxed text-slate-200 whitespace-pre-wrap">
               {step.commandSnippet}

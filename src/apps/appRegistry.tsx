@@ -314,6 +314,220 @@ export type LearningAppId =
   | 'redismastery'
   | 'sdmastery';
 
+export function getLearningApps(lang: 'vi' | 'en'): AppConfig[] {
+  if (lang === 'vi') return ALL_LEARNING_APPS;
+  return [
+    {
+      ...PYMASTERY_CONFIG,
+      contextMenu: [
+        { key: 'search', label: 'Quick Search (⌘K)', action: 'quickSearch' },
+        { key: 'sep1', label: '', action: '', separator: true },
+        { key: 'learn', label: 'Learn — roadmap, exercises, quiz', action: 'tab:learn' },
+        { key: 'playground', label: 'Playground & Studio IDE', action: 'tab:playground' },
+        { key: 'glossary', label: 'Python Glossary', action: 'tab:glossary' },
+        { key: 'sep2', label: '', action: '', separator: true },
+        { key: 'curriculum', label: 'Legacy Curriculum (lookup)', action: 'tab:curriculum' },
+        { key: 'samples', label: 'Sample Projects (16 Projects IDE)', action: 'tab:samples' },
+      ],
+      menuBarMenus: [
+        {
+          label: 'Tools',
+          items: [
+            { key: 'search', label: 'Quick Search...', shortcut: '⌘K', action: 'quickSearch' },
+            { key: 'notes', label: 'Notes & Bookmarks', action: 'openNotes' },
+            { key: 'settings', label: 'Settings & Sync...', shortcut: '⌘,', action: 'openSettings' },
+            { key: 'sep1', label: '', separator: true },
+            { key: 'close', label: 'Close App', shortcut: '⌘W', action: 'close' },
+          ],
+        },
+        {
+          label: 'Navigate',
+          items: [
+            { key: 'learn', label: 'Learn — roadmap, exercises, quiz', shortcut: '⌘1', action: 'tab:learn' },
+            { key: 'playground', label: 'Playground & Studio IDE', shortcut: '⌘2', action: 'tab:playground' },
+            { key: 'glossary', label: 'Python Glossary', shortcut: '⌘3', action: 'tab:glossary' },
+            { key: 'samples', label: 'Sample Projects (16 Projects IDE)', action: 'tab:samples' },
+            { key: 'reference', label: 'PDF References', action: 'tab:reference' },
+            { key: 'sep1', label: '', separator: true },
+            { key: 'jsts', label: 'Toggle JS/TS Comparison', action: 'toggleJsTs' },
+          ],
+        },
+      ],
+    },
+    {
+      ...REDIS_MASTERY_CONFIG,
+      contextMenu: [
+        { key: 'search', label: 'Quick Search (⌘K)', action: 'quickSearch' },
+        { key: 'sep1', label: '', action: '', separator: true },
+        { key: 'learn', label: 'Learn — 18 modules, labs, quiz', action: 'tab:learn' },
+        { key: 'simulator', label: 'RAM Eviction & 16384 Hash Slots Sim', action: 'tab:simulator' },
+        { key: 'flow-studio', label: 'Animated Flows (6 Architectures)', action: 'tab:flow-studio' },
+        { key: 'incidents', label: 'War-Room: 8 Production Incidents', action: 'tab:incidents' },
+        { key: 'glossary', label: 'Commands, Big-O & Node/Python SDK', action: 'tab:glossary' },
+      ],
+      menuBarMenus: [
+        {
+          label: 'Tools',
+          items: [
+            { key: 'search', label: 'Quick Search...', shortcut: '⌘K', action: 'quickSearch' },
+            { key: 'settings', label: 'Settings & Sync...', shortcut: '⌘,', action: 'openSettings' },
+            { key: 'sep1', label: '', separator: true },
+            { key: 'close', label: 'Close App', shortcut: '⌘W', action: 'close' },
+          ],
+        },
+        {
+          label: 'Navigate',
+          items: [
+            { key: 'learn', label: 'Learn — 18 modules, labs, quiz', shortcut: '⌘1', action: 'tab:learn' },
+            { key: 'simulator', label: 'RAM Eviction & Cluster Sim', shortcut: '⌘2', action: 'tab:simulator' },
+            { key: 'flow-studio', label: 'Animated Flows (6 Architectures)', shortcut: '⌘3', action: 'tab:flow-studio' },
+            { key: 'incidents', label: 'War-Room: 8 Production Incidents', shortcut: '⌘4', action: 'tab:incidents' },
+            { key: 'glossary', label: 'Commands, Big-O & SDK Glossary', shortcut: '⌘5', action: 'tab:glossary' },
+          ],
+        },
+      ],
+    },
+    {
+      ...KUBEMASTERY_CONFIG,
+      contextMenu: [
+        { key: 'search', label: 'Quick Search (⌘K)', action: 'quickSearch' },
+        { key: 'sep1', label: '', action: '', separator: true },
+        { key: 'learn', label: 'Learn — roadmap, labs, quiz', action: 'tab:learn' },
+        { key: 'cluster-sim', label: 'K8s Cluster Simulator & Terminal', action: 'tab:cluster-sim' },
+        { key: 'glossary', label: 'Glossary & Cheatsheet', action: 'tab:glossary' },
+        { key: 'sep2', label: '', action: '', separator: true },
+        { key: 'flow-studio', label: 'Animated Flows (lookup)', action: 'tab:flow-studio' },
+        { key: 'incidents', label: 'War-Room: 8 Incidents (lookup)', action: 'tab:incidents' },
+      ],
+      menuBarMenus: [
+        {
+          label: 'Tools',
+          items: [
+            { key: 'search', label: 'Quick Search...', shortcut: '⌘K', action: 'quickSearch' },
+            { key: 'settings', label: 'Settings & Sync...', shortcut: '⌘,', action: 'openSettings' },
+            { key: 'sep1', label: '', separator: true },
+            { key: 'close', label: 'Close App', shortcut: '⌘W', action: 'close' },
+          ],
+        },
+        {
+          label: 'Navigate',
+          items: [
+            { key: 'learn', label: 'Learn — roadmap, labs, quiz', shortcut: '⌘1', action: 'tab:learn' },
+            { key: 'cluster-sim', label: 'K8s Cluster Simulator & Terminal', shortcut: '⌘2', action: 'tab:cluster-sim' },
+            { key: 'glossary', label: 'Glossary & Cheatsheet', shortcut: '⌘3', action: 'tab:glossary' },
+            { key: 'flow-studio', label: 'Animated Flows', action: 'tab:flow-studio' },
+            { key: 'incidents', label: '8 Incident Scenarios (War-Room)', action: 'tab:incidents' },
+          ],
+        },
+      ],
+    },
+    {
+      ...CICD_MASTERY_CONFIG,
+      contextMenu: [
+        { key: 'learn', label: 'Learn — roadmap, labs, quiz', action: 'tab:learn' },
+        { key: 'simulator', label: 'Pipeline, DAG & Zero-Downtime Sim', action: 'tab:simulator' },
+        { key: 'glossary', label: 'Glossary & Architecture Matrices', action: 'tab:glossary' },
+        { key: 'sep1', label: '', action: '', separator: true },
+        { key: 'warroom', label: 'War-Room Scenarios (B1–B7)', action: 'tab:warroom' },
+        { key: 'blueprints', label: '4 Full Flow Blueprints IDE', action: 'tab:blueprints' },
+        { key: 'curriculum', label: 'Original Curriculum (lookup)', action: 'tab:curriculum' },
+      ],
+      menuBarMenus: [
+        {
+          label: 'Tools',
+          items: [
+            { key: 'search', label: 'Quick Search...', shortcut: '⌘K', action: 'quickSearch' },
+            { key: 'settings', label: 'Settings & Sync...', shortcut: '⌘,', action: 'openSettings' },
+            { key: 'sep1', label: '', separator: true },
+            { key: 'close', label: 'Close App', shortcut: '⌘W', action: 'close' },
+          ],
+        },
+        {
+          label: 'Navigate',
+          items: [
+            { key: 'learn', label: 'Learn — roadmap, labs, quiz', shortcut: '⌘1', action: 'tab:learn' },
+            { key: 'simulator', label: 'Pipeline & Traffic Simulator', shortcut: '⌘2', action: 'tab:simulator' },
+            { key: 'glossary', label: 'Glossary & Matrices', shortcut: '⌘3', action: 'tab:glossary' },
+            { key: 'warroom', label: 'Incident Scenarios (B1–B7)', action: 'tab:warroom' },
+            { key: 'blueprints', label: '4 Full Flow Blueprints', action: 'tab:blueprints' },
+          ],
+        },
+      ],
+    },
+    {
+      ...PMP_MASTERY_CONFIG,
+      contextMenu: [
+        { key: 'search', label: 'Quick Search (⌘K)', action: 'quickSearch' },
+        { key: 'sep1', label: '', action: '', separator: true },
+        { key: 'learn', label: 'Mindset — 16 modules, quiz, evidence', action: 'tab:learn' },
+        { key: 'canvas', label: 'PMP Mindset Canvas (1 page)', action: 'tab:canvas' },
+        { key: 'decision', label: 'Situational Decision Tree', action: 'tab:decision' },
+        { key: 'lookup', label: 'Comparison Tables & Deep Links', action: 'tab:lookup' },
+        { key: 'sep2', label: '', action: '', separator: true },
+        { key: 'mindmap', label: 'Open PMP Mindmap (New Tab ↗)', action: 'openMindmapExternal' },
+      ],
+      menuBarMenus: [
+        {
+          label: 'Tools',
+          items: [
+            { key: 'search', label: 'Quick Search...', shortcut: '⌘K', action: 'quickSearch' },
+            { key: 'settings', label: 'Settings & Sync...', shortcut: '⌘,', action: 'openSettings' },
+            { key: 'sep1', label: '', separator: true },
+            { key: 'close', label: 'Close App', shortcut: '⌘W', action: 'close' },
+          ],
+        },
+        {
+          label: 'Navigate',
+          items: [
+            { key: 'learn', label: 'Mindset — 16 modules, quiz, SRS', shortcut: '⌘1', action: 'tab:learn' },
+            { key: 'canvas', label: 'PMP Mindset Canvas (1 page)', shortcut: '⌘2', action: 'tab:canvas' },
+            { key: 'decision', label: 'Situational Decision Tree', shortcut: '⌘3', action: 'tab:decision' },
+            { key: 'lookup', label: 'Comparison Tables & Deep Links', shortcut: '⌘4', action: 'tab:lookup' },
+            { key: 'sepv', label: '', separator: true },
+            { key: 'mindmap', label: 'Open PMP Mindmap (New Tab ↗)', action: 'openMindmapExternal' },
+          ],
+        },
+      ],
+    },
+    {
+      ...SD_MASTERY_CONFIG,
+      contextMenu: [
+        { key: 'search', label: 'Quick Search (⌘K)', action: 'quickSearch' },
+        { key: 'sep1', label: '', action: '', separator: true },
+        { key: 'learn', label: 'Learn — roadmap, quiz, flashcards', action: 'tab:learn' },
+        { key: 'lab', label: 'System Design Lab', action: 'tab:lab' },
+        { key: 'warroom', label: 'Incident War-Room', action: 'tab:warroom' },
+        { key: 'cases', label: 'Complete Design Cases', action: 'tab:cases' },
+        { key: 'sep2', label: '', action: '', separator: true },
+        { key: 'atlas', label: 'Design Pattern Atlas', action: 'tab:atlas' },
+        { key: 'interview', label: 'Interview Practice', action: 'tab:interview' },
+      ],
+      menuBarMenus: [
+        {
+          label: 'Tools',
+          items: [
+            { key: 'search', label: 'Quick Search...', shortcut: '⌘K', action: 'quickSearch' },
+            { key: 'settings', label: 'Settings & Sync...', shortcut: '⌘,', action: 'openSettings' },
+            { key: 'sep1', label: '', separator: true },
+            { key: 'close', label: 'Close App', shortcut: '⌘W', action: 'close' },
+          ],
+        },
+        {
+          label: 'Navigate',
+          items: [
+            { key: 'learn', label: 'Learn — roadmap, quiz, flashcards', shortcut: '⌘1', action: 'tab:learn' },
+            { key: 'lab', label: 'System Design Lab', shortcut: '⌘2', action: 'tab:lab' },
+            { key: 'warroom', label: 'Incident War-Room', shortcut: '⌘3', action: 'tab:warroom' },
+            { key: 'cases', label: 'Complete Design Cases', shortcut: '⌘4', action: 'tab:cases' },
+            { key: 'atlas', label: 'Design Pattern Atlas', shortcut: '⌘5', action: 'tab:atlas' },
+            { key: 'interview', label: 'Interview Practice', shortcut: '⌘6', action: 'tab:interview' },
+          ],
+        },
+      ],
+    },
+  ];
+}
+
 export const ALL_LEARNING_APPS: AppConfig[] = [
   PYMASTERY_CONFIG,
   REDIS_MASTERY_CONFIG,

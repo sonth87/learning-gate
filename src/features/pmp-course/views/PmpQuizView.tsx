@@ -5,6 +5,9 @@ import { buildMindmapUrl } from '../links';
 import { gradeQuestion, isQuizSkipped, pmpAllQuestions, quizBest, type QuestionResult } from '../logic';
 import { usePmpNav, usePmpProgress } from '../store';
 import type { PmpCurriculum, WpQuestion } from '../types';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
+import type { CourseEnQuizOverlay } from '@/data/i18n/types';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { CourseInline } from '@/features/devops-course/components/CourseMarkdown';
 import { CourseBar, CourseBtn } from '@/features/devops-course/components/CourseUi';
 import { Callout, Spinner } from '@/features/workpath/components/ui';
@@ -54,6 +57,8 @@ const PmpQuizRound: React.FC<
   const record = usePmpProgress((x) => x.recordQuiz);
   const toggleSkipQuiz = usePmpProgress((x) => x.toggleSkipQuiz);
   const { go, back } = usePmpNav();
+  const lang = useWorkbenchStore((st) => st.language);
+  const enOverlay = useCourseEnOverlay('pmp');
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [result, setResult] = useState<{
     items: Map<string, QuestionResult>;
@@ -63,26 +68,48 @@ const PmpQuizRound: React.FC<
     recordNew: boolean;
   } | null>(null);
 
-  const { title, questions } = useMemo(() => {
+  const quizOverlayById = useMemo(() => {
+    const map = new Map<string, CourseEnQuizOverlay>();
+    if (!enOverlay?.modules) return map;
+    for (const modEn of Object.values(enOverlay.modules)) {
+      if (modEn.quizzes) {
+        for (const [qId, qEn] of Object.entries(modEn.quizzes)) {
+          map.set(qId, qEn);
+        }
+      }
+    }
+    return map;
+  }, [enOverlay]);
+
+  const questions = useMemo(() => {
     if (mode === 'module') {
       const m = cur.modules.find((x) => x.id === moduleId);
-      return {
-        title: m ? `Tự kiểm tra ${m.id} · ${m.title}` : 'Tự kiểm tra tư duy PMP',
-        questions: shuffle(m?.quiz ?? []),
-      };
+      return shuffle(m?.quiz ?? []);
     }
     if (mode === 'review') {
       const map = pmpAllQuestions(cur);
-      return {
-        title: 'Ôn lại các câu tình huống từng trả lời sai',
-        questions: s.quizWrong.map((id) => map.get(id)).filter((q): q is WpQuestion => Boolean(q)),
-      };
+      return s.quizWrong.map((id) => map.get(id)).filter((q): q is WpQuestion => Boolean(q));
     }
     const readPool = cur.modules.filter((m) => m.id in s.lessons).flatMap((m) => m.quiz);
     const pool = readPool.length ? readPool : cur.modules.slice(0, 3).flatMap((m) => m.quiz);
-    return { title: 'Quiz trộn tổng hợp tư duy PMP', questions: shuffle(pool).slice(0, 15) };
+    return shuffle(pool).slice(0, 15);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const title = useMemo(() => {
+    if (mode === 'module') {
+      const m = cur.modules.find((x) => x.id === moduleId);
+      if (!m) return lang === 'en' ? 'PMP Mindset Self-Check' : 'Tự kiểm tra tư duy PMP';
+      const modTitle = (lang === 'en' ? enOverlay?.modules?.[m.id]?.titleEn : undefined) ?? m.title;
+      return lang === 'en' ? `Self-Check ${m.id} · ${modTitle}` : `Tự kiểm tra ${m.id} · ${modTitle}`;
+    }
+    if (mode === 'review') {
+      return lang === 'en'
+        ? 'Review missed situational questions'
+        : 'Ôn lại các câu tình huống từng trả lời sai';
+    }
+    return lang === 'en' ? 'Mixed PMP Mindset Quiz' : 'Quiz trộn tổng hợp tư duy PMP';
+  }, [mode, moduleId, cur, lang, enOverlay]);
 
   if (!questions.length) {
     return (
@@ -90,11 +117,15 @@ const PmpQuizRound: React.FC<
         <h1 className="mb-3 text-xl font-bold text-white">{title}</h1>
         <Callout tone="ok">
           {mode === 'review'
-            ? 'Tuyệt vời! Bạn không còn câu tình huống nào trong danh sách chọn nhầm 🎉'
-            : 'Chưa có câu hỏi nào khả dụng.'}
+            ? lang === 'en'
+              ? 'Awesome! You have no missed situational questions left to review 🎉'
+              : 'Tuyệt vời! Bạn không còn câu tình huống nào trong danh sách chọn nhầm 🎉'
+            : lang === 'en'
+              ? 'No questions available yet.'
+              : 'Chưa có câu hỏi nào khả dụng.'}
         </Callout>
         <CourseBtn accent="amber" className="mt-4" onClick={back}>
-          <ArrowLeft className="h-4 w-4" /> Quay lại
+          <ArrowLeft className="h-4 w-4" /> {lang === 'en' ? 'Back' : 'Quay lại'}
         </CourseBtn>
       </div>
     );
@@ -121,16 +152,19 @@ const PmpQuizRound: React.FC<
 
   const practiceRoomUrl = buildMindmapUrl({
     linkId: 'view.practice',
-    label: 'Phòng Luyện Tập Tình Huống PMP Mindmap (4.318 câu & 54 bộ đề)',
+    label:
+      lang === 'en'
+        ? 'PMP Mindmap Situational Practice Room (4,318 questions & 54 sets)'
+        : 'Phòng Luyện Tập Tình Huống PMP Mindmap (4.318 câu & 54 bộ đề)',
     kind: 'practice',
-    lang: 'vi',
+    lang,
     whyRead: '',
   });
   const panoramaUrl = buildMindmapUrl({
     linkId: 'view.panorama',
-    label: 'Panorama 3 Góc nhìn',
+    label: lang === 'en' ? '3-Perspective Panorama' : 'Panorama 3 Góc nhìn',
     kind: 'panorama',
-    lang: 'vi',
+    lang,
     whyRead: '',
   });
 
@@ -139,12 +173,14 @@ const PmpQuizRound: React.FC<
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <CourseBtn accent="amber" onClick={back}>
-            <ArrowLeft className="h-4 w-4" /> Quay lại
+            <ArrowLeft className="h-4 w-4" /> {lang === 'en' ? 'Back' : 'Quay lại'}
           </CourseBtn>
           <div>
             <h1 className="font-mono text-xl font-extrabold text-[var(--dts-ink)] sm:text-2xl">{title}</h1>
             <p className="text-sm text-[var(--dts-ink-muted)]">
-              {questions.length} câu tình huống ngắn · cần đạt ≥ {Math.round(cur.passQuiz * 100)}% để xác nhận nắm vững tư duy
+              {lang === 'en'
+                ? `${questions.length} short situational questions · score ≥ ${Math.round(cur.passQuiz * 100)}% to verify mindset mastery`
+                : `${questions.length} câu tình huống ngắn · cần đạt ≥ ${Math.round(cur.passQuiz * 100)}% để xác nhận nắm vững tư duy`}
             </p>
           </div>
         </div>
@@ -158,11 +194,12 @@ const PmpQuizRound: React.FC<
           >
             {isQuizSkipped(s, moduleId) ? (
               <>
-                <Undo2 className="h-4 w-4" /> Hoàn tác bỏ qua Quiz
+                <Undo2 className="h-4 w-4" /> {lang === 'en' ? 'Undo skip Quiz' : 'Hoàn tác bỏ qua Quiz'}
               </>
             ) : (
               <>
-                <SkipForward className="h-4 w-4" /> Đã nắm vững — Bỏ qua Quiz
+                <SkipForward className="h-4 w-4" />{' '}
+                {lang === 'en' ? 'Already mastered — Skip Quiz' : 'Đã nắm vững — Bỏ qua Quiz'}
               </>
             )}
           </CourseBtn>
@@ -174,10 +211,16 @@ const PmpQuizRound: React.FC<
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 font-mono text-[10.5px] font-extrabold uppercase tracking-wider text-[var(--dts-green-ink)]">
             <Compass className="h-3.5 w-3.5 shrink-0" />
-            <span>Mở rộng sang Phòng Luyện Đề PMP Mindmap</span>
+            <span>
+              {lang === 'en'
+                ? 'Expand to PMP Mindmap Practice Room'
+                : 'Mở rộng sang Phòng Luyện Đề PMP Mindmap'}
+            </span>
           </div>
           <p className="mt-0.5 text-xs text-[var(--dts-ink-soft)]">
-            Luyện bộ 4.318 câu hỏi &amp; 54 bộ đề (Mini-Test, Domain Test, Full Mock 180 câu) hoặc ôn thuật ngữ PMBOK theo sách.
+            {lang === 'en'
+              ? 'Practice 4,318 questions & 54 sets (Mini-Test, Domain Test, Full 180-Q Mock) or review PMBOK book terms.'
+              : 'Luyện bộ 4.318 câu hỏi & 54 bộ đề (Mini-Test, Domain Test, Full Mock 180 câu) hoặc ôn thuật ngữ PMBOK theo sách.'}
           </p>
           {moduleMindmapLinks.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -203,7 +246,7 @@ const PmpQuizRound: React.FC<
             className="dts-btn-tactile inline-flex items-center gap-1.5 rounded-xl bg-[var(--dts-amber-bg)] px-3 py-1.5 font-mono text-xs font-extrabold text-[var(--dts-amber-ink)] cursor-pointer"
           >
             <Layers className="h-3.5 w-3.5" />
-            <span>Flashcard sách</span>
+            <span>{lang === 'en' ? 'Book Flashcards' : 'Flashcard sách'}</span>
           </button>
           <a
             href={practiceRoomUrl}
@@ -211,7 +254,7 @@ const PmpQuizRound: React.FC<
             rel="noopener noreferrer"
             className="dts-btn-tactile inline-flex items-center gap-1.5 rounded-xl bg-[var(--dts-green-bg)] px-3 py-1.5 font-mono text-xs font-extrabold text-[var(--dts-green-ink)]"
           >
-            <span>Phòng Luyện Đề (4.318 câu)</span>
+            <span>{lang === 'en' ? 'Practice Room (4,318 Qs)' : 'Phòng Luyện Đề (4.318 câu)'}</span>
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
           <a
@@ -231,6 +274,15 @@ const PmpQuizRound: React.FC<
           const r = result?.items.get(q.id);
           const state = !r ? 'idle' : r.ok ? 'ok' : r.skipped ? 'skip' : 'bad';
           const given = answers[q.id];
+          const qEn = lang === 'en' ? quizOverlayById.get(q.id) : undefined;
+          const qText = qEn?.qEn ?? q.q;
+          const choicesList =
+            q.type === 'mc'
+              ? (qEn?.choicesEn ?? q.choices)
+              : lang === 'en'
+                ? ['True', 'False']
+                : ['Đúng', 'Sai'];
+          const explainText = (lang === 'en' ? qEn?.explainEn : undefined) ?? r?.explain;
           return (
             <div
               key={q.id}
@@ -252,26 +304,26 @@ const PmpQuizRound: React.FC<
                   >
                     {state === 'ok' ? (
                       <>
-                        <Check className="h-3 w-3" /> CHÍNH XÁC
+                        <Check className="h-3 w-3" /> {lang === 'en' ? 'CORRECT' : 'CHÍNH XÁC'}
                       </>
                     ) : state === 'skip' ? (
-                      '⚠ BỎ TRỐNG'
+                      lang === 'en' ? '⚠ SKIPPED' : '⚠ BỎ TRỐNG'
                     ) : (
                       <>
-                        <X className="h-3 w-3" /> CHƯA ĐÚNG
+                        <X className="h-3 w-3" /> {lang === 'en' ? 'INCORRECT' : 'CHƯA ĐÚNG'}
                       </>
                     )}
                   </span>
                 )}
                 <span>
-                  {n + 1}. <CourseInline text={q.q} accent="amber" />{' '}
+                  {n + 1}. <CourseInline text={qText} accent="amber" />{' '}
                   <span className="font-mono text-xs font-normal text-[var(--dts-ink-muted)]">[{q.id}]</span>
                 </span>
               </div>
 
               {(q.type === 'mc' || q.type === 'tf') && (
                 <div className="space-y-1.5">
-                  {(q.type === 'mc' ? q.choices : ['Đúng', 'Sai']).map((choice, k) => {
+                  {choicesList.map((choice, k) => {
                     const value = q.type === 'mc' ? k : k === 0;
                     const chosen = given === value;
                     const isRight = Boolean(r) && (q.type === 'mc' ? k === r?.rightIndex : value === r?.rightBool);
@@ -300,19 +352,30 @@ const PmpQuizRound: React.FC<
                         </span>
                         {isRight && (
                           <span className="whitespace-nowrap text-xs font-bold text-emerald-500">
-                            {chosen ? '✔ Bạn chọn đúng' : '✔ Đáp án PMI'}
+                            {chosen
+                              ? lang === 'en'
+                                ? '✔ Your pick'
+                                : '✔ Bạn chọn đúng'
+                              : lang === 'en'
+                                ? '✔ PMI Answer'
+                                : '✔ Đáp án PMI'}
                           </span>
                         )}
-                        {isWrongPick && <span className="whitespace-nowrap text-xs font-bold text-rose-500">✘ Bạn đã chọn</span>}
+                        {isWrongPick && (
+                          <span className="whitespace-nowrap text-xs font-bold text-rose-500">
+                            {lang === 'en' ? '✘ Your pick' : '✘ Bạn đã chọn'}
+                          </span>
+                        )}
                       </label>
                     );
                   })}
                 </div>
               )}
 
-              {r?.explain && (
+              {explainText && (
                 <div className="mt-3 rounded-lg border border-amber-500/30 bg-[var(--dts-amber-soft)] px-3.5 py-2.5 text-sm text-[var(--dts-amber-ink)] leading-relaxed">
-                  💡 <b>Giải thích theo chuẩn PMI:</b> <CourseInline text={r.explain} accent="amber" />
+                  💡 <b>{lang === 'en' ? 'PMI Rationale:' : 'Giải thích theo chuẩn PMI:'}</b>{' '}
+                  <CourseInline text={explainText} accent="amber" />
                 </div>
               )}
             </div>
@@ -322,37 +385,41 @@ const PmpQuizRound: React.FC<
 
       {!result ? (
         <CourseBtn variant="primary" accent="amber" className="mt-5" onClick={submit}>
-          Chấm bài &amp; Xem giải thích
+          {lang === 'en' ? 'Submit & View Rationale' : 'Chấm bài & Xem giải thích'}
         </CourseBtn>
       ) : (
         <div id="pmp-quiz-result" className="mt-6 space-y-3">
           <Callout tone={passed === false ? 'bad' : 'ok'}>
             <b>
-              Đúng {result.correct}/{result.total}
+              {lang === 'en' ? `Score ${result.correct}/${result.total}` : `Đúng ${result.correct}/${result.total}`}
             </b>{' '}
             ({Math.round((result.correct / result.total) * 100)}%) · +{result.xp} XP
-            {result.recordNew && ' · 🏆 kỷ lục mới'}
+            {result.recordNew && (lang === 'en' ? ' · 🏆 new record' : ' · 🏆 kỷ lục mới')}
             {mode === 'module' &&
               (passed
-                ? ' · Đạt chuẩn tư duy module này! Giờ hãy sang PMP Mindmap xem dẫn chứng & luyện tình huống sâu.'
-                : ` · Cần đạt ≥ ${Math.round(cur.passQuiz * 100)}% để qua — hãy đọc kỹ phần giải thích đáp án bên trên rồi thử lại nhé.`)}
+                ? lang === 'en'
+                  ? ' · Mindset standard met! Now head to PMP Mindmap to review evidence & practice deeper scenarios.'
+                  : ' · Đạt chuẩn tư duy module này! Giờ hãy sang PMP Mindmap xem dẫn chứng & luyện tình huống sâu.'
+                : lang === 'en'
+                  ? ` · Need ≥ ${Math.round(cur.passQuiz * 100)}% to pass — read the rationales above carefully and try again.`
+                  : ` · Cần đạt ≥ ${Math.round(cur.passQuiz * 100)}% để qua — hãy đọc kỹ phần giải thích đáp án bên trên rồi thử lại nhé.`)}
             <CourseBar value={result.correct / result.total} accent="amber" className="mt-2" />
             {wrongNums.length > 0 && (
               <div className="mt-2 text-xs">
-                Câu cần lưu ý: <b>{wrongNums.join(', ')}</b>
+                {lang === 'en' ? 'Questions to review:' : 'Câu cần lưu ý:'} <b>{wrongNums.join(', ')}</b>
               </div>
             )}
           </Callout>
           <div className="flex flex-wrap gap-2">
             <CourseBtn variant="primary" accent="amber" onClick={onRestart}>
-              Làm lại lượt mới
+              {lang === 'en' ? 'Try New Round' : 'Làm lại lượt mới'}
             </CourseBtn>
             <CourseBtn accent="amber" onClick={() => go({ name: 'quiz', mode: 'review' })}>
-              Ôn câu từng sai
+              {lang === 'en' ? 'Review Missed Questions' : 'Ôn câu từng sai'}
             </CourseBtn>
             {moduleId && (
               <CourseBtn accent="amber" onClick={() => go({ name: 'module', id: moduleId })}>
-                Về module &amp; mở dẫn chứng Mindmap
+                {lang === 'en' ? 'Back to module & Mindmap links' : 'Về module & mở dẫn chứng Mindmap'}
               </CourseBtn>
             )}
           </div>

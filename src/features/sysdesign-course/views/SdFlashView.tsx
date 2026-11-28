@@ -3,6 +3,9 @@ import { ArrowLeft, Layers } from 'lucide-react';
 import { useSdCurriculum } from '../data';
 import { sdDueCards } from '../logic';
 import { useSdNav, useSdProgress } from '../store';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
+import type { CourseEnCardOverlay } from '@/data/i18n/types';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { CourseMarkdown } from '@/features/devops-course/components/CourseMarkdown';
 import { CourseBar, CourseBtn } from '@/features/devops-course/components/CourseUi';
 import { Callout, Spinner } from '@/features/workpath/components/ui';
@@ -12,6 +15,21 @@ export const SdFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
   const { data: cur } = useSdCurriculum();
   const rate = useSdProgress((x) => x.rateCard);
   const { go, back } = useSdNav();
+  const lang = useWorkbenchStore((st) => st.language);
+  const enOverlay = useCourseEnOverlay('sysdesign');
+
+  const cardOverlayById = useMemo(() => {
+    const map = new Map<string, CourseEnCardOverlay>();
+    if (!enOverlay?.modules) return map;
+    for (const modEn of Object.values(enOverlay.modules)) {
+      if (modEn.cards) {
+        for (const [cId, cEn] of Object.entries(modEn.cards)) {
+          map.set(cId, cEn);
+        }
+      }
+    }
+    return map;
+  }, [enOverlay]);
 
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -51,11 +69,13 @@ export const SdFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
 
   if (!cur) return <Spinner />;
 
+  const activeEn = active && lang === 'en' ? cardOverlayById.get(active.id) : undefined;
+
   return (
     <div className="mx-auto max-w-3xl p-4 text-[var(--dts-ink)] sm:p-6">
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <CourseBtn accent="cyan" onClick={back}>
-          <ArrowLeft className="h-4 w-4" /> Quay lại
+          <ArrowLeft className="h-4 w-4" /> {lang === 'en' ? 'Back' : 'Quay lại'}
         </CourseBtn>
         <div>
           <h1 className="font-mono text-xl font-extrabold sm:text-2xl">
@@ -63,7 +83,9 @@ export const SdFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
           </h1>
           <p className="inline-flex items-center gap-1.5 font-mono text-xs text-[var(--dts-ink-muted)]">
             <Layers className="h-3.5 w-3.5" />
-            Lặp lại ngắt quãng 5 hộp: nhớ thì giãn lịch 1 · 2 · 4 · 8 · 16 ngày
+            {lang === 'en'
+              ? '5-box spaced repetition: recall schedules intervals of 1 · 2 · 4 · 8 · 16 days'
+              : 'Lặp lại ngắt quãng 5 hộp: nhớ thì giãn lịch 1 · 2 · 4 · 8 · 16 ngày'}
           </p>
         </div>
       </div>
@@ -71,35 +93,45 @@ export const SdFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
       {cards.length === 0 ? (
         <div className="space-y-3">
           <Callout tone="ok">
-            Không có thẻ nào đến hạn hôm nay. Đọc thêm bài để mở thẻ mới, hoặc ôn trước các thẻ có sẵn.
+            {lang === 'en'
+              ? 'No cards due today. Read more lessons to unlock new cards, or practice available cards early.'
+              : 'Không có thẻ nào đến hạn hôm nay. Đọc thêm bài để mở thẻ mới, hoặc ôn trước các thẻ có sẵn.'}
           </Callout>
           <CourseBtn variant="primary" accent="cyan" onClick={() => setPracticeAll(true)}>
-            Ôn các thẻ có sẵn
+            {lang === 'en' ? 'Practice Available Cards' : 'Ôn các thẻ có sẵn'}
           </CourseBtn>
         </div>
       ) : idx >= cards.length ? (
         <div className="space-y-3">
           <Callout tone="ok">
-            Hoàn tất phiên ôn: nhớ <b>{remembered}</b>/{cards.length} thẻ.
+            {lang === 'en' ? (
+              <>
+                Review session complete: recalled <b>{remembered}</b>/{cards.length} cards.
+              </>
+            ) : (
+              <>
+                Hoàn tất phiên ôn: nhớ <b>{remembered}</b>/{cards.length} thẻ.
+              </>
+            )}
           </Callout>
           <CourseBtn variant="primary" accent="cyan" onClick={() => go({ name: 'home' })}>
-            Về tổng quan
+            {lang === 'en' ? 'Back to Overview' : 'Về tổng quan'}
           </CourseBtn>
         </div>
       ) : (
         <>
           <div className="mb-2 flex items-center gap-3 font-mono text-xs text-[var(--dts-ink-muted)]">
             <span>
-              Thẻ {idx + 1}/{cards.length} · {active.id}
+              {lang === 'en' ? 'Card' : 'Thẻ'} {idx + 1}/{cards.length} · {active.id}
             </span>
             <CourseBar value={idx / cards.length} accent="cyan" className="max-w-[200px]" />
           </div>
           <div className="dts-card-tactile flex min-h-[240px] flex-col justify-center rounded-2xl bg-[var(--dts-panel-elevated)] p-6 sm:p-8">
-            <CourseMarkdown source={active.front} accent="cyan" className="text-lg" />
+            <CourseMarkdown source={activeEn?.frontEn ?? active.front} accent="cyan" className="text-lg" />
             {flipped && (
               <>
                 <hr className="my-4 border-[var(--dts-border-soft)]" />
-                <CourseMarkdown source={active.back} accent="cyan" />
+                <CourseMarkdown source={activeEn?.backEn ?? active.back} accent="cyan" />
               </>
             )}
           </div>
@@ -107,15 +139,18 @@ export const SdFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
             {flipped ? (
               <>
                 <CourseBtn variant="danger" accent="cyan" onClick={() => answer(false)}>
-                  Chưa nhớ <kbd className="ml-1 hidden rounded bg-black/15 px-1 text-[10px] sm:inline">1</kbd>
+                  {lang === 'en' ? 'Forgot' : 'Chưa nhớ'}{' '}
+                  <kbd className="ml-1 hidden rounded bg-black/15 px-1 text-[10px] sm:inline">1</kbd>
                 </CourseBtn>
                 <CourseBtn variant="primary" accent="cyan" onClick={() => answer(true)}>
-                  Đã nhớ <kbd className="ml-1 hidden rounded bg-black/15 px-1 text-[10px] sm:inline">2</kbd>
+                  {lang === 'en' ? 'Recalled' : 'Đã nhớ'}{' '}
+                  <kbd className="ml-1 hidden rounded bg-black/15 px-1 text-[10px] sm:inline">2</kbd>
                 </CourseBtn>
               </>
             ) : (
               <CourseBtn variant="primary" accent="cyan" onClick={() => setFlipped(true)}>
-                Lật thẻ <kbd className="ml-1 hidden rounded bg-black/15 px-1 text-[10px] sm:inline">Space</kbd>
+                {lang === 'en' ? 'Flip Card' : 'Lật thẻ'}{' '}
+                <kbd className="ml-1 hidden rounded bg-black/15 px-1 text-[10px] sm:inline">Space</kbd>
               </CourseBtn>
             )}
           </div>

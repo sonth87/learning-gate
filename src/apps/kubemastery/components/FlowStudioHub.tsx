@@ -13,10 +13,12 @@ import {
 } from 'lucide-react';
 import { ANIMATED_FLOW_LIST } from '../data/animatedFlowsData';
 import { useKubeStore } from '../store/useKubeStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { AnimatedFlowEngine } from './AnimatedFlowEngine';
 import { cn } from '@/utils/cn';
 
 export const FlowStudioHub: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
   const { selectedFlowId, openFlowInStudio } = useKubeStore();
 
   // Interactive Widget 1: Dockerfile Layer Cache & Multi-Stage Simulator
@@ -43,13 +45,21 @@ export const FlowStudioHub: React.FC = () => {
       <div className="rounded-2xl border border-sky-500/35 bg-gradient-to-r from-sky-500/15 via-emerald-500/10 to-slate-900 p-4 sm:p-6 space-y-2">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-sky-400">
           <Workflow className="h-4 w-4 shrink-0" />
-          <span>Phòng Lab Sơ Đồ Động & Minh Họa Luồng Hoạt Động (Visual Flow Studio)</span>
+          <span>
+            {lang === 'en'
+              ? 'Visual Flow Studio — Interactive Diagrams & Execution Flows'
+              : 'Phòng Lab Sơ Đồ Động & Minh Họa Luồng Hoạt Động (Visual Flow Studio)'}
+          </span>
         </div>
         <h1 className="font-mono text-lg sm:text-2xl font-extrabold text-white">
-          Trực Quan Hóa Luồng Hoạt Động Docker & Kubernetes Bằng Animation Tương Tác
+          {lang === 'en'
+            ? 'Visualize Docker & Kubernetes Workflows with Interactive Animations'
+            : 'Trực Quan Hóa Luồng Hoạt Động Docker & Kubernetes Bằng Animation Tương Tác'}
         </h1>
         <p className="text-xs sm:text-sm text-slate-300 max-w-4xl leading-relaxed">
-          Thay vì học vẹt qua chữ viết khô khan, hãy quan sát trực tiếp cách các gói tin, các tầng Layer Cache, vòng lặp Control Loop và quy trình chẩn đoán sự cố vận hành theo thời gian thực.
+          {lang === 'en'
+            ? 'Instead of memorizing dry text, watch packets, Layer Cache tiers, the Control Loop, and incident diagnostics operate in real time.'
+            : 'Thay vì học vẹt qua chữ viết khô khan, hãy quan sát trực tiếp cách các gói tin, các tầng Layer Cache, vòng lặp Control Loop và quy trình chẩn đoán sự cố vận hành theo thời gian thực.'}
         </p>
       </div>
 
@@ -57,10 +67,12 @@ export const FlowStudioHub: React.FC = () => {
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
           <span>
-            Chọn Sơ đồ Động ({ANIMATED_FLOW_LIST.length} Luồng Cốt lõi):
+            {lang === 'en'
+              ? `Select Animated Flow (${ANIMATED_FLOW_LIST.length} Core Flows):`
+              : `Chọn Sơ đồ Động (${ANIMATED_FLOW_LIST.length} Luồng Cốt lõi):`}
           </span>
           <span className="lg:hidden font-mono text-[10px] text-sky-400 normal-case">
-            Vuốt ngang để chọn →
+            {lang === 'en' ? 'Swipe horizontally to select →' : 'Vuốt ngang để chọn →'}
           </span>
         </div>
         <div className="flex lg:grid lg:grid-cols-4 gap-2.5 overflow-x-auto no-scrollbar pb-1">
@@ -106,10 +118,14 @@ export const FlowStudioHub: React.FC = () => {
               <Layers className="h-5 w-5 text-amber-400" />
               <div>
                 <h3 className="text-sm sm:text-base font-extrabold text-white">
-                  Mô phỏng Tương tác 1: Các Tầng Bánh Kem (Layer Cache & Multi-stage)
+                  {lang === 'en'
+                    ? 'Interactive Sandbox 1: Cake Layers (Layer Cache & Multi-stage)'
+                    : 'Mô phỏng Tương tác 1: Các Tầng Bánh Kem (Layer Cache & Multi-stage)'}
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Bật/tắt thứ tự lệnh COPY để thấy vì sao đặt sai chỗ làm mất 4 phút build!
+                  {lang === 'en'
+                    ? 'Toggle COPY order to see why misplacing it wastes 4 minutes of build time!'
+                    : 'Bật/tắt thứ tự lệnh COPY để thấy vì sao đặt sai chỗ làm mất 4 phút build!'}
                 </p>
               </div>
             </div>
@@ -126,9 +142,13 @@ export const FlowStudioHub: React.FC = () => {
                   : 'border-rose-500/50 bg-rose-500/15 text-rose-300'
               )}
             >
-              <div className="font-mono text-[10px] uppercase opacity-80">Thứ tự lệnh COPY</div>
+              <div className="font-mono text-[10px] uppercase opacity-80">
+                {lang === 'en' ? 'COPY Order' : 'Thứ tự lệnh COPY'}
+              </div>
               <div className="font-bold mt-0.5">
-                {copyOrderCorrect ? '✓ COPY package.json trước' : '✗ COPY . . ngay ở đầu'}
+                {copyOrderCorrect
+                  ? (lang === 'en' ? '✓ COPY package.json first' : '✓ COPY package.json trước')
+                  : (lang === 'en' ? '✗ COPY . . at the top' : '✗ COPY . . ngay ở đầu')}
               </div>
             </button>
 
@@ -141,9 +161,13 @@ export const FlowStudioHub: React.FC = () => {
                   : 'border-amber-500/50 bg-amber-500/15 text-amber-300'
               )}
             >
-              <div className="font-mono text-[10px] uppercase opacity-80">Kiến trúc Build</div>
+              <div className="font-mono text-[10px] uppercase opacity-80">
+                {lang === 'en' ? 'Build Architecture' : 'Kiến trúc Build'}
+              </div>
               <div className="font-bold mt-0.5">
-                {useMultiStage ? '✓ Multi-stage (2 tầng)' : '✗ Single-stage (Gộp chung)'}
+                {useMultiStage
+                  ? (lang === 'en' ? '✓ Multi-stage (2 stages)' : '✓ Multi-stage (2 tầng)')
+                  : (lang === 'en' ? '✗ Single-stage (Bundled)' : '✗ Single-stage (Gộp chung)')}
               </div>
             </button>
 
@@ -153,11 +177,13 @@ export const FlowStudioHub: React.FC = () => {
               }
               className="rounded-xl border border-violet-500/50 bg-violet-500/15 p-2.5 text-left text-violet-300 transition-all"
             >
-              <div className="font-mono text-[10px] uppercase opacity-80">Thao tác vừa sửa</div>
+              <div className="font-mono text-[10px] uppercase opacity-80">
+                {lang === 'en' ? 'Recent Change' : 'Thao tác vừa sửa'}
+              </div>
               <div className="font-bold mt-0.5">
                 {changedFile === 'code-only'
-                  ? 'Sửa 1 dòng code server.ts'
-                  : 'Cài thêm thư viện mới'}
+                  ? (lang === 'en' ? 'Edit 1 line in server.ts' : 'Sửa 1 dòng code server.ts')
+                  : (lang === 'en' ? 'Install new dependency' : 'Cài thêm thư viện mới')}
               </div>
             </button>
           </div>
@@ -165,7 +191,9 @@ export const FlowStudioHub: React.FC = () => {
           {/* Animated Cake Layers Stack */}
           <div className="ide-dark-surface rounded-xl border border-slate-800 bg-slate-950 p-3.5 space-y-2 font-mono text-xs">
             <div className="flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
-              <span className="text-emerald-300">Tầng 1: FROM node:20-alpine + WORKDIR</span>
+              <span className="text-emerald-300">
+                {lang === 'en' ? 'Layer 1: FROM node:20-alpine + WORKDIR' : 'Tầng 1: FROM node:20-alpine + WORKDIR'}
+              </span>
               <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
                 CACHED (0.0s)
               </span>
@@ -181,30 +209,46 @@ export const FlowStudioHub: React.FC = () => {
                       : 'border-amber-500/40 bg-amber-500/15 text-amber-300'
                   )}
                 >
-                  <span>Tầng 2: COPY package*.json ./ → RUN npm ci (250MB)</span>
+                  <span>
+                    {lang === 'en'
+                      ? 'Layer 2: COPY package*.json ./ → RUN npm ci (250MB)'
+                      : 'Tầng 2: COPY package*.json ./ → RUN npm ci (250MB)'}
+                  </span>
                   <span className="rounded bg-slate-900 px-2 py-0.5 text-[10px] font-bold">
                     {isDepsCached ? '⚡ CACHE HIT (0.0s)!' : 'REBUILD (240s)'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sky-300">
-                  <span>Tầng 3: COPY . . → RUN npm run build</span>
+                  <span>
+                    {lang === 'en'
+                      ? 'Layer 3: COPY . . → RUN npm run build'
+                      : 'Tầng 3: COPY . . → RUN npm run build'}
+                  </span>
                   <span className="rounded bg-sky-500/20 px-2 py-0.5 text-[10px] font-bold">
-                    CHẠY LẠI (2.1s)
+                    {lang === 'en' ? 'RE-RUN (2.1s)' : 'CHẠY LẠI (2.1s)'}
                   </span>
                 </div>
               </>
             ) : (
               <>
                 <div className="flex items-center justify-between rounded-lg border border-rose-500/50 bg-rose-500/15 px-3 py-2 text-rose-300">
-                  <span>Tầng 2: COPY . . (Vừa sửa 1 dòng code → Đổi mã băm!)</span>
+                  <span>
+                    {lang === 'en'
+                      ? 'Layer 2: COPY . . (1 line edited → Hash changed!)'
+                      : 'Tầng 2: COPY . . (Vừa sửa 1 dòng code → Đổi mã băm!)'}
+                  </span>
                   <span className="rounded bg-rose-500/30 px-2 py-0.5 text-[10px] font-bold">
-                    VỠ CACHE!
+                    {lang === 'en' ? 'CACHE BUSTED!' : 'VỠ CACHE!'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between rounded-lg border border-rose-500/50 bg-rose-500/15 px-3 py-2 text-rose-300 animate-pulse">
-                  <span>Tầng 3: RUN npm ci (Bị vạ lây phải tải lại 250MB!)</span>
+                  <span>
+                    {lang === 'en'
+                      ? 'Layer 3: RUN npm ci (Forced to re-download 250MB!)'
+                      : 'Tầng 3: RUN npm ci (Bị vạ lây phải tải lại 250MB!)'}
+                  </span>
                   <span className="rounded bg-rose-500/30 px-2 py-0.5 text-[10px] font-bold">
-                    TẢI LẠI MẤT 240s!
+                    {lang === 'en' ? 'RE-DOWNLOAD 240s!' : 'TẢI LẠI MẤT 240s!'}
                   </span>
                 </div>
               </>
@@ -214,7 +258,7 @@ export const FlowStudioHub: React.FC = () => {
               <div className="flex items-center justify-between rounded-lg border border-violet-500/40 bg-violet-500/15 px-3 py-2 text-violet-300">
                 <span>Stage 2 (Runner): USER node + COPY --from=builder ./dist</span>
                 <span className="rounded bg-violet-500/30 px-2 py-0.5 text-[10px] font-bold">
-                  PHÒNG SẠCH 58MB
+                  {lang === 'en' ? 'CLEAN IMAGE 58MB' : 'PHÒNG SẠCH 58MB'}
                 </span>
               </div>
             )}
@@ -223,25 +267,35 @@ export const FlowStudioHub: React.FC = () => {
           {/* Metrics Comparison Footer */}
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-3">
-              <div className="text-slate-400">Thời gian Build Image:</div>
+              <div className="text-slate-400">
+                {lang === 'en' ? 'Image Build Time:' : 'Thời gian Build Image:'}
+              </div>
               <div
                 className={cn(
                   'font-mono text-base font-extrabold mt-0.5',
                   buildTimeSeconds < 10 ? 'text-emerald-400' : 'text-rose-400'
                 )}
               >
-                {buildTimeSeconds} giây {buildTimeSeconds < 10 ? '(Siêu tốc)' : '(Quá chậm!)'}
+                {buildTimeSeconds} {lang === 'en' ? 'sec' : 'giây'}{' '}
+                {buildTimeSeconds < 10
+                  ? (lang === 'en' ? '(Blazing fast)' : '(Siêu tốc)')
+                  : (lang === 'en' ? '(Too slow!)' : '(Quá chậm!)')}
               </div>
             </div>
             <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-3">
-              <div className="text-slate-400">Dung lượng Image cuối cùng:</div>
+              <div className="text-slate-400">
+                {lang === 'en' ? 'Final Image Size:' : 'Dung lượng Image cuối cùng:'}
+              </div>
               <div
                 className={cn(
                   'font-mono text-base font-extrabold mt-0.5',
                   imageSizeMb < 100 ? 'text-sky-400' : 'text-amber-400'
                 )}
               >
-                {imageSizeMb} MB {imageSizeMb < 100 ? '(Chuẩn Multi-stage)' : '(Chứa cả rác!)'}
+                {imageSizeMb} MB{' '}
+                {imageSizeMb < 100
+                  ? (lang === 'en' ? '(Multi-stage Ready)' : '(Chuẩn Multi-stage)')
+                  : (lang === 'en' ? '(Bloated with dev deps!)' : '(Chứa cả rác!)')}
               </div>
             </div>
           </div>
@@ -254,10 +308,14 @@ export const FlowStudioHub: React.FC = () => {
               <Network className="h-5 w-5 text-emerald-400" />
               <div>
                 <h3 className="text-sm sm:text-base font-extrabold text-white">
-                  Mô phỏng Tương tác 2: Đường Dây Mạng Ingress → Service → Pod
+                  {lang === 'en'
+                    ? 'Interactive Sandbox 2: Network Path Ingress → Service → Pod'
+                    : 'Mô phỏng Tương tác 2: Đường Dây Mạng Ingress → Service → Pod'}
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Thử đổi nhãn Selector hoặc cổng targetPort để xem vì sao Pod Running mà Web vẫn sập!
+                  {lang === 'en'
+                    ? 'Change Selector labels or targetPort to see why a site fails even when Pods are Running!'
+                    : 'Thử đổi nhãn Selector hoặc cổng targetPort để xem vì sao Pod Running mà Web vẫn sập!'}
                 </p>
               </div>
             </div>
@@ -306,7 +364,9 @@ export const FlowStudioHub: React.FC = () => {
             >
               <div className="font-mono text-[10px] uppercase opacity-80">Readiness Pod #2</div>
               <div className="font-bold mt-0.5">
-                {pod2Ready ? '✓ Pod #2 Sẵn sàng' : '⚠ Pod #2 Đang bận DB'}
+                {pod2Ready
+                  ? (lang === 'en' ? '✓ Pod #2 Ready' : '✓ Pod #2 Sẵn sàng')
+                  : (lang === 'en' ? '⚠ Pod #2 DB Busy' : '⚠ Pod #2 Đang bận DB')}
               </div>
             </button>
           </div>
@@ -314,7 +374,11 @@ export const FlowStudioHub: React.FC = () => {
           {/* Live Network Routing Diagram */}
           <div className="ide-dark-surface rounded-xl border border-slate-800 bg-slate-950 p-3.5 space-y-3 font-mono text-xs">
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-800 bg-slate-900 px-3 py-2">
-              <span className="text-amber-300">1. Khách hàng (https://shop.com) → Ingress:80</span>
+              <span className="text-amber-300">
+                {lang === 'en'
+                  ? '1. Client (https://shop.com) → Ingress:80'
+                  : '1. Khách hàng (https://shop.com) → Ingress:80'}
+              </span>
               <ArrowRight className="h-3.5 w-3.5 text-slate-400" />
               <span
                 className={cn(
@@ -332,11 +396,17 @@ export const FlowStudioHub: React.FC = () => {
               {selectorMatches ? (
                 <div className="text-emerald-300 font-bold mt-0.5">
                   ENDPOINTS: 10.244.1.12:{serviceTargetPort}
-                  {pod2Ready ? `, 10.244.2.15:${serviceTargetPort}` : ' (Pod #2 tạm rút tên do Readiness=False)'}
+                  {pod2Ready
+                    ? `, 10.244.2.15:${serviceTargetPort}`
+                    : (lang === 'en'
+                        ? ' (Pod #2 temporarily removed by Readiness=False)'
+                        : ' (Pod #2 tạm rút tên do Readiness=False)')}
                 </div>
               ) : (
                 <div className="text-rose-400 font-bold mt-0.5 animate-pulse">
-                  ENDPOINTS: &lt;none&gt; (Lệch nhãn! Service tìm "{serviceSelector}" nhưng Pod dán "app=shop-web")
+                  {lang === 'en'
+                    ? `ENDPOINTS: <none> (Label mismatch! Service looks for "${serviceSelector}" but Pods have "app=shop-web")`
+                    : `ENDPOINTS: <none> (Lệch nhãn! Service tìm "${serviceSelector}" nhưng Pod dán "app=shop-web")`}
                 </div>
               )}
             </div>
@@ -377,7 +447,7 @@ export const FlowStudioHub: React.FC = () => {
                       pod2Ready ? 'text-emerald-400' : 'text-amber-400'
                     )}
                   >
-                    {pod2Ready ? 'Ready' : 'NotReady (Bận)'}
+                    {pod2Ready ? 'Ready' : (lang === 'en' ? 'NotReady (Busy)' : 'NotReady (Bận)')}
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-300 mt-1">
@@ -401,8 +471,17 @@ export const FlowStudioHub: React.FC = () => {
               <>
                 <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
                 <span>
-                  <strong>HTTP 200 OK:</strong> Luồng mạng thông suốt từ Ingress → Service → Cổng 3000 của{' '}
-                  {pod2Ready ? 'cả 2 Pod!' : 'Pod #1 (Pod #2 được Readiness Probe bảo vệ tạm ngưng nhận khách).'}
+                  {lang === 'en' ? (
+                    <>
+                      <strong>HTTP 200 OK:</strong> Traffic flows cleanly from Ingress → Service → Port 3000 on{' '}
+                      {pod2Ready ? 'both Pods!' : 'Pod #1 (Pod #2 is protected by Readiness Probe).'}
+                    </>
+                  ) : (
+                    <>
+                      <strong>HTTP 200 OK:</strong> Luồng mạng thông suốt từ Ingress → Service → Cổng 3000 của{' '}
+                      {pod2Ready ? 'cả 2 Pod!' : 'Pod #1 (Pod #2 được Readiness Probe bảo vệ tạm ngưng nhận khách).'}
+                    </>
+                  )}
                 </span>
               </>
             ) : (
@@ -411,8 +490,12 @@ export const FlowStudioHub: React.FC = () => {
                 <span>
                   <strong>HTTP 502 Bad Gateway / Connection Refused:</strong>{' '}
                   {!selectorMatches
-                    ? 'Danh bạ Endpoints trống rỗng (<none>) do lệch nhãn Selector!'
-                    : 'Tổng đài Service gõ nhầm vào cổng 8080 đang đóng kín (Container thực tế mở cổng 3000)!'}
+                    ? (lang === 'en'
+                        ? 'Endpoints list is empty (<none>) due to Selector label mismatch!'
+                        : 'Danh bạ Endpoints trống rỗng (<none>) do lệch nhãn Selector!')
+                    : (lang === 'en'
+                        ? 'Service is routing to closed port 8080 (Container actually listens on port 3000)!'
+                        : 'Tổng đài Service gõ nhầm vào cổng 8080 đang đóng kín (Container thực tế mở cổng 3000)!')}
                 </span>
               </>
             )}

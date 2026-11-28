@@ -18,6 +18,7 @@ import { usePmpCanvas, usePmpLinks } from '../data';
 import { usePmpAppStore, usePmpNav, usePmpProgress } from '../store';
 import { buildMindmapUrl, DEFAULT_MINDMAP_BASE_URL } from '../links';
 import type { CanvasCardItem, ProvenanceKind } from '../types';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { Spinner } from '@/features/workpath/components/ui';
 import { PmpTrademarkFooter, ProvenancePill } from '../components/PmpShared';
 import { cn } from '@/utils/cn';
@@ -38,6 +39,7 @@ export const PmpCanvasView: React.FC = () => {
   const openQuickPreview = usePmpAppStore((x) => x.openQuickPreview);
   const go = usePmpNav((x) => x.go);
   const markVisited = usePmpProgress((x) => x.markEvidenceVisited);
+  const lang = useWorkbenchStore((st) => st.language);
 
   const [filter, setFilter] = useState<'all' | ProvenanceKind>('all');
   const [selected, setSelected] = useState<CanvasCardItem | null>(null);
@@ -60,20 +62,36 @@ export const PmpCanvasView: React.FC = () => {
           <div>
             <div className="inline-flex items-center gap-1.5 rounded-md border border-amber-500/45 bg-amber-500/15 px-2.5 py-0.5 font-mono text-[10px] font-extrabold text-amber-300">
               <Compass className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>BỨC TRANH TỔNG HỢP 1 TRANG · PMP MINDSET CANVAS</span>
+              <span>
+                {lang === 'en'
+                  ? 'ONE-PAGE OVERVIEW · PMP MINDSET CANVAS'
+                  : 'BỨC TRANH TỔNG HỢP 1 TRANG · PMP MINDSET CANVAS'}
+              </span>
             </div>
             <h1 className="mt-2 text-xl sm:text-2xl font-extrabold text-white">
-              Hệ Quy Chiếu Ra Quyết Định Chuẩn PMI (PMBOK® 8 · ECO 07/2026 · PMA Bridge)
+              {lang === 'en'
+                ? 'PMI Decision-Making Reference (PMBOK® 8 · ECO 07/2026 · PMA Bridge)'
+                : 'Hệ Quy Chiếu Ra Quyết Định Chuẩn PMI (PMBOK® 8 · ECO 07/2026 · PMA Bridge)'}
             </h1>
             <p className="mt-1 max-w-4xl text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Bấm vào bất kỳ thẻ nào bên dưới để xem nhanh <b>3 ý cốt lõi + bẫy phản xạ đời thực</b>, nhảy thẳng tới Module tương ứng hoặc mở Node/Flow dẫn chứng bên PMP Mindmap.
+              {lang === 'en' ? (
+                <>
+                  Click any card below to inspect <b>3 core takeaways + real-world instinct trap</b>, jump directly to
+                  its Module, or open evidence Nodes/Flows on PMP Mindmap.
+                </>
+              ) : (
+                <>
+                  Bấm vào bất kỳ thẻ nào bên dưới để xem nhanh <b>3 ý cốt lõi + bẫy phản xạ đời thực</b>, nhảy thẳng
+                  tới Module tương ứng hoặc mở Node/Flow dẫn chứng bên PMP Mindmap.
+                </>
+              )}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
             {(
               [
-                { id: 'all', label: 'Tất cả nguồn' },
+                { id: 'all', label: lang === 'en' ? 'All sources' : 'Tất cả nguồn' },
                 { id: 'pmbok8', label: 'PMBOK 8 (2025)' },
                 { id: 'eco2026', label: 'ECO 07/2026' },
                 { id: 'pma-bridge', label: 'PMA / Mindmap' },
@@ -100,10 +118,14 @@ export const PmpCanvasView: React.FC = () => {
         <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/80 p-3.5">
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
             <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-violet-300">
-              Tỷ trọng đề thi PMP ECO mới (Hiệu lực {canvas.eco2026.effectiveDate} · 180 câu / 240 phút · 26 Tasks)
+              {lang === 'en'
+                ? `New PMP ECO Exam Weights (Effective ${canvas.eco2026.effectiveDate} · 180 Qs / 240 min · 26 Tasks)`
+                : `Tỷ trọng đề thi PMP ECO mới (Hiệu lực ${canvas.eco2026.effectiveDate} · 180 câu / 240 phút · 26 Tasks)`}
             </span>
             <span className="text-[11px] text-slate-400">
-              Đối chiếu ECO 2021 cũ trong Mindmap: People 42% · Process 50% · Business 8%
+              {lang === 'en'
+                ? 'Legacy ECO 2021 reference in Mindmap: People 42% · Process 50% · Business 8%'
+                : 'Đối chiếu ECO 2021 cũ trong Mindmap: People 42% · Process 50% · Business 8%'}
             </span>
           </div>
 
@@ -115,7 +137,7 @@ export const PmpCanvasView: React.FC = () => {
                   <span className="font-mono text-xs font-extrabold text-amber-300">
                     {dom.weight2026}%{' '}
                     <span className="font-normal text-[10px] text-slate-400">
-                      ({dom.tasks2026} tasks · cũ {dom.weight2021}%)
+                      ({dom.tasks2026} tasks · {lang === 'en' ? 'old' : 'cũ'} {dom.weight2021}%)
                     </span>
                   </span>
                 </div>
@@ -136,7 +158,11 @@ export const PmpCanvasView: React.FC = () => {
           <div className="flex items-center justify-between gap-2">
             <h2 className="flex items-center gap-2 text-base font-extrabold text-white">
               <Sparkles className="h-4 w-4 text-amber-400" aria-hidden="true" />
-              <span>Vùng 1 · 6 Nguyên Tắc PMBOK 8 &amp; 6 Nguyên Tắc Hành Động PMA</span>
+              <span>
+                {lang === 'en'
+                  ? 'Quadrant 1 · 6 PMBOK 8 Principles & 6 PMA Action Principles'
+                  : 'Vùng 1 · 6 Nguyên Tắc PMBOK 8 & 6 Nguyên Tắc Hành Động PMA'}
+              </span>
             </h2>
             <ProvenancePill kind="pmbok8" label="Standard §3.3–3.8" />
           </div>
@@ -165,7 +191,9 @@ export const PmpCanvasView: React.FC = () => {
           <div className="rounded-xl border border-sky-500/25 bg-slate-950/75 p-3">
             <div className="mb-2 flex items-center justify-between gap-2">
               <span className="font-mono text-[10px] font-extrabold uppercase tracking-wider text-sky-300">
-                6 Phản xạ phòng thi cốt lõi (Core Mindset — Handout PMA)
+                {lang === 'en'
+                  ? '6 Core Exam Reflexes (Core Mindset — PMA Handout)'
+                  : '6 Phản xạ phòng thi cốt lõi (Core Mindset — Handout PMA)'}
               </span>
               <ProvenancePill kind="pma-bridge" label="core.mindset" />
             </div>
@@ -180,7 +208,9 @@ export const PmpCanvasView: React.FC = () => {
                     <div>
                       <div className="font-bold text-sky-200">{ref.title}</div>
                       <p className="mt-0.5 text-[11px] text-slate-300 leading-snug">{ref.viRule}</p>
-                      <p className="mt-1 text-[10px] text-rose-300">✗ Tránh: {ref.trap}</p>
+                      <p className="mt-1 text-[10px] text-rose-300">
+                        ✗ {lang === 'en' ? 'Avoid:' : 'Tránh:'} {ref.trap}
+                      </p>
                     </div>
                     <div className="mt-2 flex items-center justify-between gap-2 pt-1.5 border-t border-slate-800/80">
                       <button
@@ -215,7 +245,11 @@ export const PmpCanvasView: React.FC = () => {
           <div className="flex items-center justify-between gap-2">
             <h2 className="flex items-center gap-2 text-base font-extrabold text-white">
               <Users className="h-4 w-4 text-emerald-400" aria-hidden="true" />
-              <span>Vùng 2 · Vai Trò &amp; Ranh Giới Thẩm Quyền Bất Khả Xâm Phạm</span>
+              <span>
+                {lang === 'en'
+                  ? 'Quadrant 2 · Roles & Non-Negotiable Authority Boundaries'
+                  : 'Vùng 2 · Vai Trò & Ranh Giới Thẩm Quyền Bất Khả Xâm Phạm'}
+              </span>
             </h2>
             <ProvenancePill kind="eco2026" label="People & Governance" />
           </div>
@@ -247,7 +281,11 @@ export const PmpCanvasView: React.FC = () => {
           <div className="flex items-center justify-between gap-2">
             <h2 className="flex items-center gap-2 text-base font-extrabold text-white">
               <Layers className="h-4 w-4 text-cyan-400" aria-hidden="true" />
-              <span>Vùng 3 · Phổ Cách Tiếp Cận &amp; 5 Focus Areas (PMBOK 8 §4)</span>
+              <span>
+                {lang === 'en'
+                  ? 'Quadrant 3 · Development Spectrum & 5 Focus Areas (PMBOK 8 §4)'
+                  : 'Vùng 3 · Phổ Cách Tiếp Cận & 5 Focus Areas (PMBOK 8 §4)'}
+              </span>
             </h2>
             <ProvenancePill kind="pmbok8" label="Standard §4.2 & §4.5" />
           </div>
@@ -275,7 +313,9 @@ export const PmpCanvasView: React.FC = () => {
 
           <div className="rounded-xl border border-slate-800 bg-slate-950/75 p-3">
             <div className="mb-2 font-mono text-[10px] font-extrabold uppercase tracking-wider text-amber-300">
-              5 Project Management Focus Areas (Áp dụng cho cả Predictive · Agile · Hybrid)
+              {lang === 'en'
+                ? '5 Project Management Focus Areas (Predictive · Agile · Hybrid)'
+                : '5 Project Management Focus Areas (Áp dụng cho cả Predictive · Agile · Hybrid)'}
             </div>
             <div className="space-y-1.5">
               {canvas.focusAreas.map((fa, idx) => (
@@ -309,14 +349,18 @@ export const PmpCanvasView: React.FC = () => {
           <div className="flex items-center justify-between gap-2">
             <h2 className="flex items-center gap-2 text-base font-extrabold text-white">
               <GitBranch className="h-4 w-4 text-amber-400" aria-hidden="true" />
-              <span>Vùng 4 · Chu Trình 5 Bước Xử Lý Câu Hỏi Tình Huống</span>
+              <span>
+                {lang === 'en'
+                  ? 'Quadrant 4 · 5-Step Situational Decision Cycle'
+                  : 'Vùng 4 · Chu Trình 5 Bước Xử Lý Câu Hỏi Tình Huống'}
+              </span>
             </h2>
             <button
               type="button"
               onClick={() => setActiveTab('decision')}
               className="inline-flex items-center gap-1 rounded-lg bg-amber-500 px-2.5 py-1 text-xs font-extrabold text-slate-950 hover:bg-amber-400 transition-colors cursor-pointer"
             >
-              <span>Mở Cây quyết định</span>
+              <span>{lang === 'en' ? 'Open Decision Tree' : 'Mở Cây quyết định'}</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -334,23 +378,27 @@ export const PmpCanvasView: React.FC = () => {
                   <span className="text-sm">{dc.title}</span>
                 </div>
                 <p className="mt-1.5 text-slate-200 leading-relaxed">{dc.action}</p>
-                <p className="mt-1 text-[11px] text-rose-300">✗ Bẫy cần tránh: {dc.neverDo}</p>
+                <p className="mt-1 text-[11px] text-rose-300">
+                  ✗ {lang === 'en' ? 'Trap to avoid:' : 'Bẫy cần tránh:'} {dc.neverDo}
+                </p>
               </div>
             ))}
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 p-3 text-xs">
             <span className="text-violet-200">
-              Muốn nhìn toàn bộ 14 chủ đề trong không gian vũ trụ 3 góc nhìn?
+              {lang === 'en'
+                ? 'Want to see all 14 topics in the 3-perspective Panorama space?'
+                : 'Muốn nhìn toàn bộ 14 chủ đề trong không gian vũ trụ 3 góc nhìn?'}
             </span>
             <a
-              href={`${DEFAULT_MINDMAP_BASE_URL}/?v=panorama&lang=vi`}
+              href={`${DEFAULT_MINDMAP_BASE_URL}/?v=panorama&lang=${lang}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 rounded-lg bg-violet-500 px-3 py-1.5 font-bold text-white hover:bg-violet-400 transition-colors"
             >
               <ExternalLink className="h-3.5 w-3.5" />
-              <span>Mở Panorama bên PMP Mindmap</span>
+              <span>{lang === 'en' ? 'Open Panorama in PMP Mindmap' : 'Mở Panorama bên PMP Mindmap'}</span>
             </a>
           </div>
         </section>
@@ -361,25 +409,31 @@ export const PmpCanvasView: React.FC = () => {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div>
             <div className="font-mono text-[10px] font-extrabold uppercase tracking-wider text-amber-400">
-              BẢNG BẮC CẦU TRUNG THỰC · KHÔNG NHẦM THUẬT NGỮ
+              {lang === 'en'
+                ? 'FAITHFUL BRIDGE MATRIX · ZERO TERMINOLOGY CONFUSION'
+                : 'BẢNG BẮC CẦU TRUNG THỰC · KHÔNG NHẦM THUẬT NGỮ'}
             </div>
             <h2 className="flex items-center gap-2 text-base sm:text-lg font-extrabold text-white">
               <Scale className="h-4 w-4 text-sky-400" aria-hidden="true" />
-              <span>7 Performance Domains (40 Quy trình PMBOK 8) ↔ 14 Chủ đề PMP Mindmap</span>
+              <span>
+                {lang === 'en'
+                  ? '7 Performance Domains (40 PMBOK 8 Processes) ↔ 14 PMP Mindmap Topics'
+                  : '7 Performance Domains (40 Quy trình PMBOK 8) ↔ 14 Chủ đề PMP Mindmap'}
+              </span>
             </h2>
           </div>
-          <ProvenancePill kind="pmbok8" label="PMBOK 8 Table 2-1 (tr.9)" />
+          <ProvenancePill kind="pmbok8" label="PMBOK 8 Table 2-1 (p.9)" />
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[680px] border-collapse text-left text-xs">
             <thead>
               <tr className="border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400">
-                <th className="py-2.5 pr-3">Miền PMBOK 8 (Số quy trình)</th>
-                <th className="py-2.5 px-3">Trọng tâm trong PMBOK 8</th>
-                <th className="py-2.5 px-3">Chủ đề tương ứng bên Mindmap</th>
-                <th className="py-2.5 px-3">Điểm lệch / Lưu ý bắc cầu</th>
-                <th className="py-2.5 pl-3 text-right">Hành động</th>
+                <th className="py-2.5 pr-3">{lang === 'en' ? 'PMBOK 8 Domain (Processes)' : 'Miền PMBOK 8 (Số quy trình)'}</th>
+                <th className="py-2.5 px-3">{lang === 'en' ? 'Key Focus in PMBOK 8' : 'Trọng tâm trong PMBOK 8'}</th>
+                <th className="py-2.5 px-3">{lang === 'en' ? 'Matching Mindmap Topics' : 'Chủ đề tương ứng bên Mindmap'}</th>
+                <th className="py-2.5 px-3">{lang === 'en' ? 'Bridge Notes / Nuances' : 'Điểm lệch / Lưu ý bắc cầu'}</th>
+                <th className="py-2.5 pl-3 text-right">{lang === 'en' ? 'Actions' : 'Hành động'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/80">
@@ -424,7 +478,7 @@ export const PmpCanvasView: React.FC = () => {
                             onClick={() => markVisited(lnk.linkId)}
                             className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-[11px] font-semibold text-slate-200 hover:border-sky-500/50 hover:text-sky-300"
                           >
-                            <span>Mở Map</span>
+                            <span>{lang === 'en' ? 'Open Map' : 'Mở Map'}</span>
                             <ExternalLink className="h-3 w-3" />
                           </a>
                         )}
@@ -470,7 +524,7 @@ export const PmpCanvasView: React.FC = () => {
 
             <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-3.5 space-y-2">
               <div className="font-mono text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                3 Ý cốt lõi cần nhớ để ra quyết định
+                {lang === 'en' ? '3 Core Takeaways for Decision-Making' : '3 Ý cốt lõi cần nhớ để ra quyết định'}
               </div>
               <ul className="space-y-1.5 text-xs sm:text-sm text-slate-200">
                 {selected.essence.map((pt, idx) => (
@@ -484,7 +538,8 @@ export const PmpCanvasView: React.FC = () => {
 
             <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3.5 text-xs sm:text-sm text-rose-200">
               <div className="flex items-center gap-1.5 font-mono text-[10px] font-extrabold uppercase tracking-wider text-rose-300 mb-1">
-                <AlertTriangle className="h-3.5 w-3.5" /> Bẫy phản xạ đời thực
+                <AlertTriangle className="h-3.5 w-3.5" />{' '}
+                {lang === 'en' ? 'Real-World Instinct Trap' : 'Bẫy phản xạ đời thực'}
               </div>
               <p className="leading-relaxed">{selected.realWorldTrap}</p>
             </div>
@@ -496,7 +551,9 @@ export const PmpCanvasView: React.FC = () => {
                 className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 py-2 text-xs font-extrabold text-slate-950 hover:bg-amber-400 cursor-pointer"
               >
                 <BookOpen className="h-3.5 w-3.5" />
-                <span>Học sâu tại Module {selected.moduleId}</span>
+                <span>
+                  {lang === 'en' ? `Study in Module ${selected.moduleId}` : `Học sâu tại Module ${selected.moduleId}`}
+                </span>
               </button>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -521,7 +578,7 @@ export const PmpCanvasView: React.FC = () => {
                           setSelected(null);
                           openQuickPreview(lnk);
                         }}
-                        title="Xem nhanh trên Desktop"
+                        title={lang === 'en' ? 'Quick preview on Desktop' : 'Xem nhanh trên Desktop'}
                         className="hidden lg:inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-950 p-2 text-slate-300 hover:border-amber-500/50 hover:text-amber-300 cursor-pointer"
                       >
                         <Eye className="h-3.5 w-3.5" />

@@ -29,6 +29,7 @@ import {
   STDLIB_VS_THIRD_PARTY_BOUNDARIES,
 } from '@/data/libraries/pythonLibraryEcosystemData';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { renderHighlightedPython } from '@/utils/pythonHighlighter';
 import { cn } from '@/utils/cn';
 
@@ -40,6 +41,8 @@ const LibraryDetailPanel: React.FC<{
   onPrev?: () => void;
   onNext?: () => void;
 }> = ({ lib, showJsTsComparison, index, total, onPrev, onNext }) => {
+  const lang = useWorkbenchStore((s) => s.language);
+  const isEn = lang === 'en';
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedInstall, setCopiedInstall] = useState(false);
 
@@ -53,7 +56,7 @@ const LibraryDetailPanel: React.FC<{
     const text =
       lib.kind === 'stdlib'
         ? lib.installCmd.uv
-        : `${lib.installCmd.uv}   # Hoặc: ${lib.installCmd.pip}`;
+        : `${lib.installCmd.uv}   # ${isEn ? 'Or:' : 'Hoặc:'} ${lib.installCmd.pip}`;
     navigator.clipboard.writeText(text);
     setCopiedInstall(true);
     setTimeout(() => setCopiedInstall(false), 1600);
@@ -86,12 +89,20 @@ const LibraryDetailPanel: React.FC<{
               {lib.kind === 'stdlib' ? (
                 <>
                   <Sparkles className="h-3.5 w-3.5" />
-                  <span>Thư viện Chuẩn (Có sẵn trong Python)</span>
+                  <span>
+                    {isEn
+                      ? 'Standard Library (Built into Python)'
+                      : 'Thư viện Chuẩn (Có sẵn trong Python)'}
+                  </span>
                 </>
               ) : (
                 <>
                   <Package className="h-3.5 w-3.5" />
-                  <span>Thư viện Thực chiến (Third-Party PyPI)</span>
+                  <span>
+                    {isEn
+                      ? 'Third-Party Library (PyPI)'
+                      : 'Thư viện Thực chiến (Third-Party PyPI)'}
+                  </span>
                 </>
               )}
             </span>
@@ -110,7 +121,7 @@ const LibraryDetailPanel: React.FC<{
                 type="button"
                 onClick={onPrev}
                 className="rounded-lg border border-slate-700 bg-slate-800 p-1.5 text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer"
-                title="Thư viện trước"
+                title={isEn ? 'Previous library' : 'Thư viện trước'}
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -118,7 +129,7 @@ const LibraryDetailPanel: React.FC<{
                 type="button"
                 onClick={onNext}
                 className="rounded-lg border border-slate-700 bg-slate-800 p-1.5 text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer"
-                title="Thư viện tiếp theo"
+                title={isEn ? 'Next library' : 'Thư viện tiếp theo'}
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -132,7 +143,7 @@ const LibraryDetailPanel: React.FC<{
           </h2>
           <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
             <span className="text-[11px] font-semibold text-slate-400">
-              Module / Gói cốt lõi:
+              {isEn ? 'Core Module / Package:' : 'Module / Gói cốt lõi:'}
             </span>
             <span className="rounded-md border border-slate-700/80 bg-slate-900 px-2 py-0.5 font-mono text-[11px] font-bold text-amber-300">
               {lib.name}
@@ -147,23 +158,27 @@ const LibraryDetailPanel: React.FC<{
             {lib.kind === 'stdlib' ? (
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-slate-400 font-sans text-xs">
-                  Cách nạp:
+                  {isEn ? 'Import:' : 'Cách nạp:'}
                 </span>
                 <code className="text-emerald-300 font-bold">
                   {lib.installCmd.uv}
                 </code>
                 <span className="rounded bg-emerald-500/15 px-2 py-0.5 font-sans text-[10px] font-semibold text-emerald-300">
-                  Không cần cài đặt
+                  {isEn ? 'No installation needed' : 'Không cần cài đặt'}
                 </span>
               </div>
             ) : (
               <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-slate-400 font-sans">Dùng uv:</span>
+                <span className="text-slate-400 font-sans">
+                  {isEn ? 'With uv:' : 'Dùng uv:'}
+                </span>
                 <code className="rounded bg-slate-950 px-2 py-0.5 text-emerald-300 font-bold">
                   {lib.installCmd.uv}
                 </code>
                 <span className="text-slate-600">|</span>
-                <span className="text-slate-400 font-sans">Dùng pip:</span>
+                <span className="text-slate-400 font-sans">
+                  {isEn ? 'With pip:' : 'Dùng pip:'}
+                </span>
                 <code className="rounded bg-slate-950 px-2 py-0.5 text-sky-300">
                   {lib.installCmd.pip}
                 </code>
@@ -179,12 +194,14 @@ const LibraryDetailPanel: React.FC<{
             {copiedInstall ? (
               <>
                 <Check className="h-3.5 w-3.5 text-emerald-400" />
-                <span className="text-emerald-300">Đã copy</span>
+                <span className="text-emerald-300">
+                  {isEn ? 'Copied' : 'Đã copy'}
+                </span>
               </>
             ) : (
               <>
                 <Copy className="h-3.5 w-3.5" />
-                <span>Copy lệnh</span>
+                <span>{isEn ? 'Copy command' : 'Copy lệnh'}</span>
               </>
             )}
           </button>
@@ -197,7 +214,9 @@ const LibraryDetailPanel: React.FC<{
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           <div className="rounded-2xl border border-emerald-500/25 bg-emerald-950/10 p-4 space-y-1.5">
             <div className="text-xs font-extrabold uppercase tracking-wider text-emerald-400">
-              🎯 Thư viện này là gì & Dùng để làm gì?
+              {isEn
+                ? '🎯 What is this library & What does it do?'
+                : '🎯 Thư viện này là gì & Dùng để làm gì?'}
             </div>
             <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
               {lib.whatItIs}
@@ -205,7 +224,9 @@ const LibraryDetailPanel: React.FC<{
           </div>
           <div className="rounded-2xl border border-amber-500/25 bg-amber-950/10 p-4 space-y-1.5">
             <div className="text-xs font-extrabold uppercase tracking-wider text-amber-400">
-              💡 Giải quyết bài toán thực tế gì?
+              {isEn
+                ? '💡 What real-world problem does it solve?'
+                : '💡 Giải quyết bài toán thực tế gì?'}
             </div>
             <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
               {lib.problemSolved}
@@ -218,7 +239,9 @@ const LibraryDetailPanel: React.FC<{
           <div className="text-xs font-extrabold uppercase tracking-wider text-sky-300 flex items-center gap-2">
             <Layers className="h-4 w-4 text-sky-400 shrink-0" />
             <span>
-              Các Hàm / Class / Tính năng hay được dùng nhất trong {lib.name}
+              {isEn
+                ? `Most commonly used Functions / Classes / Features in ${lib.name}`
+                : `Các Hàm / Class / Tính năng hay được dùng nhất trong ${lib.name}`}
             </span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
@@ -246,7 +269,11 @@ const LibraryDetailPanel: React.FC<{
               <span className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
               <Code2 className="h-4 w-4 text-emerald-400 ml-1" />
-              <span>Code Mẫu Thực Chiến (Có giải thích từng bước)</span>
+              <span>
+                {isEn
+                  ? 'Annotated Real-World Example (Step-by-step)'
+                  : 'Code Mẫu Thực Chiến (Có giải thích từng bước)'}
+              </span>
             </div>
             <button
               type="button"
@@ -256,12 +283,14 @@ const LibraryDetailPanel: React.FC<{
               {copiedCode ? (
                 <>
                   <Check className="h-3.5 w-3.5 text-emerald-400" />
-                  <span className="text-emerald-300">Đã copy code</span>
+                  <span className="text-emerald-300">
+                    {isEn ? 'Copied code' : 'Đã copy code'}
+                  </span>
                 </>
               ) : (
                 <>
                   <Copy className="h-3.5 w-3.5" />
-                  <span>Copy code mẫu</span>
+                  <span>{isEn ? 'Copy sample code' : 'Copy code mẫu'}</span>
                 </>
               )}
             </button>
@@ -276,7 +305,11 @@ const LibraryDetailPanel: React.FC<{
           <div className="rounded-2xl border border-amber-500/30 bg-amber-950/10 p-4 space-y-2.5">
             <div className="text-xs font-extrabold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
               <Lightbulb className="h-4 w-4 text-amber-400 shrink-0" />
-              <span>Tips, Tricks & Bẫy cần tránh</span>
+              <span>
+                {isEn
+                  ? 'Tips, Tricks & Common Pitfalls'
+                  : 'Tips, Tricks & Bẫy cần tránh'}
+              </span>
             </div>
             <ul className="space-y-2 text-xs text-slate-200 leading-relaxed">
               {lib.tipsAndTricks.map((tip, i) => (
@@ -293,7 +326,11 @@ const LibraryDetailPanel: React.FC<{
           <div className="rounded-2xl border border-violet-500/30 bg-violet-950/10 p-4 space-y-2.5">
             <div className="text-xs font-extrabold uppercase tracking-wider text-violet-300 flex items-center gap-1.5">
               <GitCompare className="h-4 w-4 text-violet-400 shrink-0" />
-              <span>Thư viện Thay thế / Mở rộng trong Python</span>
+              <span>
+                {isEn
+                  ? 'Python Alternatives / Extensions'
+                  : 'Thư viện Thay thế / Mở rộng trong Python'}
+              </span>
             </div>
             <div className="space-y-2">
               {lib.alternatives.map((alt, i) => (
@@ -318,7 +355,11 @@ const LibraryDetailPanel: React.FC<{
           <div className="rounded-2xl border border-cyan-500/35 bg-cyan-950/20 p-4 space-y-1">
             <div className="text-xs font-extrabold text-cyan-300 flex flex-wrap items-center gap-2">
               <ArrowRightLeft className="h-4 w-4 text-cyan-400 shrink-0" />
-              <span>Tương đương bên Node.js / TypeScript:</span>
+              <span>
+                {isEn
+                  ? 'Node.js / TypeScript Equivalent:'
+                  : 'Tương đương bên Node.js / TypeScript:'}
+              </span>
               <code className="rounded-lg bg-slate-950 border border-cyan-500/30 px-2.5 py-0.5 font-mono text-cyan-200">
                 {lib.nodeJsEquivalent.packages}
               </code>
@@ -334,6 +375,8 @@ const LibraryDetailPanel: React.FC<{
 };
 
 export const PythonLibrariesEncyclopedia: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
+  const isEn = lang === 'en';
   const { showJsTsComparison, toggleJsTsComparison } = useSettingsStore();
   const [kindFilter, setKindFilter] = useState<'all' | LibraryKind>('all');
   const [domainFilter, setDomainFilter] = useState<LibraryDomainId>('all');
@@ -419,21 +462,42 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
           <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 font-mono text-[11px] font-bold text-emerald-300">
             <Package className="h-3.5 w-3.5" />
             <span>
-              Bản đồ Hệ sinh thái Thư viện Python • {stdlibCount} Nhóm Có Sẵn +{' '}
-              {thirdPartyCount} Nhóm Thư viện Ngoài
+              {isEn
+                ? `Python Library Ecosystem Map • ${stdlibCount} Built-in + ${thirdPartyCount} Third-Party Groups`
+                : `Bản đồ Hệ sinh thái Thư viện Python • ${stdlibCount} Nhóm Có Sẵn + ${thirdPartyCount} Nhóm Thư viện Ngoài`}
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-white">
-            Thư viện Python Thông dụng theo Mảng & Phạm vi Sử dụng
+            {isEn
+              ? 'Common Python Libraries by Domain & Usage Scope'
+              : 'Thư viện Python Thông dụng theo Mảng & Phạm vi Sử dụng'}
           </h2>
           <p className="text-xs sm:text-sm text-slate-300 max-w-4xl leading-relaxed">
-            Giúp bạn nắm rõ bức tranh toàn cảnh: với mỗi mảng (Web API, App,
-            AI/LLM, Data/ML, Scraping, Desktop) thì dùng những thư viện nào,{' '}
-            <strong className="text-emerald-300">
-              phạm vi mỗi thư viện dừng ở đâu
-            </strong>
-            , cái gì <strong className="text-amber-300">Python có sẵn</strong>{' '}
-            không cần cài và khi nào mới cần cài thư viện riêng.
+            {isEn ? (
+              <>
+                Get the full picture: for each domain (Web API, App, AI/LLM,
+                Data/ML, Scraping, Desktop), see which libraries to use,{' '}
+                <strong className="text-emerald-300">
+                  where each library&apos;s scope stops
+                </strong>
+                , what{' '}
+                <strong className="text-amber-300">
+                  Python includes out of the box
+                </strong>
+                , and when to install third-party packages.
+              </>
+            ) : (
+              <>
+                Giúp bạn nắm rõ bức tranh toàn cảnh: với mỗi mảng (Web API, App,
+                AI/LLM, Data/ML, Scraping, Desktop) thì dùng những thư viện nào,{' '}
+                <strong className="text-emerald-300">
+                  phạm vi mỗi thư viện dừng ở đâu
+                </strong>
+                , cái gì{' '}
+                <strong className="text-amber-300">Python có sẵn</strong> không
+                cần cài và khi nào mới cần cài thư viện riêng.
+              </>
+            )}
           </p>
         </div>
 
@@ -450,7 +514,11 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
             )}
           >
             <Layers className="h-4 w-4 shrink-0" />
-            <span>1. Phạm vi theo 6 Mảng Ứng dụng (Web, App, AI, ML...)</span>
+            <span>
+              {isEn
+                ? '1. Scope by 6 Application Domains (Web, App, AI, ML...)'
+                : '1. Phạm vi theo 6 Mảng Ứng dụng (Web, App, AI, ML...)'}
+            </span>
           </button>
 
           <button
@@ -464,7 +532,11 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
             )}
           >
             <GitCompare className="h-4 w-4 shrink-0" />
-            <span>2. Ranh giới: Có sẵn (Không cần cài) vs Cần cài Thư viện</span>
+            <span>
+              {isEn
+                ? '2. Boundary: Built-in (No Install) vs Third-Party'
+                : '2. Ranh giới: Có sẵn (Không cần cài) vs Cần cài Thư viện'}
+            </span>
           </button>
 
           <button
@@ -479,8 +551,9 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
           >
             <BookOpen className="h-4 w-4 shrink-0" />
             <span>
-              3. Từ điển Chi tiết & Code Mẫu ({PYTHON_LIBRARIES_CATALOG.length}{' '}
-              nhóm)
+              {isEn
+                ? `3. Detailed Encyclopedia & Code Samples (${PYTHON_LIBRARIES_CATALOG.length} groups)`
+                : `3. Từ điển Chi tiết & Code Mẫu (${PYTHON_LIBRARIES_CATALOG.length} nhóm)`}
             </span>
           </button>
         </div>
@@ -503,7 +576,7 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
                   : 'border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700'
               )}
             >
-              Xem tất cả 6 mảng
+              {isEn ? 'View all 6 domains' : 'Xem tất cả 6 mảng'}
             </button>
             {APPLICATION_DOMAIN_STACKS.map((st) => (
               <button
@@ -546,7 +619,9 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
                   <Lightbulb className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
                   <div>
                     <strong className="text-amber-300">
-                      Khi nào KHÔNG cần cài thư viện ngoài ở mảng này?{' '}
+                      {isEn
+                        ? 'When is NO external library needed in this domain? '
+                        : 'Khi nào KHÔNG cần cài thư viện ngoài ở mảng này? '}
                     </strong>
                     <span>{stack.whenNoExternalLibNeeded}</span>
                   </div>
@@ -573,7 +648,11 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
                               key={libName}
                               type="button"
                               onClick={() => handleJumpToLibrary(libName)}
-                              title="Bấm để xem code mẫu & hướng dẫn chi tiết thư viện này"
+                              title={
+                                isEn
+                                  ? 'Click to view sample code & detailed guide for this library'
+                                  : 'Bấm để xem code mẫu & hướng dẫn chi tiết thư viện này'
+                              }
                               className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-2.5 py-1 font-mono text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition-colors cursor-pointer"
                             >
                               <Package className="h-3 w-3" />
@@ -585,13 +664,17 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
                         <div className="space-y-1.5 pt-1 text-xs">
                           <p className="text-slate-200 leading-relaxed">
                             <strong className="text-emerald-400">
-                              ✓ Phạm vi làm được:{' '}
+                              {isEn
+                                ? '✓ What it can do: '
+                                : '✓ Phạm vi làm được: '}
                             </strong>
                             {stage.whatItDoes}
                           </p>
                           <p className="text-slate-400 leading-relaxed">
                             <strong className="text-rose-400">
-                              ✕ Giới hạn (Không làm):{' '}
+                              {isEn
+                                ? '✕ Limitations (Out of scope): '
+                                : '✕ Giới hạn (Không làm): '}
                             </strong>
                             {stage.whatItDoesNotDo}
                           </p>
@@ -600,7 +683,12 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
 
                       {stage.isStdlibAvailable && (
                         <div className="pt-2 border-t border-slate-800/80 text-[11px] text-amber-300/90">
-                          ⚡ <strong>Đồ có sẵn thay thế:</strong>{' '}
+                          ⚡{' '}
+                          <strong>
+                            {isEn
+                              ? 'Built-in alternative:'
+                              : 'Đồ có sẵn thay thế:'}
+                          </strong>{' '}
                           {stage.isStdlibAvailable}
                         </div>
                       )}
@@ -620,14 +708,27 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
         <div className="space-y-4">
           <div className="rounded-2xl border border-slate-800 bg-slate-900/85 p-4 sm:p-5 space-y-3 shadow-lg">
             <h3 className="text-base sm:text-lg font-bold text-white">
-              Bảng Ranh giới: Khi nào dùng Thư viện Có Sẵn (Stdlib) vs Khi nào
-              cài Thư viện Ngoài (PyPI)?
+              {isEn
+                ? 'Boundary Table: When to use Standard Library (Stdlib) vs Third-Party (PyPI)?'
+                : 'Bảng Ranh giới: Khi nào dùng Thư viện Có Sẵn (Stdlib) vs Khi nào cài Thư viện Ngoài (PyPI)?'}
             </h3>
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Python nổi tiếng với triết lý{' '}
-              <em>&quot;Batteries Included&quot; (Có sẵn pin)</em> — rất nhiều
-              việc bạn có thể làm ngay mà không cần cài thêm bất kỳ gói nào. Bảng
-              dưới đây giúp bạn biết rõ giới hạn của đồ có sẵn dừng ở đâu.
+              {isEn ? (
+                <>
+                  Python is famous for its{' '}
+                  <em>&quot;Batteries Included&quot;</em> philosophy — many
+                  tasks work out of the box without installing any packages. The
+                  table below shows where built-in tools stop.
+                </>
+              ) : (
+                <>
+                  Python nổi tiếng với triết lý{' '}
+                  <em>&quot;Batteries Included&quot; (Có sẵn pin)</em> — rất
+                  nhiều việc bạn có thể làm ngay mà không cần cài thêm bất kỳ
+                  gói nào. Bảng dưới đây giúp bạn biết rõ giới hạn của đồ có
+                  sẵn dừng ở đâu.
+                </>
+              )}
             </p>
 
             <div className="space-y-3 pt-2">
@@ -644,7 +745,9 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
                     {/* Col 1: Stdlib */}
                     <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/15 p-3 space-y-2">
                       <div className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                        ⚡ Có sẵn trong Python (Không cần cài)
+                        {isEn
+                          ? '⚡ Built into Python (No install needed)'
+                          : '⚡ Có sẵn trong Python (Không cần cài)'}
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {row.stdlibModules.map((mod) => (
@@ -666,7 +769,9 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
                     {/* Col 2: Threshold */}
                     <div className="rounded-xl border border-amber-500/30 bg-amber-950/15 p-3 space-y-2">
                       <div className="text-xs font-bold uppercase tracking-wider text-amber-400">
-                        ⚠️ Khi nào đồ có sẵn KHÔNG đủ?
+                        {isEn
+                          ? '⚠️ When is built-in NOT enough?'
+                          : '⚠️ Khi nào đồ có sẵn KHÔNG đủ?'}
                       </div>
                       <p className="text-xs text-amber-100/90 leading-relaxed">
                         {row.whenToSwitch}
@@ -676,7 +781,9 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
                     {/* Col 3: Third-party */}
                     <div className="rounded-xl border border-sky-500/30 bg-sky-950/15 p-3 space-y-2">
                       <div className="text-xs font-bold uppercase tracking-wider text-sky-400">
-                        📦 Thư viện ngoài khuyên dùng (uv add)
+                        {isEn
+                          ? '📦 Recommended third-party (uv add)'
+                          : '📦 Thư viện ngoài khuyên dùng (uv add)'}
                       </div>
                       <div className="space-y-1.5">
                         {row.thirdPartyLibs.map((tp) => (
@@ -724,7 +831,7 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
                     filteredLibraries.length;
                   setSelectedLibId(filteredLibraries[prevIdx].id);
                 }}
-                aria-label="Thư viện trước"
+                aria-label={isEn ? 'Previous library' : 'Thư viện trước'}
                 className="rounded-lg p-1 text-slate-300 hover:bg-slate-800"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -738,7 +845,7 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
                   const nextIdx = (activeIndex + 1) % filteredLibraries.length;
                   setSelectedLibId(filteredLibraries[nextIdx].id);
                 }}
-                aria-label="Thư viện tiếp theo"
+                aria-label={isEn ? 'Next library' : 'Thư viện tiếp theo'}
                 className="rounded-lg p-1 text-slate-300 hover:bg-slate-800"
               >
                 <ChevronRight className="h-4 w-4" />
@@ -746,7 +853,11 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
             </div>
           )}
           <span className="font-mono text-xs font-extrabold text-amber-300 truncate">
-            {activeLibrary ? activeLibrary.name : 'Danh mục Thư viện'}
+            {activeLibrary
+              ? activeLibrary.name
+              : isEn
+              ? 'Library Catalog'
+              : 'Danh mục Thư viện'}
           </span>
         </div>
 
@@ -766,7 +877,11 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
           <Package className="h-3.5 w-3.5" />
           <span>
             {isMobileCatalogOpen
-              ? 'Đóng Danh mục'
+              ? isEn
+                ? 'Close Catalog'
+                : 'Đóng Danh mục'
+              : isEn
+              ? `Select & Filter (${filteredLibraries.length})`
               : `Chọn & Lọc (${filteredLibraries.length})`}
           </span>
         </button>
@@ -784,7 +899,9 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-extrabold uppercase tracking-wider text-slate-300">
-              Danh mục Thư viện ({filteredLibraries.length})
+              {isEn
+                ? `Library Catalog (${filteredLibraries.length})`
+                : `Danh mục Thư viện (${filteredLibraries.length})`}
             </span>
             <button
               type="button"
@@ -797,7 +914,9 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
               )}
             >
               <ArrowRightLeft className="h-3 w-3" />
-              <span>JS/TS: {showJsTsComparison ? 'BẬT' : 'TẮT'}</span>
+              <span>
+                JS/TS: {showJsTsComparison ? (isEn ? 'ON' : 'BẬT') : isEn ? 'OFF' : 'TẮT'}
+              </span>
             </button>
           </div>
 
@@ -807,7 +926,11 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm pathlib, httpx, pydantic, zod, axios..."
+              placeholder={
+                isEn
+                  ? 'Search pathlib, httpx, pydantic, zod, axios...'
+                  : 'Tìm pathlib, httpx, pydantic, zod, axios...'
+              }
               className="w-full rounded-xl border border-slate-700/80 bg-slate-950 pl-9 pr-8 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
             />
             {searchQuery && (
@@ -834,7 +957,9 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
                 : 'border-slate-800 bg-slate-950/80 text-slate-300 hover:border-slate-700'
             )}
           >
-            Tất cả ({PYTHON_LIBRARIES_CATALOG.length})
+            {isEn
+              ? `All (${PYTHON_LIBRARIES_CATALOG.length})`
+              : `Tất cả (${PYTHON_LIBRARIES_CATALOG.length})`}
           </button>
           <button
             type="button"
@@ -846,7 +971,7 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
                 : 'border-slate-800 bg-slate-950/80 text-slate-300 hover:border-slate-700'
             )}
           >
-            ⚡ Có sẵn ({stdlibCount})
+            {isEn ? `⚡ Built-in (${stdlibCount})` : `⚡ Có sẵn (${stdlibCount})`}
           </button>
           <button
             type="button"
@@ -865,14 +990,16 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
         {/* Domain Select */}
         <div>
           <label className="block text-[11px] font-bold text-slate-400 mb-1">
-            Lọc theo Nhóm Bài toán:
+            {isEn ? 'Filter by Problem Domain:' : 'Lọc theo Nhóm Bài toán:'}
           </label>
           <select
             value={domainFilter}
             onChange={(e) =>
               setDomainFilter(e.target.value as LibraryDomainId)
             }
-            aria-label="Lọc theo Nhóm Bài toán"
+            aria-label={
+              isEn ? 'Filter by Problem Domain' : 'Lọc theo Nhóm Bài toán'
+            }
             className="w-full rounded-xl border border-slate-700/80 bg-slate-950 px-3 py-2 text-xs text-slate-200 focus:border-emerald-500 focus:outline-none"
           >
             {LIBRARY_DOMAINS.map((dom) => (
@@ -886,7 +1013,7 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
         {/* View Mode Switch: Single Detail vs Expand All */}
         <div className="flex items-center justify-between border-t border-slate-800/80 pt-3">
           <span className="text-[11px] font-bold text-slate-400">
-            Chế độ hiển thị:
+            {isEn ? 'Display mode:' : 'Chế độ hiển thị:'}
           </span>
           <button
             type="button"
@@ -895,7 +1022,13 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
           >
             <LayoutList className="h-3.5 w-3.5 text-emerald-400" />
             <span>
-              {viewAllMode ? 'Xem từng thư viện' : 'Trải toàn bộ danh sách'}
+              {viewAllMode
+                ? isEn
+                  ? 'View one by one'
+                  : 'Xem từng thư viện'
+                : isEn
+                ? 'Expand all'
+                : 'Trải toàn bộ danh sách'}
             </span>
           </button>
         </div>
@@ -956,7 +1089,9 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
           <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-12 text-center space-y-3">
             <BookOpen className="mx-auto h-8 w-8 text-slate-400" />
             <p className="text-sm font-bold text-slate-200">
-              Không tìm thấy thư viện nào khớp với từ khóa &quot;{searchQuery}&quot;
+              {isEn
+                ? `No libraries found matching "${searchQuery}"`
+                : `Không tìm thấy thư viện nào khớp với từ khóa "${searchQuery}"`}
             </p>
             <button
               type="button"
@@ -967,7 +1102,9 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
               }}
               className="rounded-xl bg-emerald-500 px-4 py-2 text-xs font-extrabold text-[#020617] cursor-pointer"
             >
-              Xem toàn bộ {PYTHON_LIBRARIES_CATALOG.length} nhóm thư viện
+              {isEn
+                ? `View all ${PYTHON_LIBRARIES_CATALOG.length} library groups`
+                : `Xem toàn bộ ${PYTHON_LIBRARIES_CATALOG.length} nhóm thư viện`}
             </button>
           </div>
         ) : viewAllMode ? (

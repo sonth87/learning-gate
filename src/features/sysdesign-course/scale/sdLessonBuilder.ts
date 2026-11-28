@@ -21,6 +21,7 @@ import { buildCodeTraceFromSection, extractFirstCodeBlock } from '@/features/dev
 import { sdAttributionLine } from '../credits';
 import { createSim, type SimFrame, type SimScenario } from '../sim';
 import type { SdBilingual, SdCurriculum, SdLiveDef, SdModule, SdStepBlock, SdText } from '../types';
+import type { CourseEnOverlay } from '@/data/i18n/types';
 import { buildSdMemoryScene, buildSdStageScene, toBilingual, type SdModelLike } from './sdSceneBuilder';
 import { buildSdModuleStory } from './sdStoryCatalog';
 
@@ -381,8 +382,10 @@ export function buildSdModuleLesson(
   mod: SdModule,
   orderInLevel: number,
   totalInLevel: number,
-  sims: SdSimsMap | null
+  sims: SdSimsMap | null,
+  enOverlay?: CourseEnOverlay | null
 ): ScaleModuleLesson {
+  const modEn = enOverlay?.modules?.[mod.id];
   const raw = parseSdLesson(mod.lesson ?? '');
   const sections: SdRawStep[] = raw.length
     ? raw
@@ -472,19 +475,21 @@ export function buildSdModuleLesson(
     }
     const isCodeTrace = stageMode === 'code-trace';
 
+    const stepEn = modEn?.steps?.[idx];
     const titleVi = cleanHeading(sec.heading);
+    const titleEn = stepEn?.headingEn ?? titleVi;
     const shortLabel: BilingualText = {
       vi: b.short ?? shortFromHeading(sec.heading),
-      en: b.shortEn ?? b.short ?? shortFromHeading(sec.heading),
+      en: stepEn?.shortEn ?? b.shortEn ?? b.short ?? shortFromHeading(sec.heading),
     };
     const snippet = isCodeTrace ? (extractFirstCodeBlock(sec.body) ?? brief) : undefined;
     const codeTrace =
       isCodeTrace && snippet !== undefined
         ? buildCodeTraceFromSection(
             `${mod.id} · ${mod.title}`,
-            `${mod.id} · ${mod.titleEn ?? mod.title}`,
+            `${mod.id} · ${modEn?.titleEn ?? mod.titleEn ?? mod.title}`,
             titleVi,
-            titleVi,
+            titleEn,
             snippet,
             sec.body
           )
@@ -502,9 +507,9 @@ export function buildSdModuleLesson(
       index: idx + 1,
       shortLabel,
       category,
-      title: { vi: titleVi, en: titleVi },
+      title: { vi: titleVi, en: titleEn },
       summaryVi: sec.body,
-      summaryEn: sec.body,
+      summaryEn: stepEn?.bodyEn ?? sec.body,
       rawMarkdownVi: sec.body,
       codeSnippet: snippet,
       callout,
@@ -525,12 +530,12 @@ export function buildSdModuleLesson(
     level: mod.level,
     levelTitle: {
       vi: curriculum.levels[String(mod.level)] ?? `Cấp ${mod.level}`,
-      en: curriculum.levels[String(mod.level)] ?? `Level ${mod.level}`,
+      en: enOverlay?.levels?.[String(mod.level)] ?? curriculum.levels[String(mod.level)] ?? `Level ${mod.level}`,
     },
     orderInLevel,
     totalInLevel,
-    title: { vi: mod.title, en: mod.titleEn ?? mod.title },
-    subtitle: { vi: mod.summary, en: mod.summaryEn ?? mod.summary },
+    title: { vi: mod.title, en: modEn?.titleEn ?? mod.titleEn ?? mod.title },
+    subtitle: { vi: mod.summary, en: modEn?.summaryEn ?? mod.summaryEn ?? mod.summary },
     durationMin: mod.durationMin,
     difficulty: mod.difficulty,
     primaryMode: steps.some((s) => s.stageMode === 'isometric' || s.stageMode === 'live-sim')
@@ -538,7 +543,7 @@ export function buildSdModuleLesson(
       : steps.some((s) => s.stageMode === 'memory-2d')
         ? 'memory-2d'
         : 'code-trace',
-    objectives: mod.objectives.map((o) => ({ vi: o.vi, en: o.en ?? o.vi })),
+    objectives: mod.objectives.map((o, oIdx) => ({ vi: o.vi, en: modEn?.objectivesEn?.[oIdx] ?? o.en ?? o.vi })),
     steps,
     quizCount: mod.quiz.length,
     exerciseCount: Array.isArray(mod.activities) ? mod.activities.length : 0,
@@ -549,7 +554,11 @@ export function buildSdModuleLesson(
   };
 }
 
-export function buildSdScaleLessons(curriculum: SdCurriculum, sims: SdSimsMap | null = null): ScaleModuleLesson[] {
+export function buildSdScaleLessons(
+  curriculum: SdCurriculum,
+  sims: SdSimsMap | null = null,
+  enOverlay?: CourseEnOverlay | null
+): ScaleModuleLesson[] {
   const sorted = [...curriculum.modules].sort((a, b) => a.level - b.level || a.order - b.order);
   const countByLevel = new Map<number, number>();
   for (const m of sorted) countByLevel.set(m.level, (countByLevel.get(m.level) ?? 0) + 1);
@@ -557,6 +566,6 @@ export function buildSdScaleLessons(curriculum: SdCurriculum, sims: SdSimsMap | 
   return sorted.map((m) => {
     const order = (idx.get(m.level) ?? 0) + 1;
     idx.set(m.level, order);
-    return buildSdModuleLesson(curriculum, m, order, countByLevel.get(m.level) ?? 1, sims);
+    return buildSdModuleLesson(curriculum, m, order, countByLevel.get(m.level) ?? 1, sims, enOverlay);
   });
 }

@@ -10,6 +10,8 @@ import {
 } from '../logic';
 import { COURSE_NAV_STORES, COURSE_PROGRESS_STORES } from '../store';
 import { useCourseMeta } from '../context';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import type { CatalogStatus } from '@/features/workpath/types';
 import { PageHeader, Pill, Spinner, Stars } from '@/features/workpath/components/ui';
 import { cn } from '@/utils/cn';
@@ -30,9 +32,29 @@ const initial = (preset: Preset): BrowseFilter => ({
 const selectCls =
   'min-h-[44px] sm:min-h-[34px] rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-sm text-slate-200 outline-none focus:border-sky-500/70';
 
+const STATUS_LABEL_EN: Record<CatalogStatus, string> = {
+  todo: 'To Do',
+  reading: 'Reading',
+  done: 'Read',
+  rewritten: 'Rewritten',
+  skip: 'Skipped',
+};
+
+const KIND_LABEL_EN: Record<string, string> = {
+  good: 'SAMPLE',
+  bug: 'FIND BUG',
+  compare: 'COMPARE',
+  outdated: 'OUTDATED',
+  project: 'FULL FLOW',
+  security: 'SECURITY',
+};
+
 export const BrowseView: React.FC<{ preset?: Preset }> = ({ preset }) => {
   const meta = useCourseMeta();
   const { courseId } = meta;
+  const lang = useWorkbenchStore((s) => s.language);
+  const enOverlay = useCourseEnOverlay(courseId);
+  void enOverlay;
   const { data: cat } = useCourseCatalog(courseId);
   const { data: cur } = useCourseCurriculum(courseId);
   const s = COURSE_PROGRESS_STORES[courseId]((x) => x.state);
@@ -50,25 +72,39 @@ export const BrowseView: React.FC<{ preset?: Preset }> = ({ preset }) => {
   if (!cat) return <Spinner />;
   const maxLv = cur ? Math.max(...cur.modules.map((m) => m.level), 5) : 6;
 
+  const readingsTitleEn: Record<typeof courseId, string> = {
+    kube: 'Read Real Configs: Dockerfile, Compose & K8s Manifests',
+    cicd: 'Read Real Configs: GitHub Actions, GitLab CI & GitOps',
+    redis: 'Read Real Configs: redis.conf, Lua Scripts, Streams & Cluster',
+  };
+  const readingsSubtitleEn: Record<typeof courseId, string> = {
+    kube: 'Curated real-world configurations (reference samples, buggy configs, comparisons, deprecated APIs & security flaws) with analysis tasks.',
+    cicd: 'Real-world CI/CD pipeline workflows and configs (best practices, race condition prevention, security & modern syntax) with analysis questions.',
+    redis: 'Production configs, atomic Lua scripts, Docker/K8s StatefulSets, and real incident traps (Stampede, Bigkey, OOM, Split-Brain).',
+  };
+
   return (
     <div className="mx-auto max-w-6xl p-4 sm:p-6">
-      <PageHeader title={meta.readingsTitle} sub={meta.readingsSubtitle} />
+      <PageHeader
+        title={lang === 'en' ? readingsTitleEn[courseId] : meta.readingsTitle}
+        sub={lang === 'en' ? readingsSubtitleEn[courseId] : meta.readingsSubtitle}
+      />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <input
           value={f.q}
           onChange={(e) => set('q', e.target.value)}
-          placeholder="Tìm theo đường dẫn / chủ đề…"
+          placeholder={lang === 'en' ? 'Search by path / topic…' : 'Tìm theo đường dẫn / chủ đề…'}
           className={cn(selectCls, 'w-52')}
-          aria-label="Tìm theo tên file"
+          aria-label={lang === 'en' ? 'Search by filename' : 'Tìm theo tên file'}
         />
         <select
           value={f.category}
           onChange={(e) => set('category', e.target.value)}
           className={selectCls}
-          aria-label="Nhóm cấu hình"
+          aria-label={lang === 'en' ? 'Config category' : 'Nhóm cấu hình'}
         >
-          <option value="">Mọi nhóm</option>
+          <option value="">{lang === 'en' ? 'All categories' : 'Mọi nhóm'}</option>
           {Object.entries(cat.categories).map(([k, v]) => (
             <option key={k} value={k}>
               {v}
@@ -79,12 +115,12 @@ export const BrowseView: React.FC<{ preset?: Preset }> = ({ preset }) => {
           value={f.maxLevel ?? ''}
           onChange={(e) => set('maxLevel', e.target.value !== '' ? Number(e.target.value) : null)}
           className={selectCls}
-          aria-label="Cấp tối đa"
+          aria-label={lang === 'en' ? 'Max level' : 'Cấp tối đa'}
         >
-          <option value="">Mọi cấp</option>
+          <option value="">{lang === 'en' ? 'All levels' : 'Mọi cấp'}</option>
           {Array.from({ length: maxLv + 1 }, (_, n) => (
             <option key={n} value={n}>
-              Cấp ≤ {n}
+              {lang === 'en' ? `Level ≤ ${n}` : `Cấp ≤ ${n}`}
             </option>
           ))}
         </select>
@@ -92,12 +128,12 @@ export const BrowseView: React.FC<{ preset?: Preset }> = ({ preset }) => {
           value={f.status}
           onChange={(e) => set('status', e.target.value as CatalogStatus | '')}
           className={selectCls}
-          aria-label="Trạng thái đọc"
+          aria-label={lang === 'en' ? 'Reading status' : 'Trạng thái đọc'}
         >
-          <option value="">Mọi trạng thái</option>
+          <option value="">{lang === 'en' ? 'All statuses' : 'Mọi trạng thái'}</option>
           {(Object.keys(CATALOG_STATUS_LABEL) as CatalogStatus[]).map((k) => (
             <option key={k} value={k}>
-              {CATALOG_STATUS_LABEL[k]}
+              {lang === 'en' ? STATUS_LABEL_EN[k] : CATALOG_STATUS_LABEL[k]}
             </option>
           ))}
         </select>
@@ -108,7 +144,7 @@ export const BrowseView: React.FC<{ preset?: Preset }> = ({ preset }) => {
             onChange={(e) => set('forMe', e.target.checked)}
             className="accent-sky-500"
           />{' '}
-          hợp cấp của tôi
+          {lang === 'en' ? 'matches my level' : 'hợp cấp của tôi'}
         </label>
         <label className="flex min-h-[44px] sm:min-h-[34px] items-center gap-1.5 px-1 text-sm text-slate-300 cursor-pointer">
           <input
@@ -117,12 +153,14 @@ export const BrowseView: React.FC<{ preset?: Preset }> = ({ preset }) => {
             onChange={(e) => set('curated', e.target.checked)}
             className="accent-sky-500"
           />{' '}
-          gắn vào module ✅
+          {lang === 'en' ? 'linked to module ✅' : 'gắn vào module ✅'}
         </label>
       </div>
 
       <p className="mb-2 text-xs text-slate-500">
-        {items.length}/{cat.items.length} file cấu hình khớp bộ lọc (nếu chưa thấy đủ, bỏ dấu tích "hợp cấp của tôi").
+        {lang === 'en'
+          ? `${items.length}/${cat.items.length} config files match the filter (if you don't see enough, uncheck "matches my level").`
+          : `${items.length}/${cat.items.length} file cấu hình khớp bộ lọc (nếu chưa thấy đủ, bỏ dấu tích "hợp cấp của tôi").`}
       </p>
 
       <div className="overflow-x-auto rounded-xl border border-slate-800">
@@ -130,12 +168,12 @@ export const BrowseView: React.FC<{ preset?: Preset }> = ({ preset }) => {
           <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-3 py-2.5">#</th>
-              <th className="px-3 py-2.5">Cấu hình</th>
-              <th className="hidden px-3 py-2.5 sm:table-cell">Loại</th>
-              <th className="hidden px-3 py-2.5 sm:table-cell">Cấp</th>
-              <th className="hidden px-3 py-2.5 sm:table-cell">Đánh giá</th>
-              <th className="hidden px-3 py-2.5 md:table-cell">Dòng</th>
-              <th className="px-3 py-2.5">Trạng thái</th>
+              <th className="px-3 py-2.5">{lang === 'en' ? 'Config' : 'Cấu hình'}</th>
+              <th className="hidden px-3 py-2.5 sm:table-cell">{lang === 'en' ? 'Type' : 'Loại'}</th>
+              <th className="hidden px-3 py-2.5 sm:table-cell">{lang === 'en' ? 'Level' : 'Cấp'}</th>
+              <th className="hidden px-3 py-2.5 sm:table-cell">{lang === 'en' ? 'Rating' : 'Đánh giá'}</th>
+              <th className="hidden px-3 py-2.5 md:table-cell">{lang === 'en' ? 'Lines' : 'Dòng'}</th>
+              <th className="px-3 py-2.5">{lang === 'en' ? 'Status' : 'Trạng thái'}</th>
             </tr>
           </thead>
           <tbody>
@@ -156,7 +194,7 @@ export const BrowseView: React.FC<{ preset?: Preset }> = ({ preset }) => {
                   </td>
                   <td className="hidden px-3 py-2.5 sm:table-cell">
                     <span className={`inline-block rounded border px-1.5 py-0.5 text-[10px] font-bold ${badge.cls}`}>
-                      {badge.label}
+                      {lang === 'en' ? (KIND_LABEL_EN[primaryKind] ?? badge.label) : badge.label}
                     </span>
                   </td>
                   <td className="hidden px-3 py-2.5 sm:table-cell">{it.level}</td>
@@ -164,7 +202,9 @@ export const BrowseView: React.FC<{ preset?: Preset }> = ({ preset }) => {
                     <Stars n={it.quality} />
                   </td>
                   <td className="hidden px-3 py-2.5 md:table-cell">{it.loc}</td>
-                  <td className="px-3 py-2.5">{st !== 'todo' && <Pill>{CATALOG_STATUS_LABEL[st]}</Pill>}</td>
+                  <td className="px-3 py-2.5">
+                    {st !== 'todo' && <Pill>{lang === 'en' ? STATUS_LABEL_EN[st] : CATALOG_STATUS_LABEL[st]}</Pill>}
+                  </td>
                 </tr>
               );
             })}
@@ -172,7 +212,9 @@ export const BrowseView: React.FC<{ preset?: Preset }> = ({ preset }) => {
         </table>
         {items.length === 0 && (
           <p className="p-6 text-center text-slate-500">
-            Không có cấu hình nào khớp bộ lọc. Hãy thử bỏ chọn "hợp cấp của tôi" để xem toàn bộ kho cấu hình.
+            {lang === 'en'
+              ? 'No configs match the filter. Try unchecking "matches my level" to view the entire config library.'
+              : 'Không có cấu hình nào khớp bộ lọc. Hãy thử bỏ chọn "hợp cấp của tôi" để xem toàn bộ kho cấu hình.'}
           </p>
         )}
       </div>
@@ -183,7 +225,7 @@ export const BrowseView: React.FC<{ preset?: Preset }> = ({ preset }) => {
           onClick={() => setLimit(limit + PAGE)}
           className="mt-3 min-h-[44px] rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 cursor-pointer"
         >
-          Hiện thêm ({items.length - limit} file nữa)
+          {lang === 'en' ? `Show more (${items.length - limit} more files)` : `Hiện thêm (${items.length - limit} file nữa)`}
         </button>
       )}
     </div>

@@ -9,11 +9,13 @@ import {
 } from 'lucide-react';
 import { CICD_FULL_FLOW_BLUEPRINTS } from '../../data/cicdBlueprintsData';
 import { useCicdNavigationStore } from '../../stores/useCicdNavigationStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { LevelBadge } from '@/components/common/LevelBadge';
 import { CodeBlock } from '@/components/common/CodeBlock';
 import { cn } from '@/utils/cn';
 
 export const CicdBlueprintsExplorer: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
   const { selectedBlueprintId, selectBlueprint } = useCicdNavigationStore();
 
   const blueprint =
@@ -86,7 +88,9 @@ export const CicdBlueprintsExplorer: React.FC = () => {
 
         <div className="ide-dark-surface rounded-xl border border-slate-800 bg-slate-950 p-3.5 overflow-x-auto">
           <div className="text-[11px] font-bold uppercase text-amber-400 mb-1.5">
-            Sơ đồ Luồng Thực thi Tổng thể (End-to-End Flow):
+            {lang === 'en'
+              ? 'End-to-End Execution Flow Diagram:'
+              : 'Sơ đồ Luồng Thực thi Tổng thể (End-to-End Flow):'}
           </div>
           <pre className="font-mono text-xs leading-relaxed text-cyan-200">
             {blueprint.asciiFlow}
@@ -100,7 +104,11 @@ export const CicdBlueprintsExplorer: React.FC = () => {
         <div className="lg:col-span-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 space-y-4">
           <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-200">
             <FolderGit2 className="h-4 w-4 text-cyan-400" />
-            <span>Các Mảnh ghép Cấu hình trong Bộ mẫu</span>
+            <span>
+              {lang === 'en'
+                ? 'Configuration Files in This Blueprint'
+                : 'Các Mảnh ghép Cấu hình trong Bộ mẫu'}
+            </span>
           </div>
 
           <div className="space-y-2">
@@ -136,7 +144,11 @@ export const CicdBlueprintsExplorer: React.FC = () => {
           <div className="border-t border-slate-800 pt-3 space-y-2">
             <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>Điểm nhấn Kỹ thuật trong {activeFile.path}:</span>
+              <span>
+                {lang === 'en'
+                  ? `Key Technical Highlights in ${activeFile.path}:`
+                  : `Điểm nhấn Kỹ thuật trong ${activeFile.path}:`}
+              </span>
             </div>
             {activeFile.highlights.map((hl, idx) => (
               <div
@@ -167,7 +179,11 @@ export const CicdBlueprintsExplorer: React.FC = () => {
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
               <div className="flex items-center gap-2 font-mono text-xs font-bold text-emerald-400">
                 <Terminal className="h-4 w-4" />
-                <span>Chạy Thử Kịch bản Thực thi của {blueprint.badge}</span>
+                <span>
+                  {lang === 'en'
+                    ? `Simulate Execution Scenarios for ${blueprint.badge}`
+                    : `Chạy Thử Kịch bản Thực thi của ${blueprint.badge}`}
+                </span>
               </div>
               <div className="flex flex-wrap gap-2">
                 {blueprint.interactiveCommands.map((cmd, idx) => (

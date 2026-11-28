@@ -12,16 +12,26 @@ import { usePmpComparisons, usePmpLinks } from '../data';
 import { pmpEvidenceVisited } from '../logic';
 import { usePmpAppStore, usePmpNav, usePmpProgress } from '../store';
 import { buildMindmapUrl, getLinkKindBadge } from '../links';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { Spinner } from '@/features/workpath/components/ui';
 import { PmpTrademarkFooter } from '../components/PmpShared';
 import { cn } from '@/utils/cn';
 
-const CATEGORY_LABEL: Record<string, string> = {
+const CATEGORY_LABEL_VI: Record<string, string> = {
   all: 'Tất cả bảng đối chiếu',
   approach: 'Phương pháp & Agile',
   governance: 'Governance & Tài liệu',
   people: 'Con người & Xung đột',
   execution: 'Phạm vi · Chi phí · Rủi ro',
+  'pmbok8-bridge': 'PMBOK 8 ↔ PMA',
+};
+
+const CATEGORY_LABEL_EN: Record<string, string> = {
+  all: 'All comparisons',
+  approach: 'Approach & Agile',
+  governance: 'Governance & Artifacts',
+  people: 'People & Conflict',
+  execution: 'Scope · Cost · Risk',
   'pmbok8-bridge': 'PMBOK 8 ↔ PMA',
 };
 
@@ -33,6 +43,8 @@ export const PmpLookupView: React.FC = () => {
   const openQuickPreview = usePmpAppStore((x) => x.openQuickPreview);
   const setActiveTab = usePmpAppStore((x) => x.setActiveTab);
   const go = usePmpNav((x) => x.go);
+  const lang = useWorkbenchStore((st) => st.language);
+  const categoryLabels = lang === 'en' ? CATEGORY_LABEL_EN : CATEGORY_LABEL_VI;
 
   const [section, setSection] = useState<'comparisons' | 'links'>('comparisons');
   const [catFilter, setCatFilter] = useState<string>('all');
@@ -69,10 +81,14 @@ export const PmpLookupView: React.FC = () => {
       <header className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-900/75 p-4 sm:p-6">
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-white">
-            Bảng Đối Chiếu Nhanh &amp; Kho Deep Link PMP Mindmap
+            {lang === 'en'
+              ? 'Quick Comparison Tables & PMP Mindmap Deep-Link Vault'
+              : 'Bảng Đối Chiếu Nhanh & Kho Deep Link PMP Mindmap'}
           </h1>
           <p className="mt-1 max-w-3xl text-xs sm:text-sm text-slate-400">
-            Phân biệt tức thì các cặp khái niệm hay gây bẫy nhất trong đề thi PMP và mở thẳng đúng Node / Flow / Phòng luyện tập đã kiểm chứng ID 100%.
+            {lang === 'en'
+              ? 'Instantly distinguish the most frequently confused PMP exam pairs and jump straight to 100%-verified Nodes, Flows, and the Practice Room.'
+              : 'Phân biệt tức thì các cặp khái niệm hay gây bẫy nhất trong đề thi PMP và mở thẳng đúng Node / Flow / Phòng luyện tập đã kiểm chứng ID 100%.'}
           </p>
         </div>
 
@@ -86,7 +102,9 @@ export const PmpLookupView: React.FC = () => {
             )}
           >
             <Scale className="h-3.5 w-3.5" />
-            <span>Bảng so sánh ({comparisons.length})</span>
+            <span>
+              {lang === 'en' ? `Comparisons (${comparisons.length})` : `Bảng so sánh (${comparisons.length})`}
+            </span>
           </button>
           <button
             type="button"
@@ -97,7 +115,9 @@ export const PmpLookupView: React.FC = () => {
             )}
           >
             <Link2 className="h-3.5 w-3.5" />
-            <span>Kho Deep Link ({allLinks.length})</span>
+            <span>
+              {lang === 'en' ? `Deep Links (${allLinks.length})` : `Kho Deep Link (${allLinks.length})`}
+            </span>
           </button>
         </div>
       </header>
@@ -112,8 +132,12 @@ export const PmpLookupView: React.FC = () => {
             onChange={(e) => setQuery(e.target.value)}
             placeholder={
               section === 'comparisons'
-                ? 'Tìm cặp khái niệm: Risk vs Issue, QA vs QC, Reserve, Charter, Agile, PMBOK 8...'
-                : 'Tìm node, flow, chủ đề: core.mindset, flow.change, stakeholder, risk...'
+                ? lang === 'en'
+                  ? 'Search concept pairs: Risk vs Issue, QA vs QC, Reserve, Charter, Agile, PMBOK 8...'
+                  : 'Tìm cặp khái niệm: Risk vs Issue, QA vs QC, Reserve, Charter, Agile, PMBOK 8...'
+                : lang === 'en'
+                  ? 'Search node, flow, topic: core.mindset, flow.change, stakeholder, risk...'
+                  : 'Tìm node, flow, chủ đề: core.mindset, flow.change, stakeholder, risk...'
             }
             className="w-full rounded-xl border border-slate-800 bg-slate-900 py-2 pl-9 pr-3 text-xs sm:text-sm text-white placeholder-slate-500 focus:border-amber-500/60 focus:outline-none"
           />
@@ -121,7 +145,7 @@ export const PmpLookupView: React.FC = () => {
 
         {section === 'comparisons' ? (
           <div className="flex flex-wrap gap-1.5">
-            {Object.entries(CATEGORY_LABEL).map(([k, lbl]) => (
+            {Object.entries(categoryLabels).map(([k, lbl]) => (
               <button
                 key={k}
                 type="button"
@@ -140,7 +164,7 @@ export const PmpLookupView: React.FC = () => {
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {[
-              { id: 'all', label: 'Tất cả' },
+              { id: 'all', label: lang === 'en' ? 'All' : 'Tất cả' },
               { id: 'core', label: 'Core Map' },
               { id: 'book', label: 'Book Map' },
               { id: 'flow', label: '19 Flows' },
@@ -214,7 +238,10 @@ export const PmpLookupView: React.FC = () => {
 
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.08] px-3.5 py-2.5 text-xs">
                 <div className="text-amber-100">
-                  <b className="text-amber-300">💡 Mẹo phản xạ phòng thi:</b> {table.examTip}
+                  <b className="text-amber-300">
+                    {lang === 'en' ? '💡 Exam Reflex Tip:' : '💡 Mẹo phản xạ phòng thi:'}
+                  </b>{' '}
+                  {table.examTip}
                 </div>
                 <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
                   <button
@@ -271,14 +298,16 @@ export const PmpLookupView: React.FC = () => {
                     </span>
                     {visited && (
                       <span className="inline-flex items-center gap-1 font-mono text-[10px] font-bold text-emerald-400">
-                        <CheckCircle2 className="h-3 w-3" /> Đã xem
+                        <CheckCircle2 className="h-3 w-3" /> {lang === 'en' ? 'Opened' : 'Đã xem'}
                       </span>
                     )}
                   </div>
                   <h3 className="mt-2 text-sm font-bold text-white">{lnk.label}</h3>
                   <p className="mt-1 text-xs text-slate-300 leading-relaxed">{lnk.whyRead}</p>
                   {lnk.bridgeNote && (
-                    <p className="mt-1.5 text-[11px] text-sky-300">Đối chiếu: {lnk.bridgeNote}</p>
+                    <p className="mt-1.5 text-[11px] text-sky-300">
+                      {lang === 'en' ? 'Bridge note:' : 'Đối chiếu:'} {lnk.bridgeNote}
+                    </p>
                   )}
                   <p className="mt-1.5 break-all font-mono text-[10px] text-slate-500">{url}</p>
                 </div>
@@ -292,7 +321,7 @@ export const PmpLookupView: React.FC = () => {
                     className="inline-flex min-h-[36px] flex-1 items-center justify-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-extrabold text-slate-950 hover:bg-amber-400"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
-                    <span>Mở trong tab mới</span>
+                    <span>{lang === 'en' ? 'Open in new tab' : 'Mở trong tab mới'}</span>
                   </a>
                   <button
                     type="button"
@@ -300,7 +329,7 @@ export const PmpLookupView: React.FC = () => {
                     className="hidden lg:inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-slate-200 hover:border-amber-500/50 hover:text-amber-300 cursor-pointer"
                   >
                     <Eye className="h-3.5 w-3.5" />
-                    <span>Xem nhanh</span>
+                    <span>{lang === 'en' ? 'Quick preview' : 'Xem nhanh'}</span>
                   </button>
                 </div>
               </div>

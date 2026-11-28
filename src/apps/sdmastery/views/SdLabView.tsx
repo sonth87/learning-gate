@@ -1,4 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -9,6 +16,7 @@ import {
   ChevronUp,
   Cpu,
   Database,
+  Eye,
   FlaskConical,
   Gauge,
   Globe,
@@ -18,6 +26,7 @@ import {
   Link2,
   Lock,
   Pause,
+  Redo2,
   Play,
   Plus,
   RotateCcw,
@@ -31,6 +40,7 @@ import {
   Star,
   StickyNote,
   Trash2,
+  Undo2,
   Users,
   Workflow,
   XCircle,
@@ -68,6 +78,7 @@ import {
   type StructuralWarning,
   type StructuralWarningCode,
   type SystemModel,
+  type TimedEvent,
 } from '@/features/sysdesign-course/sim';
 import { useSdProgress } from '@/features/sysdesign-course/store';
 import { useNavigationStore } from '@/stores/useNavigationStore';
@@ -78,24 +89,48 @@ import {
   gradeLabChallenge,
   LAB_BLANK_SANDBOX_PRESET,
   LAB_CHALLENGES,
-  LAB_GRID_COLS,
-  LAB_GRID_ROWS,
   LAB_SANDBOX_PRESET,
   type BiText,
-  type GridPos,
   type LabCanvasPreset,
   type LabChallengeSpec,
   type LabGradeReport,
 } from '../data/labChallenges';
+import { LabConfirmDialog } from '../components/lab/LabConfirmDialog';
+import {
+  CARD_H,
+  CARD_H_DOTS,
+  CARD_W,
+  CARD_W_DOTS,
+  collidesAny,
+  DOT,
+  findFreeSpot,
+  findPlacementForNew,
+  nodeAtPoint,
+  nudgePosition,
+  routeOrthogonalWires,
+  snapToDot,
+  type CanvasPos,
+  type PxPos,
+} from '../components/lab/canvasGeometry';
+import {
+  readValidDraft,
+  stableStringify,
+  useLabDrafts,
+  type LabCanvasMode,
+} from '../store/useLabDrafts';
 
 /* ─────────────────────────── CONSTANTS & METADATA ─────────────────────────── */
 
-const CELL_W = 156;
-const CELL_H = 114;
-const BOARD_W = LAB_GRID_COLS * CELL_W; // 1092
-const BOARD_H = LAB_GRID_ROWS * CELL_H; // 570
-const CARD_W = 138;
-const CARD_H = 96;
+/**
+ * Canvas tự do: node đặt theo lưới chấm DOT = 26 px (xem canvasGeometry). Khung board luôn chừa
+ * CANVAS_PAD chấm (~3 ô lưới cũ) trống quanh sơ đồ và tự nới khi node ra mép.
+ */
+const CANVAS_PAD = 16;
+const MIN_BOARD_DOTS_W = 60;
+const MIN_BOARD_DOTS_H = 31;
+const ZOOM_MIN = 0.4;
+const ZOOM_MAX = 2;
+const clampZoom = (z: number) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Number(z.toFixed(3))));
 
 type PaletteKind =
   | 'client'
@@ -117,7 +152,6 @@ interface PaletteItemMeta {
   kind: PaletteKind;
   label: BiText;
   shortRole: BiText;
-  preferredCols: number[];
   toneClass: string;
   icon: React.FC<{ className?: string }>;
 }
@@ -127,7 +161,6 @@ const PALETTE_ITEMS: PaletteItemMeta[] = [
     kind: 'client',
     label: { vi: 'Client', en: 'Client' },
     shortRole: { vi: 'Nguồn phát lưu lượng', en: 'Traffic generator' },
-    preferredCols: [0],
     toneClass: 'bg-[var(--dts-panel-muted)] text-[var(--dts-ink)]',
     icon: Users,
   },
@@ -135,15 +168,13 @@ const PALETTE_ITEMS: PaletteItemMeta[] = [
     kind: 'dns',
     label: { vi: 'DNS', en: 'DNS' },
     shortRole: { vi: 'Phân giải tên miền', en: 'Domain resolution' },
-    preferredCols: [1, 0],
     toneClass: 'bg-[var(--dts-blue-soft)] text-[var(--dts-blue-ink)]',
     icon: Globe,
   },
   {
     kind: 'cdn',
-    label: { vi: 'CDN Edge', en: 'CDN Edge' },
+    label: { vi: 'CDN', en: 'CDN' },
     shortRole: { vi: 'Cache nội dung tại biên', en: 'Edge content cache' },
-    preferredCols: [1, 2],
     toneClass: 'bg-[var(--dts-green-soft)] text-[var(--dts-green-ink)]',
     icon: Zap,
   },
@@ -151,7 +182,6 @@ const PALETTE_ITEMS: PaletteItemMeta[] = [
     kind: 'rate-limiter',
     label: { vi: 'Rate Limiter', en: 'Rate Limiter' },
     shortRole: { vi: 'Kiểm soát tốc độ (Token Bucket)', en: 'Token bucket admission' },
-    preferredCols: [1, 2],
     toneClass: 'bg-[var(--dts-amber-soft)] text-[var(--dts-amber-ink)]',
     icon: Shield,
   },
@@ -159,7 +189,6 @@ const PALETTE_ITEMS: PaletteItemMeta[] = [
     kind: 'lb',
     label: { vi: 'Load Balancer', en: 'Load Balancer' },
     shortRole: { vi: 'Chia tải giữa các backend', en: 'Distributes backend traffic' },
-    preferredCols: [1, 2, 3],
     toneClass: 'bg-[var(--dts-blue-soft)] text-[var(--dts-blue-ink)]',
     icon: Split,
   },
@@ -167,7 +196,6 @@ const PALETTE_ITEMS: PaletteItemMeta[] = [
     kind: 'gateway',
     label: { vi: 'API Gateway', en: 'API Gateway' },
     shortRole: { vi: 'Xác thực & định tuyến API', en: 'API auth & routing' },
-    preferredCols: [2, 1, 3],
     toneClass: 'bg-[var(--dts-blue-soft)] text-[var(--dts-blue-ink)]',
     icon: Router,
   },
@@ -175,15 +203,13 @@ const PALETTE_ITEMS: PaletteItemMeta[] = [
     kind: 'service',
     label: { vi: 'App Service', en: 'App Service' },
     shortRole: { vi: 'Xử lý nghiệp vụ stateless', en: 'Stateless app compute' },
-    preferredCols: [3, 2, 4],
     toneClass: 'bg-[var(--dts-blue-bg)] text-[var(--dts-blue-ink)]',
     icon: Server,
   },
   {
     kind: 'cache',
-    label: { vi: 'Redis Cache', en: 'Redis Cache' },
+    label: { vi: 'Cache', en: 'Cache' },
     shortRole: { vi: 'Bộ nhớ đệm đọc tốc độ cao', en: 'In-memory key-value cache' },
-    preferredCols: [4, 3, 5],
     toneClass: 'bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]',
     icon: Cpu,
   },
@@ -191,7 +217,6 @@ const PALETTE_ITEMS: PaletteItemMeta[] = [
     kind: 'queue',
     label: { vi: 'Message Queue', en: 'Message Queue' },
     shortRole: { vi: 'Đệm tải ghi bất đồng bộ', en: 'Async message buffer' },
-    preferredCols: [4, 3, 5],
     toneClass: 'bg-[var(--dts-purple-bg)] text-[var(--dts-purple-ink)]',
     icon: Workflow,
   },
@@ -199,7 +224,6 @@ const PALETTE_ITEMS: PaletteItemMeta[] = [
     kind: 'worker',
     label: { vi: 'Async Worker', en: 'Async Worker' },
     shortRole: { vi: 'Tiêu thụ message từ Queue', en: 'Pull consumer from Queue' },
-    preferredCols: [5, 4, 6],
     toneClass: 'bg-[var(--dts-purple-soft)] text-[var(--dts-purple-ink)]',
     icon: Layers,
   },
@@ -207,7 +231,6 @@ const PALETTE_ITEMS: PaletteItemMeta[] = [
     kind: 'sql',
     label: { vi: 'SQL Database', en: 'SQL Database' },
     shortRole: { vi: 'CSDL quan hệ ACID', en: 'Relational ACID database' },
-    preferredCols: [5, 6, 4],
     toneClass: 'bg-[var(--dts-amber-bg)] text-[var(--dts-amber-ink)]',
     icon: Database,
   },
@@ -215,7 +238,6 @@ const PALETTE_ITEMS: PaletteItemMeta[] = [
     kind: 'nosql',
     label: { vi: 'NoSQL Store', en: 'NoSQL Store' },
     shortRole: { vi: 'Lưu trữ phân mảnh ngang', en: 'Sharded key/doc store' },
-    preferredCols: [5, 6, 4],
     toneClass: 'bg-[var(--dts-orange-bg)] text-[var(--dts-orange-ink)]',
     icon: HardDrive,
   },
@@ -223,7 +245,6 @@ const PALETTE_ITEMS: PaletteItemMeta[] = [
     kind: 'search',
     label: { vi: 'Search Index', en: 'Search Index' },
     shortRole: { vi: 'Chỉ mục tìm kiếm toàn văn', en: 'Full-text search cluster' },
-    preferredCols: [5, 6, 4],
     toneClass: 'bg-[var(--dts-amber-soft)] text-[var(--dts-amber-ink)]',
     icon: Search,
   },
@@ -231,7 +252,6 @@ const PALETTE_ITEMS: PaletteItemMeta[] = [
     kind: 'blob',
     label: { vi: 'Blob Storage', en: 'Blob Storage' },
     shortRole: { vi: 'Lưu trữ đối tượng / media', en: 'Object & media storage' },
-    preferredCols: [6, 5, 4],
     toneClass: 'bg-[var(--dts-panel-muted)] text-[var(--dts-ink)]',
     icon: Box,
   },
@@ -344,7 +364,7 @@ function explainBottleneckReason(
       case 'pool-limited':
         return `${nodeLabel} (ρ = ${rhoStr}) is capped by its connection poolSize before CPU throughput is reached.`;
       case 'hot-shard':
-        return `${nodeLabel} (ρ = ${rhoStr}) suffers hot-key skew on one shard. Increase shards or add an edge/in-memory cache.`;
+        return `${nodeLabel} (ρ = ${rhoStr}) suffers hot-key skew on one shard. More shards won't help the hot key itself — split it (hotKeySalt), put a Cache in front for hot reads, or batch hot writes.`;
       case 'slow-dependency':
         return `${nodeLabel} accounts for the largest share of end-to-end latency despite low utilization (ρ = ${rhoStr}).`;
       case 'none':
@@ -359,7 +379,7 @@ function explainBottleneckReason(
     case 'pool-limited':
       return `${nodeLabel} (ρ = ${rhoStr}) bị giới hạn bởi Connection Pool (poolSize) thấp hơn thông lượng xử lý tối đa.`;
     case 'hot-shard':
-      return `${nodeLabel} (ρ = ${rhoStr}) bị lệch tải trên một phân mảnh nóng (hot shard). Hãy tăng số shard hoặc đặt Cache hấp thụ khóa nóng.`;
+      return `${nodeLabel} (ρ = ${rhoStr}) bị lệch tải trên một phân mảnh nóng (hot shard). Thêm shard không giảm tải cho chính khoá nóng — hãy chia nhỏ khoá (hotKeySalt), đặt Cache phía trước hút đọc nóng, hoặc gom/batch ghi.`;
     case 'slow-dependency':
       return `${nodeLabel} chiếm tỷ trọng thời gian xử lý lớn nhất trên đường nóng dù tải ρ = ${rhoStr} chưa cao.`;
     case 'none':
@@ -587,202 +607,258 @@ function roundOrthogonalPoints(pts: [number, number][], radius = 8): string {
   return d;
 }
 
+/** Dây vuông góc cho canvas tự do (định tuyến ở canvasGeometry, ở đây chỉ bo góc thành path SVG). */
 function computeOrthogonalWires(
   links: LinkSpec[],
-  positions: Record<NodeId, GridPos>
+  positions: Record<NodeId, PxPos>
 ): ComputedWire[] {
-  const occupied = new Set<string>();
-  for (const pos of Object.values(positions)) {
-    occupied.add(`${pos.col},${pos.row}`);
+  return routeOrthogonalWires(links, positions).map((w) => ({
+    link: w.link,
+    d: roundOrthogonalPoints(w.points, 8),
+    labelX: w.labelX,
+    labelY: w.labelY,
+  }));
+}
+
+/* ─────────────────────────── LINK HELP COPY ─────────────────────────── */
+
+const LINK_MODE_HELP: Record<LinkSpec['mode'], BiText> = {
+  sync: {
+    vi: 'Bên gọi chờ phản hồi rồi mới đi tiếp (áp dụng timeout/retry).',
+    en: 'Caller waits for the response before continuing (timeout/retry apply).',
+  },
+  async: {
+    vi: 'Gửi rồi bỏ đó (fire-and-forget) vào Queue; bên gọi không chờ kết quả.',
+    en: 'Fire-and-forget into a queue; the caller does not wait for a result.',
+  },
+  pull: {
+    vi: 'Worker tự kéo message từ Queue theo tốc độ xử lý của nó.',
+    en: 'The worker consumes from the queue at its own pace.',
+  },
+  replicate: {
+    vi: 'Sao chép dữ liệu giữa hai store; không mang request của người dùng.',
+    en: 'Data copy between two stores; carries no user requests.',
+  },
+};
+
+const LINK_CARRIES_HELP: Record<'rw' | 'r' | 'w', BiText> = {
+  rw: {
+    vi: 'rw: cả request đọc và ghi đều đi qua dây này.',
+    en: 'rw: both read and write requests flow on this wire.',
+  },
+  r: {
+    vi: 'r: chỉ request đọc đi qua dây này.',
+    en: 'r: only read requests flow on this wire.',
+  },
+  w: {
+    vi: 'w: chỉ request ghi đi qua dây này.',
+    en: 'w: only write requests flow on this wire.',
+  },
+};
+
+/* ─────────────────────────── CANVAS HELPERS ─────────────────────────── */
+
+const HISTORY_CAP = 50;
+const HISTORY_COALESCE_MS = 700;
+const DRAFT_DEBOUNCE_MS = 450;
+
+interface CanvasSnap {
+  model: SystemModel;
+  positions: Record<NodeId, CanvasPos>;
+  load: LoadProfile;
+  readRatio: number;
+  durationSec: number;
+}
+
+interface ResolvedCanvas extends CanvasSnap {
+  canvasMode: LabCanvasMode;
+  lockedIds: string[];
+}
+
+function presetFor(templateId: string, mode: LabCanvasMode): LabCanvasPreset {
+  const ch = LAB_CHALLENGES.find((c) => c.id === templateId);
+  if (!ch) return mode === 'blank' ? LAB_BLANK_SANDBOX_PRESET : LAB_SANDBOX_PRESET;
+  if (mode === 'blank') return ch.blank;
+  if (mode === 'reference') return ch.referenceSolution;
+  return ch.starter;
+}
+
+function canvasFromPreset(preset: LabCanvasPreset, mode: LabCanvasMode): ResolvedCanvas {
+  return {
+    model: structuredClone(preset.model),
+    positions: structuredClone(preset.positions),
+    load: structuredClone(preset.load),
+    readRatio: preset.readRatio,
+    durationSec: preset.durationSec,
+    canvasMode: mode,
+    lockedIds: [...preset.lockedNodeIds],
+  };
+}
+
+/** Canvas để hiển thị khi chọn template: bản nháp hợp lệ nếu có, nếu không thì starter. */
+function resolveCanvas(templateId: string): ResolvedCanvas {
+  const draft = readValidDraft(templateId);
+  if (draft) {
+    const ids = new Set(draft.model.nodes.map((n) => n.id));
+    return {
+      model: structuredClone(draft.model),
+      positions: structuredClone(draft.positions),
+      load: structuredClone(draft.load),
+      readRatio: draft.readRatio,
+      durationSec: draft.durationSec,
+      canvasMode: draft.canvasMode,
+      lockedIds: presetFor(templateId, draft.canvasMode).lockedNodeIds.filter((id) =>
+        ids.has(id)
+      ),
+    };
   }
+  return canvasFromPreset(presetFor(templateId, 'starter'), 'starter');
+}
 
-  // Group outgoing / incoming links per node to apply subtle port offsets
-  const outByNode = new Map<string, string[]>();
-  const inByNode = new Map<string, string[]>();
-  for (const l of links) {
-    if (!positions[l.from] || !positions[l.to]) continue;
-    const o = outByNode.get(l.from) ?? [];
-    o.push(l.id);
-    outByNode.set(l.from, o);
-    const inn = inByNode.get(l.to) ?? [];
-    inn.push(l.id);
-    inByNode.set(l.to, inn);
-  }
-
-  // Sort ports by target/source row so wires don't cross unnecessarily
-  for (const [, list] of outByNode) {
-    list.sort((a, b) => {
-      const la = links.find((x) => x.id === a)!;
-      const lb = links.find((x) => x.id === b)!;
-      return (positions[la.to]?.row ?? 0) - (positions[lb.to]?.row ?? 0);
-    });
-  }
-  for (const [, list] of inByNode) {
-    list.sort((a, b) => {
-      const la = links.find((x) => x.id === a)!;
-      const lb = links.find((x) => x.id === b)!;
-      return (positions[la.from]?.row ?? 0) - (positions[lb.from]?.row ?? 0);
-    });
-  }
-
-  return links.flatMap((link, linkIdx): ComputedWire[] => {
-    const p1 = positions[link.from];
-    const p2 = positions[link.to];
-    if (!p1 || !p2) return [];
-
-    const cx1 = p1.col * CELL_W + CELL_W / 2;
-    const cy1 = p1.row * CELL_H + CELL_H / 2;
-    const cx2 = p2.col * CELL_W + CELL_W / 2;
-    const cy2 = p2.row * CELL_H + CELL_H / 2;
-
-    const outs = outByNode.get(link.from) ?? [link.id];
-    const ins = inByNode.get(link.to) ?? [link.id];
-    const outOffset = (outs.indexOf(link.id) - (outs.length - 1) / 2) * 12;
-    const inOffset = (ins.indexOf(link.id) - (ins.length - 1) / 2) * 12;
-
-    let pts: [number, number][];
-    let labelX: number;
-    let labelY: number;
-
-    if (p2.col > p1.col) {
-      const xStart = cx1 + CARD_W / 2;
-      const yStart = cy1 + outOffset;
-      const xEnd = cx2 - CARD_W / 2;
-      const yEnd = cy2 + inOffset;
-
-      // Check if same row has an intermediate occupied card blocking straight horizontal line
-      let blockedSameRow = false;
-      if (p1.row === p2.row && p2.col - p1.col > 1) {
-        for (let c = p1.col + 1; c < p2.col; c++) {
-          if (occupied.has(`${c},${p1.row}`)) {
-            blockedSameRow = true;
-            break;
-          }
-        }
-      }
-
-      if (blockedSameRow) {
-        const alleyY =
-          p1.row > 0
-            ? p1.row * CELL_H + 3
-            : (p1.row + 1) * CELL_H - 3;
-        const stub1 = xStart + 10;
-        const stub2 = xEnd - 10;
-        pts = [
-          [xStart, yStart],
-          [stub1, yStart],
-          [stub1, alleyY],
-          [stub2, alleyY],
-          [stub2, yEnd],
-          [xEnd, yEnd],
-        ];
-        labelX = (stub1 + stub2) / 2;
-        labelY = alleyY;
-      } else {
-        const channelOffset = ((linkIdx % 3) - 1) * 4;
-        const midX = (xStart + xEnd) / 2 + channelOffset;
-        pts = [
-          [xStart, yStart],
-          [midX, yStart],
-          [midX, yEnd],
-          [xEnd, yEnd],
-        ];
-        labelX = midX;
-        labelY = (yStart + yEnd) / 2;
-      }
-    } else if (p2.col === p1.col) {
-      // Same column (e.g. Primary SQL -> Standby SQL)
-      const goingDown = p2.row >= p1.row;
-      const yStart = goingDown ? cy1 + CARD_H / 2 : cy1 - CARD_H / 2;
-      const yEnd = goingDown ? cy2 - CARD_H / 2 : cy2 + CARD_H / 2;
-      const xStart = cx1 + outOffset;
-      const xEnd = cx2 + inOffset;
-
-      let blockedSameCol = false;
-      const rMin = Math.min(p1.row, p2.row);
-      const rMax = Math.max(p1.row, p2.row);
-      for (let r = rMin + 1; r < rMax; r++) {
-        if (occupied.has(`${p1.col},${r}`)) {
-          blockedSameCol = true;
-          break;
-        }
-      }
-
-      if (blockedSameCol) {
-        const alleyX =
-          p1.col < LAB_GRID_COLS - 1
-            ? (p1.col + 1) * CELL_W - 4
-            : p1.col * CELL_W + 4;
-        const stub1 = yStart + (goingDown ? 8 : -8);
-        const stub2 = yEnd + (goingDown ? -8 : 8);
-        pts = [
-          [xStart, yStart],
-          [xStart, stub1],
-          [alleyX, stub1],
-          [alleyX, stub2],
-          [xEnd, stub2],
-          [xEnd, yEnd],
-        ];
-        labelX = alleyX;
-        labelY = (stub1 + stub2) / 2;
-      } else {
-        const midY = (yStart + yEnd) / 2;
-        pts = [
-          [xStart, yStart],
-          [xStart, midY],
-          [xEnd, midY],
-          [xEnd, yEnd],
-        ];
-        labelX = (xStart + xEnd) / 2;
-        labelY = midY;
-      }
-    } else {
-      // Right-to-left connection: route cleanly through horizontal inter-row alley
-      const xStart = cx1 - CARD_W / 2;
-      const yStart = cy1 + outOffset;
-      const xEnd = cx2 + CARD_W / 2;
-      const yEnd = cy2 + inOffset;
-      const alleyRow = Math.max(p1.row, p2.row);
-      const alleyY =
-        alleyRow < LAB_GRID_ROWS - 1
-          ? (alleyRow + 1) * CELL_H - 4
-          : alleyRow * CELL_H + 4;
-      if (p1.row !== p2.row) {
-        const midX = (xStart + xEnd) / 2;
-        pts = [
-          [xStart, yStart],
-          [midX, yStart],
-          [midX, yEnd],
-          [xEnd, yEnd],
-        ];
-        labelX = midX;
-        labelY = (yStart + yEnd) / 2;
-      } else {
-        const stub1 = xStart - 10;
-        const stub2 = xEnd + 10;
-        pts = [
-          [xStart, yStart],
-          [stub1, yStart],
-          [stub1, alleyY],
-          [stub2, alleyY],
-          [stub2, yEnd],
-          [xEnd, yEnd],
-        ];
-        labelX = (stub1 + stub2) / 2;
-        labelY = alleyY;
-      }
-    }
-
-    return [
-      {
-        link,
-        d: roundOrthogonalPoints(pts, 8),
-        labelX,
-        labelY,
-      },
-    ];
+function snapSignature(c: CanvasSnap): string {
+  return stableStringify({
+    model: c.model,
+    positions: c.positions,
+    load: c.load,
+    readRatio: c.readRatio,
+    durationSec: c.durationSec,
   });
 }
+
+function isEditableTarget(t: EventTarget | null): boolean {
+  if (!(t instanceof HTMLElement)) return false;
+  const tag = t.tagName;
+  return tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || t.isContentEditable;
+}
+
+let savedBodyUserSelect: string | null = null;
+/** Khoá bôi đen văn bản toàn trang trong lúc kéo-thả. */
+function lockBodySelect() {
+  if (savedBodyUserSelect === null) savedBodyUserSelect = document.body.style.userSelect;
+  document.body.style.userSelect = 'none';
+  document.body.style.setProperty('-webkit-user-select', 'none');
+}
+function unlockBodySelect() {
+  if (savedBodyUserSelect === null) return;
+  document.body.style.userSelect = savedBodyUserSelect;
+  document.body.style.removeProperty('-webkit-user-select');
+  savedBodyUserSelect = null;
+}
+
+interface WireDragState {
+  fromId: NodeId;
+  /** Toạ độ con trỏ trong hệ toạ độ board (đã chia boardZoom, tính cả scroll). */
+  x: number;
+  y: number;
+  hoverId: NodeId | null;
+  moved: boolean;
+}
+
+/** Node dưới điểm (x, y) của board hiển thị (px) — theo hình chữ nhật thật của thẻ, nới 6 px. */
+function nodeAtBoardPoint(
+  x: number,
+  y: number,
+  positions: Record<NodeId, PxPos>
+): NodeId | null {
+  return nodeAtPoint(x, y, positions, 6);
+}
+
+/** Trạng thái kéo một node bằng Pointer Events. Toạ độ theo chấm (toạ độ thật). */
+interface NodeDragState {
+  id: NodeId;
+  pointerId: number;
+  startClientX: number;
+  startClientY: number;
+  /** Độ lệch con trỏ so với góc trên-trái thẻ lúc nhấn (px board). */
+  grabX: number;
+  grabY: number;
+  origin: CanvasPos;
+  /** Vị trí đã hút vào chấm, đi theo con trỏ. */
+  pos: CanvasPos;
+  /** Vị trí sẽ đặt khi thả (= pos nếu trống, nếu không là chỗ trống gần nhất). */
+  landing: CanvasPos;
+  collides: boolean;
+  moved: boolean;
+}
+
+/** Xem trước vị trí thả khi kéo một thành phần từ palette. */
+interface PaletteDropPreview {
+  pos: CanvasPos;
+  landing: CanvasPos;
+  collides: boolean;
+}
+
+const samePos = (a: CanvasPos, b: CanvasPos) => a.x === b.x && a.y === b.y;
+
+type ConnectionPlan =
+  | { ok: false; tone: 'info' | 'warn'; text: string; existingLinkId?: LinkId }
+  | { ok: true; candidate: SystemModel; linkId: LinkId; hint: string };
+
+/* ─────────────────────────── LINK LEGEND ─────────────────────────── */
+
+const LinkLegend: React.FC<{ lang: WorkbenchLang }> = ({ lang }) => {
+  const [open, setOpen] = useState(false);
+  const rows: { mode: LinkSpec['mode']; color: string; dash?: string }[] = [
+    { mode: 'sync', color: 'var(--dts-ink)' },
+    { mode: 'async', color: '#7c3aed', dash: '7 5' },
+    { mode: 'pull', color: '#7c3aed', dash: '7 5' },
+    { mode: 'replicate', color: '#0d9488', dash: '3 4' },
+  ];
+  return (
+    <div className="pointer-events-auto max-w-[19rem] select-none rounded-xl border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] font-mono text-[10.5px] shadow-sm">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-2 px-2.5 py-1 font-bold text-[var(--dts-ink-soft)] hover:text-[var(--dts-ink)]"
+      >
+        <span className="inline-flex items-center gap-1">
+          <HelpCircle className="h-3 w-3 shrink-0" />
+          {lang === 'en' ? 'Wire legend' : 'Chú giải đường nối'}
+        </span>
+        {open ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}
+      </button>
+      {open && (
+        <div className="space-y-1.5 border-t border-[var(--dts-line-strong)] px-2.5 py-2">
+          {rows.map((r) => (
+            <div key={r.mode} className="flex items-start gap-2">
+              <svg width="30" height="10" className="mt-0.5 shrink-0" aria-hidden>
+                <line
+                  x1="1"
+                  y1="5"
+                  x2="29"
+                  y2="5"
+                  stroke={r.color}
+                  strokeWidth="2"
+                  strokeDasharray={r.dash}
+                />
+              </svg>
+              <div className="font-sans leading-snug text-[var(--dts-ink-soft)]">
+                <span className="font-mono font-extrabold text-[var(--dts-ink)]">{r.mode}</span>
+                {' — '}
+                {pick(LINK_MODE_HELP[r.mode], lang)}
+              </div>
+            </div>
+          ))}
+          <div className="border-t border-dashed border-[var(--dts-line-strong)] pt-1.5 font-sans leading-snug text-[var(--dts-ink-soft)]">
+            <span className="font-mono font-extrabold text-[var(--dts-ink)]">r / w / rw</span>
+            {' — '}
+            {lang === 'en'
+              ? 'which request types flow on the wire (read, write, both).'
+              : 'loại request đi qua dây (đọc, ghi, cả hai).'}
+          </div>
+          <div className="font-sans leading-snug text-[var(--dts-ink-soft)]">
+            <span className="font-mono font-extrabold text-[var(--dts-ink)]">miss</span>
+            {' — '}
+            {lang === 'en'
+              ? 'only called when the linked cache misses (cache-aside).'
+              : 'chỉ được gọi khi cache liên kết bị miss (cache-aside).'}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 /* ─────────────────────────── MAIN COMPONENT ─────────────────────────── */
 
@@ -801,7 +877,9 @@ export const SdLabView: React.FC = () => {
 
   // Active template ('sandbox' or challenge id)
   const [activeTemplateId, setActiveTemplateId] = useState<string>('lab-01-read-api');
-  const [canvasMode, setCanvasMode] = useState<'starter' | 'blank' | 'reference'>('starter');
+  // Khôi phục bản nháp (nếu có) ngay từ lần mount đầu tiên
+  const [initialCanvas] = useState<ResolvedCanvas>(() => resolveCanvas('lab-01-read-api'));
+  const [canvasMode, setCanvasMode] = useState<LabCanvasMode>(initialCanvas.canvasMode);
 
   const activeChallenge: LabChallengeSpec | null = useMemo(
     () => LAB_CHALLENGES.find((c) => c.id === activeTemplateId) ?? null,
@@ -809,32 +887,135 @@ export const SdLabView: React.FC = () => {
   );
 
   // Architecture canvas state
-  const [model, setModel] = useState<SystemModel>(() =>
-    structuredClone(LAB_CHALLENGES[0].starter.model)
-  );
-  const [positions, setPositions] = useState<Record<NodeId, GridPos>>(() =>
-    structuredClone(LAB_CHALLENGES[0].starter.positions)
-  );
+  const [model, setModel] = useState<SystemModel>(initialCanvas.model);
+  const [positions, setPositions] = useState<Record<NodeId, CanvasPos>>(initialCanvas.positions);
   const [lockedIds, setLockedIds] = useState<ReadonlySet<string>>(
-    () => new Set(LAB_CHALLENGES[0].starter.lockedNodeIds)
+    () => new Set(initialCanvas.lockedIds)
   );
 
-  // Load & scenario settings
-  const [loadProfile, setLoadProfile] = useState<LoadProfile>(
-    () => structuredClone(LAB_CHALLENGES[0].starter.load)
+  // Load & scenario settings (giá trị "canvas" — chỉ dùng trực tiếp ở Sandbox)
+  const [loadProfileState, setLoadProfile] = useState<LoadProfile>(initialCanvas.load);
+  const [readRatioState, setReadRatio] = useState<number>(initialCanvas.readRatio);
+  const [durationSecState, setDurationSec] = useState<number>(initialCanvas.durationSec);
+
+  // Challenge mode: tải do kịch bản của bài quyết định (chỉ đọc), người dùng chọn kịch bản để xem trước
+  const [scenarioId, setScenarioId] = useState<string | null>(null);
+  const activeScenario = useMemo(
+    () =>
+      activeChallenge
+        ? (activeChallenge.scenarios.find((s) => s.id === scenarioId) ??
+          activeChallenge.scenarios[0] ??
+          null)
+        : null,
+    [activeChallenge, scenarioId]
   );
-  const [readRatio, setReadRatio] = useState<number>(LAB_CHALLENGES[0].starter.readRatio);
-  const [durationSec, setDurationSec] = useState<number>(LAB_CHALLENGES[0].starter.durationSec);
+  const loadProfile: LoadProfile = activeScenario?.load ?? loadProfileState;
+  const readRatio: number = activeScenario?.readRatio ?? readRatioState;
+  const durationSec: number = activeScenario?.durationSec ?? durationSecState;
+  const scenarioTimeoutMs = activeScenario?.clientTimeoutMs ?? 2000;
+  const scenarioEvents = useMemo<TimedEvent[]>(
+    () => (activeScenario as { events?: TimedEvent[] } | null)?.events ?? [],
+    [activeScenario]
+  );
 
   // UI interaction states
   const [selection, setSelection] = useState<SelectionState>({ kind: 'node', id: 'app' });
   const [rightTab, setRightTab] = useState<RightTab>('inspector');
   const [connectMode, setConnectMode] = useState<boolean>(false);
   const [connectFromId, setConnectFromId] = useState<NodeId | null>(null);
-  const [dragHoverCell, setDragHoverCell] = useState<GridPos | null>(null);
+  const [wireDrag, setWireDrag] = useState<WireDragState | null>(null);
+  const wireDragRef = useRef<WireDragState | null>(null);
+  const wireStartRef = useRef<{ x: number; y: number } | null>(null);
+  const boardRef = useRef<HTMLDivElement | null>(null);
+  // Kéo node (Pointer Events) + xem trước vị trí thả khi kéo từ palette (HTML5 DnD)
+  const [nodeDrag, setNodeDrag] = useState<NodeDragState | null>(null);
+  const nodeDragRef = useRef<NodeDragState | null>(null);
+  const [paletteDrop, setPaletteDrop] = useState<PaletteDropPreview | null>(null);
+  const paletteKindRef = useRef<PaletteKind | null>(null);
   const [boardZoom, setBoardZoom] = useState<number>(1);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const [stageSize, setStageSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setStageSize((cur) =>
+        Math.abs(cur.w - width) < 1 && Math.abs(cur.h - height) < 1 ? cur : { w: width, h: height }
+      );
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  /** Vị trí đang hiển thị: node đang kéo đi theo con trỏ (chưa ghi vào state/history). */
+  const shownPositions = useMemo(() => {
+    if (!nodeDrag?.moved || !positions[nodeDrag.id]) return positions;
+    return { ...positions, [nodeDrag.id]: nodeDrag.pos };
+  }, [nodeDrag, positions]);
+
+  /*
+   * Canvas vô hạn: khung board = bao của sơ đồ (theo chấm) + CANVAS_PAD chấm mỗi phía, tự nới khi
+   * node ra mép (kể cả sang trái / lên trên — toạ độ thật có thể âm). Bao "dính": chỉ nới ra, không
+   * co lại trong lúc chỉnh sửa (tránh giật khung), chỉ co khi đổi bài / nạp preset.
+   * Gốc khung `org` luôn là số chấm nguyên → nền chấm khớp đúng bội số DOT của toạ độ thật.
+   */
+  const stickyBoundsRef = useRef<{ key: string; minX: number; minY: number; maxX: number; maxY: number } | null>(null);
+  const viewport = useMemo(() => {
+    const key = `${activeTemplateId}|${canvasMode}`;
+    const pts = Object.values(shownPositions);
+    let minX = pts.length ? Math.min(...pts.map((q) => q.x)) : 0;
+    let minY = pts.length ? Math.min(...pts.map((q) => q.y)) : 0;
+    let maxX = pts.length ? Math.max(...pts.map((q) => q.x + CARD_W_DOTS)) : CARD_W_DOTS;
+    let maxY = pts.length ? Math.max(...pts.map((q) => q.y + CARD_H_DOTS)) : CARD_H_DOTS;
+    const prev = stickyBoundsRef.current;
+    if (prev && prev.key === key) {
+      minX = Math.min(minX, prev.minX);
+      minY = Math.min(minY, prev.minY);
+      maxX = Math.max(maxX, prev.maxX);
+      maxY = Math.max(maxY, prev.maxY);
+    }
+    stickyBoundsRef.current = { key, minX, minY, maxX, maxY };
+    const org = { x: minX - CANVAS_PAD, y: minY - CANVAS_PAD };
+    // Lấp đầy vùng nhìn (nới sang phải / xuống dưới) để không bao giờ thấy mép board
+    const fillW = stageSize.w > 0 ? Math.ceil(stageSize.w / (DOT * boardZoom)) + 1 : 0;
+    const fillH = stageSize.h > 0 ? Math.ceil(stageSize.h / (DOT * boardZoom)) + 1 : 0;
+    const wDots = Math.max(maxX - minX + CANVAS_PAD * 2, MIN_BOARD_DOTS_W, fillW);
+    const hDots = Math.max(maxY - minY + CANVAS_PAD * 2, MIN_BOARD_DOTS_H, fillH);
+    return { org, w: wDots * DOT, h: hDots * DOT };
+  }, [activeTemplateId, boardZoom, canvasMode, shownPositions, stageSize.h, stageSize.w]);
+  const BOARD_W = viewport.w;
+  const BOARD_H = viewport.h;
+  const viewportRef = useRef(viewport);
+  viewportRef.current = viewport;
+
+  /** Góc trên-trái thẻ trên board hiển thị (px, luôn ≥ 0) = (toạ độ thật − gốc khung) × DOT. */
+  const viewPositions = useMemo(() => {
+    const out: Record<NodeId, PxPos> = {};
+    for (const [id, q] of Object.entries(shownPositions)) {
+      out[id] = { x: (q.x - viewport.org.x) * DOT, y: (q.y - viewport.org.y) * DOT };
+    }
+    return out;
+  }, [shownPositions, viewport.org.x, viewport.org.y]);
+
+  // Khung nới sang trái / lên trên → bù scroll để nội dung đứng yên trên màn hình
+  const prevOrgRef = useRef(viewport.org);
+  useLayoutEffect(() => {
+    const prevOrg = prevOrgRef.current;
+    prevOrgRef.current = viewport.org;
+    const el = stageRef.current;
+    if (!el) return;
+    const dx = prevOrg.x - viewport.org.x;
+    const dy = prevOrg.y - viewport.org.y;
+    if (dx) el.scrollLeft += dx * DOT * boardZoom;
+    if (dy) el.scrollTop += dy * DOT * boardZoom;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewport.org.x, viewport.org.y]);
   const [briefExpanded, setBriefExpanded] = useState<boolean>(true);
-  const [hintsShown, setHintsShown] = useState<number>(0);
+  const [hintsShown, setHintsShown] = useState<number>(
+    () => useLabDrafts.getState().hints['lab-01-read-api'] ?? 0
+  );
+  const [pendingPreset, setPendingPreset] = useState<LabCanvasMode | null>(null);
   const [toast, setToast] = useState<{ tone: 'info' | 'warn' | 'ok'; text: string } | null>(
     null
   );
@@ -867,58 +1048,253 @@ export const SdLabView: React.FC = () => {
     return () => window.clearTimeout(id);
   }, [toast]);
 
-  // Escape cancels connect mode
+  /* ───────────── Live canvas ref + Undo / Redo history ───────────── */
+  const liveRef = useRef({
+    templateId: activeTemplateId,
+    canvasMode,
+    snap: {
+      model,
+      positions,
+      load: loadProfileState,
+      readRatio: readRatioState,
+      durationSec: durationSecState,
+    } as CanvasSnap,
+  });
+  useLayoutEffect(() => {
+    liveRef.current = {
+      templateId: activeTemplateId,
+      canvasMode,
+      snap: {
+        model,
+        positions,
+        load: loadProfileState,
+        readRatio: readRatioState,
+        durationSec: durationSecState,
+      },
+    };
+  });
+
+  const pastRef = useRef<CanvasSnap[]>([]);
+  const futureRef = useRef<CanvasSnap[]>([]);
+  const lastPushRef = useRef<{ key: string; at: number } | null>(null);
+  const [histLen, setHistLen] = useState({ past: 0, future: 0 });
+  const syncHist = useCallback(
+    () => setHistLen({ past: pastRef.current.length, future: futureRef.current.length }),
+    []
+  );
+
+  /** Ghi lại trạng thái hiện tại TRƯỚC khi đổi. `coalesceKey`: các chỉnh sửa liên tiếp cùng key gộp thành 1 bước. */
+  const pushHistory = useCallback(
+    (coalesceKey?: string) => {
+      const now = Date.now();
+      const last = lastPushRef.current;
+      if (coalesceKey && last && last.key === coalesceKey && now - last.at < HISTORY_COALESCE_MS) {
+        lastPushRef.current = { key: coalesceKey, at: now };
+        return;
+      }
+      pastRef.current.push(liveRef.current.snap);
+      if (pastRef.current.length > HISTORY_CAP) pastRef.current.shift();
+      futureRef.current = [];
+      lastPushRef.current = coalesceKey ? { key: coalesceKey, at: now } : null;
+      syncHist();
+    },
+    [syncHist]
+  );
+
+  const editLoad = useCallback(
+    (next: LoadProfile) => {
+      pushHistory('load');
+      setLoadProfile(next);
+    },
+    [pushHistory]
+  );
+  const editReadRatio = useCallback(
+    (next: number) => {
+      pushHistory('readRatio');
+      setReadRatio(next);
+    },
+    [pushHistory]
+  );
+
+  const resetHistory = useCallback(() => {
+    pastRef.current = [];
+    futureRef.current = [];
+    lastPushRef.current = null;
+    syncHist();
+  }, [syncHist]);
+
+  const applySnap = useCallback((snap: CanvasSnap) => {
+    setModel(snap.model);
+    setPositions(snap.positions);
+    setLoadProfile(snap.load);
+    setReadRatio(snap.readRatio);
+    setDurationSec(snap.durationSec);
+    setGradeReport(null);
+    setConnectFromId(null);
+    lastPushRef.current = null;
+  }, []);
+
+  const undo = useCallback(() => {
+    const prev = pastRef.current.pop();
+    if (!prev) return;
+    futureRef.current.push(liveRef.current.snap);
+    applySnap(prev);
+    syncHist();
+  }, [applySnap, syncHist]);
+
+  const redo = useCallback(() => {
+    const next = futureRef.current.pop();
+    if (!next) return;
+    pastRef.current.push(liveRef.current.snap);
+    applySnap(next);
+    syncHist();
+  }, [applySnap, syncHist]);
+
+  // Phím tắt Undo/Redo
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setConnectFromId(null);
-        setConnectMode(false);
+      if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+      if (isEditableTarget(e.target)) return;
+      if (nodeDragRef.current) return; // đang kéo node — thả/huỷ trước đã
+      const k = e.key.toLowerCase();
+      if (k === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) redo();
+        else undo();
+      } else if (k === 'y') {
+        e.preventDefault();
+        redo();
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
+  }, [redo, undo]);
+
+  /* ───────────── Draft persistence (per template, debounced) ───────────── */
+  const writeDraft = useCallback(() => {
+    const { templateId, canvasMode: mode, snap } = liveRef.current;
+    const store = useLabDrafts.getState();
+    if (mode === 'starter' && snapSignature(snap) === snapSignature(presetFor(templateId, 'starter'))) {
+      store.clearDraft(templateId);
+      return;
+    }
+    store.saveDraft(templateId, {
+      model: snap.model,
+      positions: snap.positions,
+      load: snap.load,
+      readRatio: snap.readRatio,
+      durationSec: snap.durationSec,
+      canvasMode: mode,
+    });
   }, []);
 
-  /* ───────────── Load preset helper ───────────── */
+  useEffect(() => {
+    const id = window.setTimeout(writeDraft, DRAFT_DEBOUNCE_MS);
+    return () => window.clearTimeout(id);
+  }, [
+    writeDraft,
+    activeTemplateId,
+    canvasMode,
+    model,
+    positions,
+    loadProfileState,
+    readRatioState,
+    durationSecState,
+  ]);
+
+  useEffect(() => {
+    window.addEventListener('pagehide', writeDraft);
+    return () => {
+      window.removeEventListener('pagehide', writeDraft);
+      writeDraft();
+      unlockBodySelect();
+    };
+  }, [writeDraft]);
+
+  // An toàn: luôn trả lại user-select khi kết thúc/huỷ kéo-thả
+  useEffect(() => {
+    const restore = () => unlockBodySelect();
+    window.addEventListener('dragend', restore);
+    window.addEventListener('drop', restore);
+    window.addEventListener('blur', restore);
+    return () => {
+      window.removeEventListener('dragend', restore);
+      window.removeEventListener('drop', restore);
+      window.removeEventListener('blur', restore);
+    };
+  }, []);
+
+  // Gợi ý đã mở: chỉ tăng, lưu theo challenge (không reset được để lách phạt XP)
+  useEffect(() => {
+    if (activeChallenge && hintsShown > 0) {
+      useLabDrafts.getState().raiseHints(activeChallenge.id, hintsShown);
+    }
+  }, [activeChallenge, hintsShown]);
+
+  /* ───────────── Load preset / template helpers ───────────── */
+  const applyCanvas = useCallback((c: ResolvedCanvas) => {
+    if (nodeDragRef.current) unlockBodySelect();
+    nodeDragRef.current = null;
+    setNodeDrag(null);
+    setPaletteDrop(null);
+    setIsPlaying(false);
+    setModel(c.model);
+    setPositions(c.positions);
+    setLockedIds(new Set(c.lockedIds));
+    setLoadProfile(c.load);
+    setReadRatio(c.readRatio);
+    setDurationSec(c.durationSec);
+    setCanvasMode(c.canvasMode);
+    setConnectMode(false);
+    setConnectFromId(null);
+    setGradeReport(null);
+    const firstEditable = c.model.nodes.find((n) => n.kind !== 'client') ?? c.model.nodes[0];
+    setSelection(firstEditable ? { kind: 'node', id: firstEditable.id } : null);
+  }, []);
+
   const applyPreset = useCallback(
-    (preset: LabCanvasPreset, modeTag: 'starter' | 'blank' | 'reference') => {
-      setIsPlaying(false);
-      const nextModel = structuredClone(preset.model);
-      setModel(nextModel);
-      setPositions(structuredClone(preset.positions));
-      setLockedIds(new Set(preset.lockedNodeIds));
-      setLoadProfile(structuredClone(preset.load));
-      setReadRatio(preset.readRatio);
-      setDurationSec(preset.durationSec);
-      setCanvasMode(modeTag);
-      setConnectMode(false);
-      setConnectFromId(null);
-      setGradeReport(null);
-      const firstEditable =
-        nextModel.nodes.find((n) => n.kind !== 'client') ?? nextModel.nodes[0];
-      setSelection(firstEditable ? { kind: 'node', id: firstEditable.id } : null);
+    (preset: LabCanvasPreset, modeTag: LabCanvasMode) => {
+      pushHistory();
+      applyCanvas(canvasFromPreset(preset, modeTag));
     },
-    []
+    [applyCanvas, pushHistory]
   );
 
   const handleSelectTemplate = useCallback(
-    (templateId: string, startMode: 'starter' | 'blank' = 'starter') => {
+    (templateId: string) => {
+      writeDraft(); // lưu ngay bản nháp của template đang mở
       setActiveTemplateId(templateId);
-      setHintsShown(0);
-      if (templateId === 'sandbox') {
-        applyPreset(
-          startMode === 'blank' ? LAB_BLANK_SANDBOX_PRESET : LAB_SANDBOX_PRESET,
-          startMode
-        );
+      setScenarioId(null);
+      setHintsShown(useLabDrafts.getState().hints[templateId] ?? 0);
+      resetHistory();
+      applyCanvas(resolveCanvas(templateId));
+    },
+    [applyCanvas, resetHistory, writeDraft]
+  );
+
+  /** Yêu cầu nạp preset: hỏi xác nhận nếu canvas hiện tại khác preset (hoặc là mẫu 3★). */
+  const requestPreset = useCallback(
+    (mode: LabCanvasMode) => {
+      const preset = presetFor(activeTemplateId, mode);
+      const dirty = snapSignature(liveRef.current.snap) !== snapSignature(preset);
+      const needsSolutionWarning =
+        mode === 'reference' && !sdExercises[activeTemplateId]?.solutionViewed;
+      if (dirty || needsSolutionWarning) {
+        setPendingPreset(mode);
         return;
       }
-      const found = LAB_CHALLENGES.find((c) => c.id === templateId);
-      if (found) {
-        applyPreset(startMode === 'blank' ? found.blank : found.starter, startMode);
-      }
+      applyPreset(preset, mode);
     },
-    [applyPreset]
+    [activeTemplateId, applyPreset, sdExercises]
   );
+
+  const confirmPendingPreset = useCallback(() => {
+    const mode = pendingPreset;
+    setPendingPreset(null);
+    if (!mode) return;
+    if (mode === 'reference') markSolutionViewed(activeTemplateId);
+    applyPreset(presetFor(activeTemplateId, mode), mode);
+  }, [activeTemplateId, applyPreset, markSolutionViewed, pendingPreset]);
 
   /* ───────────── Rebuild Sim whenever model / load / mix changes ───────────── */
   useEffect(() => {
@@ -945,10 +1321,10 @@ export const SdLabView: React.FC = () => {
       model,
       durationSec,
       load: loadProfile,
-      events: [],
+      events: scenarioEvents,
       seed: 2026,
       mix: { readRatio },
-      clientTimeoutMs: 2000,
+      clientTimeoutMs: scenarioTimeoutMs,
       options: { noise: true, maxPackets: 120 },
     };
 
@@ -961,7 +1337,16 @@ export const SdLabView: React.FC = () => {
     setCurrentSec(f.t);
     // Intentionally rebuild only when structural/scenario inputs change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [model, loadProfile, readRatio, durationSec, activeTemplateId, lang]);
+  }, [
+    model,
+    loadProfile,
+    readRatio,
+    durationSec,
+    scenarioEvents,
+    scenarioTimeoutMs,
+    activeTemplateId,
+    lang,
+  ]);
 
   /* ───────────── Live Playback Interval ───────────── */
   useEffect(() => {
@@ -1010,53 +1395,20 @@ export const SdLabView: React.FC = () => {
   }, []);
 
   /* ───────────── Grid Placement & Node CRUD ───────────── */
-  const findBestEmptyCell = useCallback(
-    (kind: PrimitiveKind): GridPos | null => {
-      const occupied = new Set(
-        Object.values(positions).map((p) => `${p.col},${p.row}`)
-      );
-      const meta = KIND_META_MAP[kind];
-      const colsOrder = [
-        ...(meta?.preferredCols ?? [3]),
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-      ];
-      const rowsOrder = [2, 1, 3, 0, 4];
-      for (const c of colsOrder) {
-        for (const r of rowsOrder) {
-          if (c >= 0 && c < LAB_GRID_COLS && !occupied.has(`${c},${r}`)) {
-            return { col: c, row: r };
-          }
-        }
-      }
-      return null;
-    },
-    [positions]
+  /** Toạ độ chấm của các node khác (để kiểm tra chồng lấn). */
+  const otherPositions = useCallback(
+    (exceptId: NodeId | null, from: Record<NodeId, CanvasPos> = liveRef.current.snap.positions) =>
+      Object.entries(from)
+        .filter(([id]) => id !== exceptId)
+        .map(([, p]) => p),
+    []
   );
 
   const addPrimitiveAt = useCallback(
-    (kind: PaletteKind, targetCell?: GridPos) => {
-      const cell = targetCell ?? findBestEmptyCell(kind);
-      if (!cell) {
-        showToast(
-          'warn',
-          lang === 'en'
-            ? 'All 35 grid cells are occupied. Delete or move a component first.'
-            : 'Lưới 7×5 đã kín chỗ. Hãy xoá bớt một thành phần trước khi thêm mới.'
-        );
-        return;
-      }
-
-      const occupiedEntry = Object.entries(positions).find(
-        ([, p]) => p.col === cell.col && p.row === cell.row
-      );
-      const finalCell = occupiedEntry ? findBestEmptyCell(kind) : cell;
-      if (!finalCell) return;
+    (kind: PaletteKind, desired?: CanvasPos) => {
+      const others = Object.values(positions);
+      // Thả vào board: chỗ trống gần điểm thả nhất; nhấn palette: bên phải sơ đồ, quanh tâm dọc
+      const finalPos = desired ? findFreeSpot(desired, others) : findPlacementForNew(others);
 
       const existingIds = new Set(model.nodes.map((n) => n.id));
       let idx = model.nodes.filter((n) => n.kind === kind).length + 1;
@@ -1079,6 +1431,7 @@ export const SdLabView: React.FC = () => {
         zone: kind === 'client' ? 'internet' : 'az-a',
       });
 
+      pushHistory();
       setModel((prev) => ({
         ...prev,
         nodes: [...prev.nodes, newNode],
@@ -1089,35 +1442,28 @@ export const SdLabView: React.FC = () => {
       }));
       setPositions((prev) => ({
         ...prev,
-        [newId]: finalCell,
+        [newId]: finalPos,
       }));
       setSelection({ kind: 'node', id: newId });
       setRightTab('inspector');
       setGradeReport(null);
     },
-    [findBestEmptyCell, lang, model.nodes, positions, showToast]
+    [model.nodes, positions, pushHistory]
   );
 
-  const moveNodeToCell = useCallback(
-    (nodeId: NodeId, dest: GridPos) => {
-      setPositions((prev) => {
-        const src = prev[nodeId];
-        if (!src || (src.col === dest.col && src.row === dest.row)) return prev;
-        const occupant = Object.entries(prev).find(
-          ([id, p]) => id !== nodeId && p.col === dest.col && p.row === dest.row
-        );
-        const next = { ...prev, [nodeId]: dest };
-        if (occupant) {
-          next[occupant[0]] = src;
-        }
-        return next;
-      });
+  /** Đặt node tới vị trí chấm `dest` (đã đảm bảo không chồng lấn). Một bước history; bỏ qua nếu không đổi. */
+  const moveNodeTo = useCallback(
+    (nodeId: NodeId, dest: CanvasPos, coalesceKey?: string) => {
+      const cur = liveRef.current.snap.positions[nodeId];
+      if (!cur || samePos(cur, dest)) return;
+      pushHistory(coalesceKey);
+      setPositions((prev) => (prev[nodeId] ? { ...prev, [nodeId]: dest } : prev));
     },
-    []
+    [pushHistory]
   );
 
   const deleteNode = useCallback(
-    (nodeId: NodeId) => {
+    (nodeId: NodeId): boolean => {
       if (lockedIds.has(nodeId)) {
         showToast(
           'warn',
@@ -1125,7 +1471,7 @@ export const SdLabView: React.FC = () => {
             ? 'This entry node is locked and cannot be deleted.'
             : 'Thành phần gốc này được khoá cố định để giữ nguồn phát tải.'
         );
-        return;
+        return false;
       }
       // Prevent deleting the very last client node
       const targetNode = model.nodes.find((n) => n.id === nodeId);
@@ -1139,9 +1485,10 @@ export const SdLabView: React.FC = () => {
             ? 'At least one Client node is required in the model.'
             : 'Mô hình cần ít nhất một node Client để phát lưu lượng.'
         );
-        return;
+        return false;
       }
 
+      pushHistory();
       setModel((prev) => {
         const nextRoutes = { ...(prev.routes ?? {}) };
         delete nextRoutes[nodeId];
@@ -1165,37 +1512,56 @@ export const SdLabView: React.FC = () => {
         setConnectFromId(null);
       }
       setGradeReport(null);
+      return true;
     },
-    [connectFromId, lang, lockedIds, model.nodes, selection, showToast]
+    [connectFromId, lang, lockedIds, model.nodes, pushHistory, selection, showToast]
   );
 
   /* ───────────── Connect Mode & Link CRUD ───────────── */
-  const createConnection = useCallback(
-    (fromId: NodeId, toId: NodeId) => {
-      if (fromId === toId) {
-        showToast(
-          'warn',
-          lang === 'en'
-            ? 'Cannot connect a component to itself.'
-            : 'Không thể nối một thành phần vào chính nó.'
-        );
-        return;
-      }
+  /**
+   * Tính toán (thuần, không side-effect) kết quả khi nối `fromId → toId`:
+   * hợp lệ (kèm model ứng viên + cấu hình mặc định thông minh) hoặc lý do bị từ chối.
+   * Dùng chung cho tô sáng đích khi kéo dây và cho việc tạo kết nối thật.
+   */
+  const planConnection = useCallback(
+    (fromId: NodeId, toId: NodeId): ConnectionPlan | null => {
       const fromNode = model.nodes.find((n) => n.id === fromId);
       const toNode = model.nodes.find((n) => n.id === toId);
-      if (!fromNode || !toNode) return;
+      if (!fromNode || !toNode) return null;
 
-      if (model.links.some((l) => l.from === fromId && l.to === toId)) {
-        showToast(
-          'info',
-          lang === 'en'
-            ? `Link ${fromId} → ${toId} already exists.`
-            : `Kết nối ${fromNode.label.vi} → ${toNode.label.vi} đã tồn tại.`
-        );
-        const existing = model.links.find((l) => l.from === fromId && l.to === toId)!;
-        setSelection({ kind: 'link', id: existing.id });
-        setRightTab('inspector');
-        return;
+      if (fromId === toId) {
+        return {
+          ok: false,
+          tone: 'warn',
+          text:
+            lang === 'en'
+              ? 'Cannot connect a component to itself.'
+              : 'Không thể nối một thành phần vào chính nó.',
+        };
+      }
+
+      const existing = model.links.find((l) => l.from === fromId && l.to === toId);
+      if (existing) {
+        return {
+          ok: false,
+          tone: 'info',
+          existingLinkId: existing.id,
+          text:
+            lang === 'en'
+              ? `Link ${fromId} → ${toId} already exists.`
+              : `Kết nối ${fromNode.label.vi} → ${toNode.label.vi} đã tồn tại.`,
+        };
+      }
+
+      if (toNode.kind === 'client') {
+        return {
+          ok: false,
+          tone: 'warn',
+          text:
+            lang === 'en'
+              ? 'A Client is a traffic source — it cannot be a link target.'
+              : 'Client là nguồn phát tải nên không thể làm đích của kết nối.',
+        };
       }
 
       // Smart defaults based on source & target primitive kinds
@@ -1297,58 +1663,362 @@ export const SdLabView: React.FC = () => {
         ...(onMissOf !== undefined ? { onMissOf } : {}),
       };
 
-      const candidateModel: SystemModel = {
+      const candidate: SystemModel = {
         ...model,
         links: [...updatedPrevLinks, newLink],
       };
 
       try {
-        validate(candidateModel);
+        validate(candidate);
       } catch (err) {
         if (err instanceof SimModelError && err.code === 'CYCLE') {
           const cyclePath = err.path ? ` (${err.path.join(' → ')})` : '';
-          showToast(
-            'warn',
-            lang === 'en'
-              ? `Cannot add link: synchronous cycle detected${cyclePath}. Use replicate mode or reverse direction.`
-              : `Không thể nối kết nối: phát hiện chu trình đồng bộ${cyclePath}. Hãy chọn hướng khác hoặc dùng kết nối nhân bản (replicate).`
-          );
-        } else {
-          showToast(
-            'warn',
+          return {
+            ok: false,
+            tone: 'warn',
+            text:
+              lang === 'en'
+                ? `Cannot add link: synchronous cycle detected${cyclePath}. Use replicate mode or reverse direction.`
+                : `Không thể nối kết nối: phát hiện chu trình đồng bộ${cyclePath}. Hãy chọn hướng khác hoặc dùng kết nối nhân bản (replicate).`,
+          };
+        }
+        return {
+          ok: false,
+          tone: 'warn',
+          text:
             err instanceof Error
               ? err.message
               : lang === 'en'
                 ? 'Invalid connection.'
-                : 'Kết nối không hợp lệ.'
-          );
+                : 'Kết nối không hợp lệ.',
+        };
+      }
+
+      return {
+        ok: true,
+        candidate,
+        linkId,
+        hint: lang === 'en' ? smartHintEn : smartHintVi,
+      };
+    },
+    [lang, model]
+  );
+
+  const createConnection = useCallback(
+    (fromId: NodeId, toId: NodeId) => {
+      const plan = planConnection(fromId, toId);
+      if (!plan) return;
+      if (!plan.ok) {
+        showToast(plan.tone, plan.text);
+        if (plan.existingLinkId) {
+          setSelection({ kind: 'link', id: plan.existingLinkId });
+          setRightTab('inspector');
         }
         return;
       }
-
-      setModel(candidateModel);
-      setSelection({ kind: 'link', id: linkId });
+      pushHistory();
+      setModel(plan.candidate);
+      setSelection({ kind: 'link', id: plan.linkId });
       setRightTab('inspector');
       setGradeReport(null);
-      if (smartHintVi) {
-        showToast('ok', lang === 'en' ? smartHintEn : smartHintVi);
+      if (plan.hint) showToast('ok', plan.hint);
+    },
+    [planConnection, pushHistory, showToast]
+  );
+
+  /* ───────────── Wire dragging (Pointer Events: mouse + touch + pen) ───────────── */
+  const pointerToBoard = useCallback(
+    (clientX: number, clientY: number) => {
+      const board = boardRef.current;
+      const rect = board?.getBoundingClientRect();
+      if (!board || !rect) return { x: 0, y: 0 };
+      // rect (viền ngoài) đã phản ánh scroll + transform scale → chia cho zoom, rồi trừ độ dày viền
+      // (clientLeft/Top là px chưa scale) để ra toạ độ của các phần tử absolute bên trong board.
+      const z = zoomRef.current;
+      return {
+        x: (clientX - rect.left) / z - board.clientLeft,
+        y: (clientY - rect.top) / z - board.clientTop,
+      };
+    },
+    []
+  );
+
+  /** Con trỏ → toạ độ px THẬT (không phụ thuộc gốc khung, ổn định khi board nới). */
+  const pointerToReal = useCallback(
+    (clientX: number, clientY: number) => {
+      const b = pointerToBoard(clientX, clientY);
+      const { org } = viewportRef.current;
+      return { x: b.x + org.x * DOT, y: b.y + org.y * DOT };
+    },
+    [pointerToBoard]
+  );
+
+  /* ───────────── Node dragging (Pointer Events: mouse + touch + pen, hút vào chấm) ───────────── */
+  const cancelNodeDrag = useCallback((): boolean => {
+    const cur = nodeDragRef.current;
+    if (!cur) return false;
+    nodeDragRef.current = null;
+    setNodeDrag(null);
+    if (cur.moved) unlockBodySelect();
+    return cur.moved;
+  }, []);
+
+  const handleNodePointerDown = useCallback(
+    (e: React.PointerEvent<HTMLElement>, nodeId: NodeId) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (connectMode || wireDragRef.current || nodeDragRef.current) return;
+      const t = e.target as HTMLElement;
+      if (t.closest('button,input,select,textarea,a,[data-no-drag]')) return;
+      const cur = liveRef.current.snap.positions[nodeId];
+      if (!cur) return;
+      const r = pointerToReal(e.clientX, e.clientY);
+      nodeDragRef.current = {
+        id: nodeId,
+        pointerId: e.pointerId,
+        startClientX: e.clientX,
+        startClientY: e.clientY,
+        grabX: r.x - cur.x * DOT,
+        grabY: r.y - cur.y * DOT,
+        origin: cur,
+        pos: cur,
+        landing: cur,
+        collides: false,
+        moved: false,
+      };
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        /* pointer capture không khả dụng */
       }
     },
-    [lang, model, showToast]
+    [connectMode, pointerToReal]
   );
+
+  const handleNodePointerMove = useCallback(
+    (e: React.PointerEvent<HTMLElement>) => {
+      const cur = nodeDragRef.current;
+      if (!cur || cur.pointerId !== e.pointerId) return;
+      if (!cur.moved) {
+        // Ngưỡng 4 px trước khi bắt đầu kéo → nhấn nhẹ vẫn là "chọn"
+        if (Math.hypot(e.clientX - cur.startClientX, e.clientY - cur.startClientY) < 4) return;
+        lockBodySelect();
+        setSelection({ kind: 'node', id: cur.id });
+      }
+      const r = pointerToReal(e.clientX, e.clientY);
+      const pos = { x: snapToDot(r.x - cur.grabX), y: snapToDot(r.y - cur.grabY) };
+      if (cur.moved && samePos(pos, cur.pos)) return;
+      const others = otherPositions(cur.id);
+      const collides = collidesAny(pos, others);
+      const landing = collides ? findFreeSpot(pos, others) : pos;
+      const next: NodeDragState = { ...cur, pos, landing, collides, moved: true };
+      nodeDragRef.current = next;
+      setNodeDrag(next);
+    },
+    [otherPositions, pointerToReal]
+  );
+
+  const handleNodePointerUp = useCallback(
+    (e: React.PointerEvent<HTMLElement>) => {
+      const cur = nodeDragRef.current;
+      if (!cur || cur.pointerId !== e.pointerId) return;
+      nodeDragRef.current = null;
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+      if (!cur.moved) return; // chỉ là nhấn → onClick xử lý chọn
+      setNodeDrag(null);
+      unlockBodySelect();
+      // Thả vào chỗ chồng lấn → hút vào chỗ trống gần nhất (tính lại theo trạng thái mới nhất)
+      const others = otherPositions(cur.id);
+      const landing = collidesAny(cur.pos, others) ? findFreeSpot(cur.pos, others) : cur.pos;
+      moveNodeTo(cur.id, landing);
+    },
+    [moveNodeTo, otherPositions]
+  );
+
+  const handleNodeLostCapture = useCallback(
+    (e: React.PointerEvent<HTMLElement>) => {
+      const cur = nodeDragRef.current;
+      if (cur && cur.pointerId === e.pointerId) cancelNodeDrag();
+    },
+    [cancelNodeDrag]
+  );
+
+  /* ───────────── Palette → board (HTML5 DnD): vị trí thả theo chấm ───────────── */
+  const paletteDropAt = useCallback(
+    (clientX: number, clientY: number): PaletteDropPreview => {
+      const r = pointerToReal(clientX, clientY);
+      // Tâm thẻ nằm dưới con trỏ
+      const pos = { x: snapToDot(r.x - CARD_W / 2), y: snapToDot(r.y - CARD_H / 2) };
+      const others = otherPositions(null);
+      const collides = collidesAny(pos, others);
+      return { pos, landing: collides ? findFreeSpot(pos, others) : pos, collides };
+    },
+    [otherPositions, pointerToReal]
+  );
+
+  const handleBoardDragOver = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      if (!Array.from(e.dataTransfer.types).includes('application/x-sd-palette')) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      const next = paletteDropAt(e.clientX, e.clientY);
+      setPaletteDrop((cur) =>
+        cur && samePos(cur.pos, next.pos) && samePos(cur.landing, next.landing) ? cur : next
+      );
+    },
+    [paletteDropAt]
+  );
+
+  const handleBoardDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    const to = e.relatedTarget;
+    if (to instanceof Node && boardRef.current?.contains(to)) return;
+    setPaletteDrop(null);
+  }, []);
+
+  const handleBoardDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      const kind = (e.dataTransfer.getData('application/x-sd-palette') ||
+        paletteKindRef.current) as PaletteKind | null;
+      setPaletteDrop(null);
+      if (!kind || !(kind in KIND_META_MAP)) return;
+      e.preventDefault();
+      paletteKindRef.current = null;
+      addPrimitiveAt(kind, paletteDropAt(e.clientX, e.clientY).pos);
+    },
+    [addPrimitiveAt, paletteDropAt]
+  );
+
+  const cancelWireDrag = useCallback(() => {
+    if (!wireDragRef.current) return;
+    wireDragRef.current = null;
+    setWireDrag(null);
+    unlockBodySelect();
+  }, []);
+
+  const handleWirePointerDown = useCallback(
+    (e: React.PointerEvent<HTMLElement>, fromId: NodeId) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      e.stopPropagation();
+      e.preventDefault();
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        /* pointer capture không khả dụng — vẫn hoạt động nhờ window listeners */
+      }
+      const { x, y } = pointerToBoard(e.clientX, e.clientY);
+      const next: WireDragState = { fromId, x, y, hoverId: null, moved: false };
+      wireDragRef.current = next;
+      wireStartRef.current = { x: e.clientX, y: e.clientY };
+      setWireDrag(next);
+      lockBodySelect();
+    },
+    [pointerToBoard]
+  );
+
+  const handleWirePointerMove = useCallback(
+    (e: React.PointerEvent<HTMLElement>) => {
+      const cur = wireDragRef.current;
+      if (!cur) return;
+      const { x, y } = pointerToBoard(e.clientX, e.clientY);
+      const start = wireStartRef.current;
+      const moved =
+        cur.moved ||
+        (start ? Math.hypot(e.clientX - start.x, e.clientY - start.y) > 5 : true);
+      const inside = x >= 0 && y >= 0 && x <= BOARD_W && y <= BOARD_H;
+      const next: WireDragState = {
+        ...cur,
+        x,
+        y,
+        moved,
+        hoverId: moved && inside ? nodeAtBoardPoint(x, y, viewPositions) : null,
+      };
+      wireDragRef.current = next;
+      setWireDrag(next);
+    },
+    [BOARD_H, BOARD_W, pointerToBoard, viewPositions]
+  );
+
+  const handleWirePointerUp = useCallback(
+    (e: React.PointerEvent<HTMLElement>) => {
+      const cur = wireDragRef.current;
+      if (!cur) return;
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+      const { x, y } = pointerToBoard(e.clientX, e.clientY);
+      cancelWireDrag();
+      if (!cur.moved) {
+        // Nhấn nhẹ vào tay nối → chuyển sang luồng "nhấn chọn đích"
+        setConnectMode(true);
+        setConnectFromId(cur.fromId);
+        setSelection({ kind: 'node', id: cur.fromId });
+        return;
+      }
+      const inside = x >= 0 && y >= 0 && x <= BOARD_W && y <= BOARD_H;
+      const targetId = inside ? nodeAtBoardPoint(x, y, viewPositions) : null;
+      if (!targetId) return; // thả ra ngoài vùng trống = huỷ
+      createConnection(cur.fromId, targetId);
+    },
+    [BOARD_H, BOARD_W, cancelWireDrag, createConnection, pointerToBoard, viewPositions]
+  );
+
+  // Node đang được rê chuột tới trong luồng "nhấn nguồn → nhấn đích" (connect mode)
+  const [connectHoverId, setConnectHoverId] = useState<NodeId | null>(null);
+  useEffect(() => {
+    if (!connectMode || !connectFromId) setConnectHoverId(null);
+  }, [connectMode, connectFromId]);
+
+  // Nguồn/đích đang nối — gộp kéo dây (drag) và nhấn chọn (click-to-connect)
+  const linkingFromId: NodeId | null =
+    wireDrag?.fromId ?? (connectMode ? connectFromId : null);
+  const linkingHoverId: NodeId | null = wireDrag
+    ? wireDrag.hoverId
+    : connectMode && connectFromId
+      ? connectHoverId
+      : null;
+
+  // Trạng thái hợp lệ của node đang được rê tới khi nối dây
+  const wireHoverPlan = useMemo(() => {
+    if (!linkingFromId || !linkingHoverId) return null;
+    return planConnection(linkingFromId, linkingHoverId);
+  }, [planConnection, linkingFromId, linkingHoverId]);
+
+  // Tính trước node nào nối được để tô sáng đích hợp lệ / làm mờ đích không hợp lệ
+  const linkTargetOk = useMemo(() => {
+    if (!linkingFromId) return null;
+    const map: Record<NodeId, boolean> = {};
+    for (const n of model.nodes) {
+      if (n.id === linkingFromId) continue;
+      map[n.id] = planConnection(linkingFromId, n.id)?.ok === true;
+    }
+    return map;
+  }, [linkingFromId, model.nodes, planConnection]);
+
+  // Kiểu kết nối sẽ được tạo (hiển thị trên nhãn "Thả để nối")
+  const wireHoverMode = useMemo(() => {
+    if (!wireHoverPlan?.ok) return null;
+    return wireHoverPlan.candidate.links.find((l) => l.id === wireHoverPlan.linkId)?.mode ?? null;
+  }, [wireHoverPlan]);
 
   const updateNode = useCallback(
     (nodeId: NodeId, mutator: (n: NodeSpec) => NodeSpec) => {
+      pushHistory(`node:${nodeId}`);
       setModel((prev) => ({
         ...prev,
         nodes: prev.nodes.map((n) => (n.id === nodeId ? mutator(structuredClone(n)) : n)),
       }));
       setGradeReport(null);
     },
-    []
+    [pushHistory]
   );
 
   const updateNodeRoute = useCallback((nodeId: NodeId, route: RouteMode) => {
+    pushHistory(`route:${nodeId}`);
     setModel((prev) => ({
       ...prev,
       routes: {
@@ -1357,7 +2027,7 @@ export const SdLabView: React.FC = () => {
       },
     }));
     setGradeReport(null);
-  }, []);
+  }, [pushHistory]);
 
   const updateLink = useCallback(
     (linkId: LinkId, mutator: (l: LinkSpec) => LinkSpec) => {
@@ -1378,14 +2048,16 @@ export const SdLabView: React.FC = () => {
           return;
         }
       }
+      pushHistory(`link:${linkId}`);
       setModel(candidate);
       setGradeReport(null);
     },
-    [lang, model, showToast]
+    [lang, model, pushHistory, showToast]
   );
 
   const deleteLink = useCallback(
     (linkId: LinkId) => {
+      pushHistory();
       setModel((prev) => ({
         ...prev,
         links: prev.links.filter((l) => l.id !== linkId),
@@ -1395,13 +2067,268 @@ export const SdLabView: React.FC = () => {
       }
       setGradeReport(null);
     },
-    [selection]
+    [pushHistory, selection]
   );
+
+  // Phím Delete / Backspace xoá node hoặc kết nối đang chọn (có history → Ctrl/Cmd+Z để hoàn tác)
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+      if (isEditableTarget(e.target)) return;
+      if (e.target instanceof HTMLElement && e.target.closest('[role="dialog"],[role="alertdialog"]')) {
+        return;
+      }
+      if (pendingPreset !== null || wireDragRef.current || !selection) return;
+      e.preventDefault();
+      const undoHint =
+        lang === 'en'
+          ? ` Press ${navigator.platform.toLowerCase().includes('mac') ? '⌘' : 'Ctrl'}+Z to undo.`
+          : ` Nhấn ${navigator.platform.toLowerCase().includes('mac') ? '⌘' : 'Ctrl'}+Z để hoàn tác.`;
+      if (selection.kind === 'node') {
+        const node = model.nodes.find((n) => n.id === selection.id);
+        if (!node) return;
+        if (deleteNode(node.id)) {
+          showToast(
+            'info',
+            (lang === 'en' ? `Deleted “${node.label.en}”.` : `Đã xoá “${node.label.vi}”.`) + undoHint
+          );
+        }
+      } else if (selection.kind === 'link') {
+        if (!model.links.some((l) => l.id === selection.id)) return;
+        deleteLink(selection.id);
+        showToast('info', (lang === 'en' ? 'Deleted link.' : 'Đã xoá kết nối.') + undoHint);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [deleteLink, deleteNode, lang, model.links, model.nodes, pendingPreset, selection, showToast]);
+
+  /*
+   * Escape: huỷ kéo dây → thoát chế độ nối → bỏ chọn. Bắt ở pha capture trên `window` và chặn
+   * lan truyền khi Lab thực sự "tiêu thụ" phím, để Window (device-layout) không thoát Fullscreen.
+   * Chỉ áp dụng khi tương tác gần nhất nằm trong Phòng Lab; nếu không còn gì để huỷ thì để Esc đi tiếp.
+   */
+  const labRootRef = useRef<HTMLDivElement | null>(null);
+  const labActiveRef = useRef(false);
+  const escStateRef = useRef({ selection, connectMode, connectFromId });
+  escStateRef.current = { selection, connectMode, connectFromId };
+  useEffect(() => {
+    const onPointerDown = (e: PointerEvent) => {
+      labActiveRef.current = Boolean(
+        labRootRef.current && e.target instanceof Node && labRootRef.current.contains(e.target)
+      );
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || !labActiveRef.current) return;
+      if (isEditableTarget(e.target)) return; // App shell đã chặn Esc trong ô nhập
+      const st = escStateRef.current;
+      let consumed = false;
+      if (nodeDragRef.current?.moved) {
+        // Huỷ kéo node → trả về vị trí cũ (chưa ghi vào state nên chỉ cần bỏ trạng thái kéo)
+        nodeDragRef.current = null;
+        setNodeDrag(null);
+        unlockBodySelect();
+        consumed = true;
+      } else if (wireDragRef.current) {
+        wireDragRef.current = null;
+        setWireDrag(null);
+        unlockBodySelect();
+        consumed = true;
+      } else if (st.connectMode || st.connectFromId) {
+        setConnectFromId(null);
+        setConnectMode(false);
+        consumed = true;
+      } else if (st.selection) {
+        setSelection(null);
+        consumed = true;
+      }
+      if (consumed) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    window.addEventListener('pointerdown', onPointerDown, true);
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => {
+      window.removeEventListener('pointerdown', onPointerDown, true);
+      window.removeEventListener('keydown', onKeyDown, true);
+    };
+  }, []);
+
+  // Phím mũi tên: dịch node đang chọn 1 chấm (Shift = 5 chấm), không chồng lên node khác
+  const nudgeStateRef = useRef({ selection, pendingPreset });
+  nudgeStateRef.current = { selection, pendingPreset };
+  useEffect(() => {
+    const DIRS: Record<string, [number, number]> = {
+      ArrowLeft: [-1, 0],
+      ArrowRight: [1, 0],
+      ArrowUp: [0, -1],
+      ArrowDown: [0, 1],
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      const dir = DIRS[e.key];
+      if (!dir || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (!labActiveRef.current || isEditableTarget(e.target)) return;
+      if (e.target instanceof HTMLElement && e.target.closest('[role="dialog"],[role="alertdialog"],[role="slider"]')) {
+        return;
+      }
+      const { selection: sel, pendingPreset: pending } = nudgeStateRef.current;
+      if (pending !== null || wireDragRef.current || nodeDragRef.current) return;
+      if (sel?.kind !== 'node') return;
+      const cur = liveRef.current.snap.positions[sel.id];
+      if (!cur) return;
+      e.preventDefault();
+      const step = e.shiftKey ? 5 : 1;
+      const next = nudgePosition(cur, dir[0] * step, dir[1] * step, otherPositions(sel.id));
+      if (next) moveNodeTo(sel.id, next, `nudge:${sel.id}`);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [moveNodeTo, otherPositions]);
+
+  /* ───────────── Viewport: Ctrl/Cmd + wheel zoom, drag-to-pan, fit ───────────── */
+  const zoomRef = useRef(boardZoom);
+  zoomRef.current = boardZoom;
+  /** Điểm neo khi zoom: giữ điểm board (bx, by) nằm dưới toạ độ màn hình (cx, cy). */
+  const zoomAnchorRef = useRef<{ bx: number; by: number; cx: number; cy: number } | null>(null);
+
+  const zoomAt = useCallback((nextZoom: number, clientX?: number, clientY?: number) => {
+    const z = zoomRef.current;
+    const z2 = clampZoom(nextZoom);
+    if (z2 === z) return;
+    const board = boardRef.current;
+    const stage = stageRef.current;
+    if (board && stage) {
+      const r = board.getBoundingClientRect();
+      const sr = stage.getBoundingClientRect();
+      const cx = clientX ?? sr.left + sr.width / 2;
+      const cy = clientY ?? sr.top + sr.height / 2;
+      zoomAnchorRef.current = { bx: (cx - r.left) / z, by: (cy - r.top) / z, cx, cy };
+    }
+    setBoardZoom(z2);
+  }, []);
+
+  // Sau khi zoom đã render: cuộn để điểm neo đứng yên dưới con trỏ
+  useLayoutEffect(() => {
+    const a = zoomAnchorRef.current;
+    const board = boardRef.current;
+    const stage = stageRef.current;
+    if (!a || !board || !stage) return;
+    zoomAnchorRef.current = null;
+    const r = board.getBoundingClientRect();
+    stage.scrollLeft += r.left + a.bx * boardZoom - a.cx;
+    stage.scrollTop += r.top + a.by * boardZoom - a.cy;
+  }, [boardZoom]);
+
+  // Ctrl/Cmd + cuộn chuột (và pinch trên trackpad — trình duyệt gửi wheel kèm ctrlKey)
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      e.preventDefault();
+      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1;
+      const dy = Math.max(-120, Math.min(120, e.deltaY * unit));
+      zoomAt(zoomRef.current * Math.exp(-dy * 0.0025), e.clientX, e.clientY);
+    };
+    stage.addEventListener('wheel', onWheel, { passive: false });
+    return () => stage.removeEventListener('wheel', onWheel);
+  }, [zoomAt]);
+
+  // Vừa khung: zoom + cuộn để toàn bộ sơ đồ nằm gọn giữa vùng nhìn
+  const fitToContent = useCallback(() => {
+    const stage = stageRef.current;
+    const pts = Object.values(positions);
+    if (!stage) return;
+    const minX = pts.length ? Math.min(...pts.map((p) => p.x)) : 0;
+    const maxX = pts.length ? Math.max(...pts.map((p) => p.x + CARD_W_DOTS)) : CARD_W_DOTS;
+    const minY = pts.length ? Math.min(...pts.map((p) => p.y)) : 0;
+    const maxY = pts.length ? Math.max(...pts.map((p) => p.y + CARD_H_DOTS)) : CARD_H_DOTS;
+    const pad = 3; // ~nửa ô lưới cũ lề mỗi phía (chấm)
+    const wPx = (maxX - minX + pad * 2) * DOT;
+    const hPx = (maxY - minY + pad * 2) * DOT;
+    const availW = stage.clientWidth - 32;
+    const availH = stage.clientHeight - 32;
+    const z = clampZoom(Math.min(1, availW / wPx, availH / hPx));
+    zoomAnchorRef.current = null;
+    setBoardZoom(z);
+    requestAnimationFrame(() => {
+      const board = boardRef.current;
+      if (!board || !stageRef.current) return;
+      const s = stageRef.current;
+      const br = board.getBoundingClientRect();
+      const sr = s.getBoundingClientRect();
+      const { org } = viewportRef.current;
+      const centerX = (board.clientLeft + ((minX + maxX) / 2 - org.x) * DOT) * z;
+      const centerY = (board.clientTop + ((minY + maxY) / 2 - org.y) * DOT) * z;
+      s.scrollLeft += br.left + centerX - (sr.left + sr.width / 2);
+      s.scrollTop += br.top + centerY - (sr.top + sr.height / 2);
+    });
+  }, [positions]);
+
+  // Tự căn khung khi đổi bài / tải preset
+  const fitRef = useRef(fitToContent);
+  fitRef.current = fitToContent;
+  useEffect(() => {
+    const id = requestAnimationFrame(() => fitRef.current());
+    return () => cancelAnimationFrame(id);
+  }, [activeTemplateId, canvasMode]);
+
+  // Kéo trên vùng trống của board để di chuyển (pan) khung nhìn
+  const panRef = useRef<{ x: number; y: number; sl: number; st: number; moved: boolean; id: number } | null>(null);
+  const [isPanning, setIsPanning] = useState(false);
+  const handleStagePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const isMiddle = e.button === 1;
+    if (e.button !== 0 && !isMiddle) return;
+    if (e.pointerType === 'touch') return; // cảm ứng: dùng cuộn gốc của trình duyệt
+    const t = e.target as HTMLElement;
+    if (!isMiddle && t.closest('[data-lab-node],button,input,select,textarea,a,[data-no-pan]')) return;
+    if (connectMode && !isMiddle) return;
+    const s = stageRef.current;
+    if (!s) return;
+    panRef.current = { x: e.clientX, y: e.clientY, sl: s.scrollLeft, st: s.scrollTop, moved: false, id: e.pointerId };
+    if (isMiddle) e.preventDefault();
+  }, [connectMode]);
+  const handleStagePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const p = panRef.current;
+    const s = stageRef.current;
+    if (!p || !s || p.id !== e.pointerId) return;
+    const dx = e.clientX - p.x;
+    const dy = e.clientY - p.y;
+    if (!p.moved) {
+      if (Math.hypot(dx, dy) < 4) return;
+      p.moved = true;
+      setIsPanning(true);
+      lockBodySelect();
+      try {
+        s.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+    }
+    s.scrollLeft = p.sl - dx;
+    s.scrollTop = p.st - dy;
+  }, []);
+  const endPan = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const p = panRef.current;
+    if (!p || p.id !== e.pointerId) return;
+    panRef.current = null;
+    if (p.moved) {
+      setIsPanning(false);
+      unlockBodySelect();
+      try {
+        stageRef.current?.releasePointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+    }
+  }, []);
 
   /* ───────────── Live Diagnostics & Wires ───────────── */
   const wires = useMemo(
-    () => computeOrthogonalWires(model.links, positions),
-    [model.links, positions]
+    () => computeOrthogonalWires(model.links, viewPositions),
+    [model.links, viewPositions]
   );
 
   const staticCostPerHour = useMemo(
@@ -1504,7 +2431,7 @@ export const SdLabView: React.FC = () => {
               : n.kind === 'rate-limiter'
                 ? `, rate=${n.params.ratePerSec ?? 1000}/s`
                 : '';
-      return `- ${n.label.vi} [${n.kind}, id=${n.id}] @ (${pos?.col ?? 0},${pos?.row ?? 0}): replicas=${rep}, ops=${n.capacity.opsPerSec}/s, base=${n.latency.baseMs}ms${extra}`;
+      return `- ${n.label.vi} [${n.kind}, id=${n.id}] @ (${pos?.x ?? 0},${pos?.y ?? 0}): replicas=${rep}, ops=${n.capacity.opsPerSec}/s, base=${n.latency.baseMs}ms${extra}`;
     });
 
     const linkSummaryLines = model.links.map(
@@ -1613,7 +2540,10 @@ export const SdLabView: React.FC = () => {
   /* ─────────────────────────── RENDER ─────────────────────────── */
 
   return (
-    <div className="flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden bg-[var(--dts-canvas)] text-[var(--dts-ink)]">
+    <div
+      ref={labRootRef}
+      className="flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden bg-[var(--dts-canvas)] text-[var(--dts-ink)]"
+    >
       {/* ═══════════════ TOP CONTROL & SIMULATION TOOLBAR ═══════════════ */}
       <div className="shrink-0 border-b border-[var(--dts-line-strong)] bg-[var(--dts-panel)] px-3 py-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1624,7 +2554,7 @@ export const SdLabView: React.FC = () => {
               <select
                 aria-label={lang === 'en' ? 'Select Lab Challenge' : 'Chọn bài toán Phòng Lab'}
                 value={activeTemplateId}
-                onChange={(e) => handleSelectTemplate(e.target.value, 'starter')}
+                onChange={(e) => handleSelectTemplate(e.target.value)}
                 className="bg-transparent font-mono text-xs font-extrabold text-[var(--dts-ink)] focus:outline-none"
               >
                 <option value="sandbox">
@@ -1645,15 +2575,15 @@ export const SdLabView: React.FC = () => {
               </select>
             </div>
 
-            {/* Starter Canvas vs Blank Canvas (06 §10 / T7.1) */}
+            {/* Starter / Blank canvas (ghi đè canvas → hỏi xác nhận nếu đã chỉnh sửa) */}
             <div className="inline-flex rounded-xl border border-[var(--dts-line-strong)] bg-[var(--dts-panel-muted)] p-0.5 text-[11px] font-bold">
               <button
                 type="button"
-                onClick={() =>
-                  applyPreset(
-                    activeChallenge ? activeChallenge.starter : LAB_SANDBOX_PRESET,
-                    'starter'
-                  )
+                onClick={() => requestPreset('starter')}
+                title={
+                  lang === 'en'
+                    ? 'Reset the canvas to the starter design (your draft is replaced)'
+                    : 'Đặt lại canvas về bản khởi điểm (bản nháp hiện tại sẽ bị thay)'
                 }
                 className={cn(
                   'rounded-lg px-2.5 py-1 transition-colors',
@@ -1666,12 +2596,8 @@ export const SdLabView: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  applyPreset(
-                    activeChallenge ? activeChallenge.blank : LAB_BLANK_SANDBOX_PRESET,
-                    'blank'
-                  )
-                }
+                onClick={() => requestPreset('blank')}
+                title={lang === 'en' ? 'Start from an empty canvas' : 'Bắt đầu từ canvas trống'}
                 className={cn(
                   'rounded-lg px-2.5 py-1 transition-colors',
                   canvasMode === 'blank'
@@ -1681,33 +2607,37 @@ export const SdLabView: React.FC = () => {
               >
                 {lang === 'en' ? 'Blank Canvas' : 'Canvas trống'}
               </button>
-              {activeChallenge && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    markSolutionViewed(activeChallenge.id);
-                    applyPreset(activeChallenge.referenceSolution, 'reference');
-                  }}
-                  title={
-                    lang === 'en'
-                      ? 'Load 3-star reference design to inspect'
-                      : 'Nạp kiến trúc mẫu 3 sao để tham khảo'
-                  }
-                  className={cn(
-                    'rounded-lg px-2 py-1 transition-colors',
-                    canvasMode === 'reference'
-                      ? 'bg-[var(--dts-amber-bg)] text-[var(--dts-amber-ink)]'
-                      : 'text-[var(--dts-ink-muted)] hover:text-[var(--dts-ink)]'
-                  )}
-                >
-                  {lang === 'en' ? '3★ Sample' : 'Mẫu 3★'}
-                </button>
-              )}
             </div>
 
-            {/* Connect Mode toggle */}
+            {/* Mẫu 3★ — tách riêng, cần xác nhận vì ảnh hưởng điểm thưởng */}
+            {activeChallenge && (
+              <button
+                type="button"
+                onClick={() => requestPreset('reference')}
+                title={
+                  lang === 'en'
+                    ? 'View the 3-star reference design (reduces XP/stars for this lab)'
+                    : 'Xem kiến trúc mẫu 3 sao (làm giảm XP/sao của bài này)'
+                }
+                className={cn(
+                  'dts-btn-tactile ml-1 inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-[11px] font-extrabold',
+                  'bg-[var(--dts-amber-bg)] text-[var(--dts-amber-ink)]',
+                  canvasMode === 'reference' && 'ring-2 ring-[var(--dts-amber-ink)]'
+                )}
+              >
+                <Eye className="h-3.5 w-3.5 shrink-0" />
+                <span>{lang === 'en' ? '3★ Sample' : 'Mẫu 3★'}</span>
+              </button>
+            )}
+
+            {/* Connect Mode toggle (dự phòng cho cảm ứng; trên desktop kéo từ chấm tròn bên phải thẻ) */}
             <button
               type="button"
+              title={
+                lang === 'en'
+                  ? "Click-to-connect mode. Tip: you can also drag from the dot on a card's right edge."
+                  : 'Chế độ nhấn-để-nối. Mẹo: có thể kéo trực tiếp từ chấm tròn bên phải thẻ.'
+              }
               onClick={() => {
                 setConnectMode((v) => !v);
                 setConnectFromId(null);
@@ -1726,7 +2656,46 @@ export const SdLabView: React.FC = () => {
 
           {/* Load Profile + Play/Pause/Scrubber + Grade + Save Notes */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Load Profile Control */}
+            {/* Load Profile Control (Sandbox) — trong challenge: badge kịch bản chỉ đọc */}
+            {activeChallenge && activeScenario ? (
+              <div
+                className="flex flex-wrap items-center gap-1.5 rounded-xl border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] px-2 py-1 text-[11px]"
+                title={
+                  lang === 'en'
+                    ? 'In a challenge, load comes from the grader scenarios and cannot be edited. Switch to the Sandbox to tune load freely.'
+                    : 'Trong bài thử thách, tải do các kịch bản chấm điểm quyết định nên không chỉnh được. Dùng Sandbox để chỉnh tải tự do.'
+                }
+              >
+                <Lock className="h-3 w-3 shrink-0 text-[var(--dts-ink-muted)]" />
+                <Gauge className="h-3.5 w-3.5 shrink-0 text-[var(--dts-ink-muted)]" />
+                {activeChallenge.scenarios.length > 1 ? (
+                  <select
+                    aria-label={lang === 'en' ? 'Preview scenario' : 'Kịch bản xem trước'}
+                    value={activeScenario.id}
+                    onChange={(e) => {
+                      setScenarioId(e.target.value);
+                      setIsPlaying(false);
+                    }}
+                    className="max-w-[16rem] truncate bg-transparent font-mono font-extrabold text-[var(--dts-ink)] focus:outline-none"
+                  >
+                    {activeChallenge.scenarios.map((sc) => (
+                      <option key={sc.id} value={sc.id}>
+                        {pick(sc.label, lang)}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="max-w-[16rem] truncate font-mono font-extrabold text-[var(--dts-ink)]">
+                    {pick(activeScenario.label, lang)}
+                  </span>
+                )}
+                <span className="font-mono text-[10px] text-[var(--dts-ink-muted)]">
+                  {lang === 'en'
+                    ? `${Math.round(readRatio * 100)}% read · ${durationSec}s · fixed`
+                    : `${Math.round(readRatio * 100)}% đọc · ${durationSec}s · cố định`}
+                </span>
+              </div>
+            ) : (
             <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] px-2 py-1 text-[11px]">
               <Gauge className="h-3.5 w-3.5 shrink-0 text-[var(--dts-ink-muted)]" />
               <select
@@ -1734,11 +2703,11 @@ export const SdLabView: React.FC = () => {
                 value={loadProfile.kind}
                 onChange={(e) => {
                   const k = e.target.value as 'steady' | 'ramp' | 'spike';
-                  if (k === 'steady') setLoadProfile({ kind: 'steady', rps: 3000 });
+                  if (k === 'steady') editLoad({ kind: 'steady', rps: 3000 });
                   else if (k === 'ramp')
-                    setLoadProfile({ kind: 'ramp', from: 500, to: 6000, overSec: 45 });
+                    editLoad({ kind: 'ramp', from: 500, to: 6000, overSec: 45 });
                   else
-                    setLoadProfile({
+                    editLoad({
                       kind: 'spike',
                       base: 1000,
                       peak: 8000,
@@ -1764,7 +2733,7 @@ export const SdLabView: React.FC = () => {
                     step={100}
                     value={loadProfile.rps}
                     onChange={(e) =>
-                      setLoadProfile({ kind: 'steady', rps: Number(e.target.value) })
+                      editLoad({ kind: 'steady', rps: Number(e.target.value) })
                     }
                     className="w-20 accent-[var(--dts-blue-ink)]"
                   />
@@ -1783,7 +2752,7 @@ export const SdLabView: React.FC = () => {
                     step={100}
                     value={loadProfile.from}
                     onChange={(e) =>
-                      setLoadProfile({
+                      editLoad({
                         ...loadProfile,
                         from: Math.max(100, Number(e.target.value) || 100),
                       })
@@ -1798,7 +2767,7 @@ export const SdLabView: React.FC = () => {
                     step={100}
                     value={loadProfile.to}
                     onChange={(e) =>
-                      setLoadProfile({
+                      editLoad({
                         ...loadProfile,
                         to: Math.max(200, Number(e.target.value) || 200),
                       })
@@ -1818,7 +2787,7 @@ export const SdLabView: React.FC = () => {
                     step={100}
                     value={loadProfile.base}
                     onChange={(e) =>
-                      setLoadProfile({
+                      editLoad({
                         ...loadProfile,
                         base: Math.max(100, Number(e.target.value) || 100),
                       })
@@ -1833,7 +2802,7 @@ export const SdLabView: React.FC = () => {
                     step={250}
                     value={loadProfile.peak}
                     onChange={(e) =>
-                      setLoadProfile({
+                      editLoad({
                         ...loadProfile,
                         peak: Math.max(500, Number(e.target.value) || 500),
                       })
@@ -1855,13 +2824,14 @@ export const SdLabView: React.FC = () => {
                   value={Math.round(readRatio * 100)}
                   onChange={(e) => {
                     const pct = Math.max(0, Math.min(100, Number(e.target.value) || 0));
-                    setReadRatio(pct / 100);
+                    editReadRatio(pct / 100);
                   }}
                   className="w-11 rounded border border-[var(--dts-line-strong)] bg-[var(--dts-panel)] px-1 py-0.5 text-right font-bold text-[var(--dts-ink)]"
                 />
                 <span>%</span>
               </label>
             </div>
+            )}
 
             {/* Playback + Scrubber */}
             <div className="flex items-center gap-1.5 rounded-xl border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] px-2 py-1">
@@ -2097,7 +3067,7 @@ export const SdLabView: React.FC = () => {
       {/* ═══════════════ MAIN 3-COLUMN WORKSPACE ═══════════════ */}
       <div className="flex flex-1 min-h-0 min-w-0 flex-col lg:flex-row overflow-hidden">
         {/* ─────── LEFT: COMPONENT PALETTE ─────── */}
-        <aside className="shrink-0 flex flex-row lg:flex-col gap-1.5 overflow-x-auto lg:overflow-y-auto lg:w-52 border-b lg:border-b-0 lg:border-r border-[var(--dts-line-strong)] bg-[var(--dts-panel)] p-2">
+        <aside className="shrink-0 select-none flex flex-row lg:flex-col gap-1.5 overflow-x-auto lg:overflow-y-auto lg:w-52 border-b lg:border-b-0 lg:border-r border-[var(--dts-line-strong)] bg-[var(--dts-panel)] p-2">
           <div className="hidden lg:flex items-center justify-between px-1 pb-1">
             <span className="font-mono text-[10px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
               {lang === 'en' ? 'Primitives (14)' : 'Thành phần (14)'}
@@ -2118,6 +3088,13 @@ export const SdLabView: React.FC = () => {
                 onDragStart={(e) => {
                   e.dataTransfer.setData('application/x-sd-palette', item.kind);
                   e.dataTransfer.effectAllowed = 'copy';
+                  paletteKindRef.current = item.kind;
+                  lockBodySelect();
+                }}
+                onDragEnd={() => {
+                  setPaletteDrop(null);
+                  paletteKindRef.current = null;
+                  unlockBodySelect();
                 }}
                 onClick={() => addPrimitiveAt(item.kind)}
                 className="group shrink-0 flex items-center gap-2 rounded-xl border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] px-2.5 py-1.5 text-left transition-all hover:border-[var(--dts-border)] hover:shadow-[1.5px_2px_0_var(--dts-shadow-color)]"
@@ -2239,8 +3216,8 @@ export const SdLabView: React.FC = () => {
                         ? `Source: "${connectFromId}" → Click target node to create link`
                         : `Nguồn: "${connectFromId}" → Nhấn vào thành phần đích để nối dây`
                       : lang === 'en'
-                        ? 'Connect Mode active: Click source node first, then click target node'
-                        : 'Chế độ Nối kết nối: Nhấn chọn thành phần nguồn trước, sau đó nhấn thành phần đích'}
+                        ? 'Connect mode: click a source node, then a target node (or drag from the dot on a card\'s right edge)'
+                        : 'Chế độ Nối: nhấn thành phần nguồn trước, rồi nhấn thành phần đích (hoặc kéo từ chấm tròn bên phải thẻ)'}
                   </span>
                   <button
                     type="button"
@@ -2280,16 +3257,30 @@ export const SdLabView: React.FC = () => {
           )}
 
           {/* Scrollable 2D Blueprint Grid Board */}
-          <div className="dts-stage-noselect relative flex-1 overflow-auto p-3 sm:p-4">
+          <div
+            ref={stageRef}
+            onPointerDown={handleStagePointerDown}
+            onPointerMove={handleStagePointerMove}
+            onPointerUp={endPan}
+            onPointerCancel={endPan}
+            onAuxClick={(e) => {
+              if (e.button === 1) e.preventDefault();
+            }}
+            className={cn(
+              'dts-stage-noselect relative flex-1 select-none overflow-auto p-3 sm:p-4',
+              isPanning ? 'cursor-grabbing' : connectMode ? '' : 'cursor-grab'
+            )}
+          >
             <div
-              className="mx-auto origin-top-left transition-transform duration-150"
+              className="mx-auto origin-top-left"
               style={{
                 width: BOARD_W * boardZoom,
                 height: BOARD_H * boardZoom,
               }}
             >
               <div
-                className="relative rounded-2xl border-2 border-[var(--dts-line-strong)] bg-[var(--dts-stage-bg)] shadow-inner"
+                ref={boardRef}
+                className="relative select-none rounded-2xl border-2 border-[var(--dts-line-strong)] bg-[var(--dts-stage-bg)] shadow-inner"
                 style={{
                   width: BOARD_W,
                   height: BOARD_H,
@@ -2297,84 +3288,52 @@ export const SdLabView: React.FC = () => {
                   transformOrigin: 'top left',
                   backgroundImage:
                     'radial-gradient(circle, var(--dts-line-strong) 1px, transparent 1px)',
-                  backgroundSize: '26px 26px',
+                  backgroundSize: `${DOT}px ${DOT}px`,
+                  // Chấm của gradient nằm giữa ô nền → lùi nửa ô để chấm rơi đúng (0,0), (26,26)…
+                  // Gốc khung là số chấm nguyên nên chấm khớp bội số DOT của toạ độ thật.
+                  backgroundPosition: `${-DOT / 2}px ${-DOT / 2}px`,
                 }}
+                onDragOver={handleBoardDragOver}
+                onDragLeave={handleBoardDragLeave}
+                onDrop={handleBoardDrop}
                 onClick={(e) => {
                   if (e.target === e.currentTarget) {
                     setConnectFromId(null);
                   }
                 }}
               >
-                {/* 1. Grid Slots Layer (`cols: 0..6, rows: 0..4`) */}
-                {Array.from({ length: LAB_GRID_ROWS }).map((_, row) =>
-                  Array.from({ length: LAB_GRID_COLS }).map((__, col) => {
-                    const isHover =
-                      dragHoverCell?.col === col && dragHoverCell?.row === row;
-                    const hasNode = Object.values(positions).some(
-                      (p) => p.col === col && p.row === row
-                    );
-                    return (
-                      <div
-                        key={`cell-${col}-${row}`}
-                        style={{
-                          left: col * CELL_W,
-                          top: row * CELL_H,
-                          width: CELL_W,
-                          height: CELL_H,
-                        }}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          if (
-                            dragHoverCell?.col !== col ||
-                            dragHoverCell?.row !== row
-                          ) {
-                            setDragHoverCell({ col, row });
-                          }
-                        }}
-                        onDragLeave={() => {
-                          setDragHoverCell((cur) =>
-                            cur?.col === col && cur?.row === row ? null : cur
-                          );
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          setDragHoverCell(null);
-                          const paletteKind = e.dataTransfer.getData(
-                            'application/x-sd-palette'
-                          ) as PaletteKind;
-                          if (paletteKind) {
-                            addPrimitiveAt(paletteKind, { col, row });
-                            return;
-                          }
-                          const draggedNodeId = e.dataTransfer.getData(
-                            'application/x-sd-node'
-                          );
-                          if (draggedNodeId) {
-                            moveNodeToCell(draggedNodeId, { col, row });
-                          }
-                        }}
-                        className="absolute p-2"
-                      >
-                        <div
-                          className={cn(
-                            'flex h-full w-full items-start justify-between rounded-xl border border-dashed px-2 py-1 font-mono text-[9px] transition-colors',
-                            isHover
-                              ? 'border-[var(--dts-border)] bg-[var(--dts-blue-soft)]/70'
-                              : hasNode
-                                ? 'border-transparent'
-                                : 'border-[var(--dts-line-strong)]/60 text-[var(--dts-ink-muted)]/45 hover:border-[var(--dts-line-strong)]'
-                          )}
-                        >
-                          {!hasNode && (
-                            <span>
-                              C{col}·R{row}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
+                {/* 1. Xem trước chỗ thả (palette) / chỗ hạ cánh khi kéo node vào chỗ đã có node */}
+                {(() => {
+                  const ghosts: { key: string; p: CanvasPos; bad: boolean }[] = [];
+                  if (paletteDrop) {
+                    if (paletteDrop.collides) {
+                      ghosts.push({ key: 'pal-bad', p: paletteDrop.pos, bad: true });
+                    }
+                    ghosts.push({ key: 'pal-land', p: paletteDrop.landing, bad: false });
+                  }
+                  if (nodeDrag?.moved && nodeDrag.collides) {
+                    ghosts.push({ key: 'node-land', p: nodeDrag.landing, bad: false });
+                  }
+                  return ghosts.map((g) => (
+                    <div
+                      key={g.key}
+                      aria-hidden
+                      className={cn(
+                        'pointer-events-none absolute rounded-xl',
+                        g.bad ? 'z-[15]' : 'z-[5]'
+                      )}
+                      style={{
+                        left: (g.p.x - viewport.org.x) * DOT,
+                        top: (g.p.y - viewport.org.y) * DOT,
+                        width: CARD_W,
+                        height: CARD_H,
+                        outline: g.bad ? '2px dashed #dc3d43' : '2px dashed #2563eb',
+                        outlineOffset: -1,
+                        backgroundColor: g.bad ? 'rgba(220,61,67,0.10)' : 'rgba(37,99,235,0.08)',
+                      }}
+                    />
+                  ));
+                })()}
 
                 {/* 2. Orthogonal SVG Wires + Animated Flow Dots Layer */}
                 <svg
@@ -2602,9 +3561,61 @@ export const SdLabView: React.FC = () => {
                   })}
                 </svg>
 
+                {/* 2b. Rubber-band wire preview while dragging from a connection handle */}
+                {wireDrag?.moved &&
+                  viewPositions[wireDrag.fromId] &&
+                  (() => {
+                    const fp = viewPositions[wireDrag.fromId];
+                    const sx = fp.x + CARD_W;
+                    const sy = fp.y + CARD_H / 2;
+                    // Hút đầu dây vào cạnh trái node đích khi rê tới node hợp lệ
+                    const tp =
+                      wireHoverPlan?.ok && wireDrag.hoverId
+                        ? viewPositions[wireDrag.hoverId]
+                        : undefined;
+                    const ex = tp ? tp.x : wireDrag.x;
+                    const ey = tp ? tp.y + CARD_H / 2 : wireDrag.y;
+                    const mx = (sx + ex) / 2;
+                    const d = `M ${sx} ${sy} H ${mx} V ${ey} H ${ex}`;
+                    const color = wireHoverPlan
+                      ? wireHoverPlan.ok
+                        ? '#16a34a'
+                        : '#dc3d43'
+                      : '#2563eb';
+                    return (
+                      <>
+                        <svg
+                          viewBox={`0 0 ${BOARD_W} ${BOARD_H}`}
+                          className="pointer-events-none absolute inset-0 z-20 h-full w-full overflow-visible"
+                        >
+                          <path
+                            d={d}
+                            fill="none"
+                            stroke={color}
+                            strokeWidth={2.5}
+                            strokeDasharray="6 4"
+                            strokeLinejoin="round"
+                          />
+                          <circle cx={sx} cy={sy} r={4} fill={color} />
+                          <circle cx={ex} cy={ey} r={5} fill={color} opacity={0.85} />
+                        </svg>
+                        {wireHoverPlan && !wireHoverPlan.ok && (
+                          <div
+                            className="pointer-events-none absolute z-30 max-w-[15rem] rounded-lg border border-[var(--dts-border)] bg-[var(--dts-rose-bg)] px-2 py-1 text-[10.5px] font-bold leading-snug text-[var(--dts-rose-ink)] shadow-md"
+                            style={{ left: wireDrag.x + 14, top: wireDrag.y + 14 }}
+                          >
+                            {wireHoverPlan.text}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+
                 {/* 3. Node Cards Layer */}
                 {model.nodes.map((node) => {
-                  const pos = positions[node.id] ?? { col: 0, row: 0 };
+                  const pos = viewPositions[node.id] ?? { x: 0, y: 0 };
+                  const isDragging = nodeDrag?.moved === true && nodeDrag.id === node.id;
+                  const dragBlocked = isDragging && nodeDrag.collides;
                   const nf = frame?.nodes[node.id];
                   const state: NodeState = nf?.state ?? 'idle';
                   const stMeta = STATE_BADGE_META[state];
@@ -2617,6 +3628,53 @@ export const SdLabView: React.FC = () => {
                   const isBottleneck =
                     bottleneck?.reason !== 'none' && bottleneck?.nodeId === node.id;
                   const isLocked = lockedIds.has(node.id);
+                  const isLinking = Boolean(linkingFromId);
+                  const isWireSource = linkingFromId === node.id;
+                  const isWireHover = linkingHoverId === node.id && Boolean(wireHoverPlan);
+                  const isValidTarget = linkTargetOk?.[node.id] === true;
+                  // Khi đang nối dây: đích hợp lệ có viền xanh nét đứt, đích không hợp lệ bị làm mờ,
+                  // node đang rê tới được phóng to + phát sáng xanh (thả được) hoặc đỏ (không thả được).
+                  // Lưu ý: `.dts-card-tactile` (index.css, ngoài @layer) đè box-shadow/background/border
+                  // của Tailwind, nên viền tô sáng dùng `outline` + inline style để luôn hiển thị.
+                  const wireTargetRing = !isLinking
+                    ? ''
+                    : isWireSource
+                      ? ''
+                      : isWireHover
+                        ? wireHoverPlan?.ok
+                          ? 'z-20 scale-[1.06] -translate-y-0.5'
+                          : 'z-20 cursor-not-allowed'
+                        : isValidTarget
+                          ? ''
+                          : 'opacity-40 grayscale';
+                  const highlightStyle: React.CSSProperties | undefined = !isLinking
+                    ? isConnectSource
+                      ? { outline: '2.5px solid #10b981', outlineOffset: 2 }
+                      : isSelected
+                        ? { outline: '2.5px solid #2563eb', outlineOffset: 2 }
+                        : undefined
+                    : isWireSource
+                      ? { outline: '2.5px solid rgba(16,185,129,0.7)', outlineOffset: 3 }
+                      : isWireHover
+                        ? wireHoverPlan?.ok
+                          ? {
+                              outline: '3px solid #10b981',
+                              outlineOffset: 2,
+                              backgroundColor: 'var(--dts-green-soft)',
+                              boxShadow:
+                                '0 0 0 7px rgba(16,185,129,0.22), 0 10px 22px rgba(16,185,129,0.35)',
+                            }
+                          : {
+                              outline: '3px solid #dc3d43',
+                              outlineOffset: 2,
+                              backgroundColor: 'var(--dts-rose-soft)',
+                              boxShadow: '0 0 0 7px rgba(220,61,67,0.18)',
+                            }
+                        : isValidTarget
+                          ? { outline: '2px dashed rgba(16,185,129,0.75)', outlineOffset: 3 }
+                          : undefined;
+                  const showHandle =
+                    isSelected || connectMode || Boolean(wireDrag) || isConnectSource;
 
                   const loadPct = nf
                     ? Math.min(100, Math.round(nf.rho * 100))
@@ -2631,28 +3689,13 @@ export const SdLabView: React.FC = () => {
                   return (
                     <div
                       key={node.id}
-                      draggable={!connectMode}
-                      onDragStart={(e) => {
-                        if (connectMode) {
-                          e.preventDefault();
-                          return;
-                        }
-                        e.dataTransfer.setData('application/x-sd-node', node.id);
-                        e.dataTransfer.effectAllowed = 'move';
-                      }}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        setDragHoverCell(null);
-                        const draggedNodeId = e.dataTransfer.getData(
-                          'application/x-sd-node'
-                        );
-                        if (draggedNodeId && draggedNodeId !== node.id) {
-                          moveNodeToCell(draggedNodeId, pos);
-                        }
-                      }}
+                      data-lab-node={node.id}
+                      onPointerDown={(e) => handleNodePointerDown(e, node.id)}
+                      onPointerMove={handleNodePointerMove}
+                      onPointerUp={handleNodePointerUp}
+                      onPointerCancel={cancelNodeDrag}
+                      onLostPointerCapture={handleNodeLostCapture}
+                      onDragStart={(e) => e.preventDefault()}
                       onClick={(e) => {
                         e.stopPropagation();
                         if (connectMode) {
@@ -2668,23 +3711,65 @@ export const SdLabView: React.FC = () => {
                         setRightTab('inspector');
                       }}
                       style={{
-                        left: pos.col * CELL_W + (CELL_W - CARD_W) / 2,
-                        top: pos.row * CELL_H + (CELL_H - CARD_H) / 2,
+                        left: pos.x,
+                        top: pos.y,
                         width: CARD_W,
                         height: CARD_H,
+                        ...(state === 'overloaded'
+                          ? { borderColor: '#dc3d43', backgroundColor: 'var(--dts-rose-soft)' }
+                          : null),
+                        ...highlightStyle,
+                        // Đang kéo: chỗ hiện tại chồng lên node khác → viền đỏ (thả ra sẽ hút vào ô xanh)
+                        ...(dragBlocked
+                          ? {
+                              outline: '2.5px solid #dc3d43',
+                              outlineOffset: 2,
+                              backgroundColor: 'var(--dts-rose-soft)',
+                            }
+                          : null),
+                        ...(isDragging
+                          ? { boxShadow: '0 12px 24px rgba(15,23,42,0.22)', opacity: 0.94 }
+                          : null),
                       }}
                       className={cn(
-                        'group absolute z-10 flex flex-col justify-between rounded-xl p-2 transition-all cursor-pointer',
+                        'group absolute z-10 flex touch-none select-none flex-col justify-between rounded-xl p-2',
+                        // Khi kéo: tắt transition để thẻ bám con trỏ (dây vẽ lại tức thì, không lệch)
+                        isDragging
+                          ? 'z-30 cursor-grabbing transition-none'
+                          : connectMode
+                            ? 'cursor-pointer transition-all'
+                            : 'cursor-grab transition-all',
                         'dts-card-tactile',
-                        isConnectSource &&
-                          'ring-2 ring-emerald-500 -translate-y-0.5',
-                        isSelected &&
-                          !isConnectSource &&
-                          'ring-2 ring-[#2563eb] -translate-y-0.5',
-                        state === 'overloaded' &&
-                          'border-[#dc3d43] bg-[var(--dts-rose-soft)]'
+                        !isLinking && !isDragging && (isConnectSource || isSelected) && '-translate-y-0.5',
+                        // Đặt cuối để tô sáng khi nối dây luôn thắng viền "đang chọn"
+                        wireTargetRing
                       )}
+                      onPointerEnter={() => {
+                        if (connectMode && connectFromId && !wireDragRef.current) {
+                          setConnectHoverId(node.id);
+                        }
+                      }}
+                      onPointerLeave={() => {
+                        setConnectHoverId((cur) => (cur === node.id ? null : cur));
+                      }}
                     >
+                      {/* Nhãn thả dây: "Thả để nối" / "Không nối được" */}
+                      {isWireHover && wireHoverPlan && (
+                        <div
+                          className={cn(
+                            'pointer-events-none absolute -top-3 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-full border px-2 py-0.5 font-mono text-[9.5px] font-extrabold shadow-sm',
+                            wireHoverPlan.ok
+                              ? 'border-emerald-600 bg-emerald-500 text-white'
+                              : 'border-[#dc3d43] bg-[#dc3d43] text-white'
+                          )}
+                        >
+                          {wireHoverPlan.ok
+                            ? `${lang === 'en' ? '✓ Drop to connect' : '✓ Thả để nối'}${wireHoverMode ? ` · ${wireHoverMode}` : ''}`
+                            : lang === 'en'
+                              ? '✕ Cannot connect'
+                              : '✕ Không nối được'}
+                        </div>
+                      )}
                       {/* Top row: Icon + Title + Quick actions */}
                       <div className="flex items-start justify-between gap-1">
                         <div className="flex min-w-0 items-center gap-1.5">
@@ -2739,7 +3824,7 @@ export const SdLabView: React.FC = () => {
                                 e.stopPropagation();
                                 deleteNode(node.id);
                               }}
-                              title={lang === 'en' ? 'Delete node' : 'Xoá thành phần'}
+                              title={lang === 'en' ? 'Delete node (Del)' : 'Xoá thành phần (Del)'}
                               className="hidden group-hover:inline-flex h-4 w-4 items-center justify-center rounded text-[var(--dts-ink-muted)] hover:bg-[var(--dts-rose-bg)] hover:text-[var(--dts-rose-ink)]"
                             >
                               <Trash2 className="h-2.5 w-2.5" />
@@ -2810,6 +3895,44 @@ export const SdLabView: React.FC = () => {
                           </span>
                         </div>
                       )}
+
+                      {/* Tay nối: kéo để vẽ dây, nhấn một lần để chọn đích */}
+                      <button
+                        type="button"
+                        draggable={false}
+                        aria-label={
+                          lang === 'en'
+                            ? `Connect from ${node.id}: drag to a target, or click then pick a target`
+                            : `Nối từ ${node.id}: kéo tới thành phần đích, hoặc nhấn rồi chọn đích`
+                        }
+                        title={
+                          lang === 'en'
+                            ? 'Drag to another component to connect (click = pick target)'
+                            : 'Kéo tới thành phần khác để nối (nhấn = chọn đích)'
+                        }
+                        onPointerDown={(e) => handleWirePointerDown(e, node.id)}
+                        onPointerMove={handleWirePointerMove}
+                        onPointerUp={handleWirePointerUp}
+                        onPointerCancel={cancelWireDrag}
+                        onClick={(e) => e.stopPropagation()}
+                        onDragStart={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        className={cn(
+                          'absolute -right-3.5 top-1/2 z-20 flex h-7 w-7 -translate-y-1/2 cursor-crosshair touch-none select-none items-center justify-center rounded-full transition-opacity focus-visible:opacity-100',
+                          showHandle ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            'h-3.5 w-3.5 rounded-full border-2 border-[var(--dts-border)] shadow-[1px_1px_0_var(--dts-shadow-color)]',
+                            isWireSource || isConnectSource
+                              ? 'bg-emerald-400'
+                              : 'bg-[var(--dts-green-bg)] hover:bg-emerald-300'
+                          )}
+                        />
+                      </button>
                     </div>
                   );
                 })}
@@ -2817,35 +3940,84 @@ export const SdLabView: React.FC = () => {
             </div>
           </div>
 
-          {/* Bottom-left Zoom Pill (`− · 100% · +`) */}
+          {/* Bottom-right collapsible wire legend */}
+          <div className="pointer-events-none absolute bottom-3 right-3 z-20">
+            <LinkLegend lang={lang} />
+          </div>
+
+          {/* Bottom-left view toolbar: Undo · Redo │ − · 100% · + │ Reset view */}
           <div className="pointer-events-none absolute bottom-3 left-3 z-20 flex items-center gap-2">
-            <div className="pointer-events-auto inline-flex items-center gap-1 rounded-xl border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] px-2 py-1 font-mono text-[11px] font-bold shadow-sm">
+            <div
+              data-no-pan
+              className="pointer-events-auto inline-flex items-center gap-1 rounded-xl border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] px-2 py-1 font-mono text-[11px] font-bold shadow-sm"
+            >
               <button
                 type="button"
-                onClick={() =>
-                  setBoardZoom((z) => Math.max(0.65, Number((z - 0.1).toFixed(2))))
+                onClick={undo}
+                disabled={histLen.past === 0}
+                title={lang === 'en' ? 'Undo (Ctrl/Cmd+Z)' : 'Hoàn tác (Ctrl/Cmd+Z)'}
+                aria-label={lang === 'en' ? 'Undo' : 'Hoàn tác'}
+                className="px-1 hover:text-[var(--dts-blue-ink)] disabled:cursor-not-allowed disabled:opacity-35"
+              >
+                <Undo2 className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={redo}
+                disabled={histLen.future === 0}
+                title={
+                  lang === 'en'
+                    ? 'Redo (Ctrl/Cmd+Shift+Z or Ctrl+Y)'
+                    : 'Làm lại (Ctrl/Cmd+Shift+Z hoặc Ctrl+Y)'
                 }
-                className="px-1.5 hover:text-[var(--dts-blue-ink)]"
+                aria-label={lang === 'en' ? 'Redo' : 'Làm lại'}
+                className="px-1 hover:text-[var(--dts-blue-ink)] disabled:cursor-not-allowed disabled:opacity-35"
+              >
+                <Redo2 className="h-3.5 w-3.5" />
+              </button>
+              <span className="mx-0.5 h-3.5 w-px bg-[var(--dts-line-strong)]" />
+              <button
+                type="button"
+                onClick={() => zoomAt(boardZoom / 1.15)}
+                disabled={boardZoom <= ZOOM_MIN}
+                title={lang === 'en' ? 'Zoom out (Ctrl/⌘ + scroll)' : 'Thu nhỏ (Ctrl/⌘ + cuộn chuột)'}
+                className="px-1.5 hover:text-[var(--dts-blue-ink)] disabled:opacity-40"
               >
                 −
               </button>
               <button
                 type="button"
-                onClick={() => setBoardZoom(1)}
-                className="px-1 tabular-nums hover:text-[var(--dts-blue-ink)]"
+                onClick={() => zoomAt(1)}
+                title={lang === 'en' ? 'Reset to 100%' : 'Về 100%'}
+                className="min-w-[3ch] px-1 tabular-nums hover:text-[var(--dts-blue-ink)]"
               >
                 {Math.round(boardZoom * 100)}%
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  setBoardZoom((z) => Math.min(1.25, Number((z + 0.1).toFixed(2))))
-                }
-                className="px-1.5 hover:text-[var(--dts-blue-ink)]"
+                onClick={() => zoomAt(boardZoom * 1.15)}
+                disabled={boardZoom >= ZOOM_MAX}
+                title={lang === 'en' ? 'Zoom in (Ctrl/⌘ + scroll)' : 'Phóng to (Ctrl/⌘ + cuộn chuột)'}
+                className="px-1.5 hover:text-[var(--dts-blue-ink)] disabled:opacity-40"
               >
                 +
               </button>
+              <span className="mx-0.5 h-3.5 w-px bg-[var(--dts-line-strong)]" />
+              <button
+                type="button"
+                onClick={fitToContent}
+                title={lang === 'en' ? 'Reset view (fit diagram)' : 'Đặt lại khung nhìn (vừa sơ đồ)'}
+                aria-label={lang === 'en' ? 'Reset view' : 'Đặt lại khung nhìn'}
+                className="px-1 hover:text-[var(--dts-blue-ink)]"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+              </button>
             </div>
+            <span className="hidden rounded-lg bg-[var(--dts-panel-elevated)]/85 px-2 py-0.5 text-[10px] text-[var(--dts-ink-muted)] shadow-xs xl:inline">
+              {lang === 'en'
+                ? 'Ctrl/⌘ + scroll to zoom · drag empty space to pan · arrow keys nudge the selected node'
+                : 'Ctrl/⌘ + cuộn để zoom · kéo vùng trống để di chuyển · phím mũi tên để xê dịch thành phần đang chọn'}
+            </span>
           </div>
         </section>
 
@@ -3209,7 +4381,7 @@ export const SdLabView: React.FC = () => {
                           <button
                             key={ch.id}
                             type="button"
-                            onClick={() => handleSelectTemplate(ch.id, 'starter')}
+                            onClick={() => handleSelectTemplate(ch.id)}
                             className="flex w-full items-center justify-between gap-2 rounded-xl border border-[var(--dts-line-strong)] bg-[var(--dts-panel)] p-2.5 text-left hover:border-[var(--dts-border)]"
                           >
                             <div className="min-w-0">
@@ -3383,6 +4555,53 @@ export const SdLabView: React.FC = () => {
           </div>
         </aside>
       </div>
+
+      {/* ═══════════════ CONFIRM: ghi đè canvas / xem mẫu 3★ ═══════════════ */}
+      <LabConfirmDialog
+        open={pendingPreset !== null}
+        tone={pendingPreset === 'reference' ? 'amber' : 'default'}
+        title={
+          pendingPreset === 'reference'
+            ? lang === 'en'
+              ? 'View the 3-star reference?'
+              : 'Xem kiến trúc mẫu 3★?'
+            : pendingPreset === 'blank'
+              ? lang === 'en'
+                ? 'Replace canvas with a blank one?'
+                : 'Thay canvas bằng canvas trống?'
+              : lang === 'en'
+                ? 'Reset to the starter design?'
+                : 'Đặt lại về bản khởi điểm?'
+        }
+        body={
+          <>
+            {pendingPreset === 'reference' && (
+              <p>
+                {lang === 'en'
+                  ? 'Opening the reference solution permanently marks this lab as "solution viewed". It reduces the XP and stars you can earn here, and this cannot be undone.'
+                  : 'Mở lời giải mẫu sẽ đánh dấu vĩnh viễn bài này là "đã xem đáp án": XP và số sao nhận được ở bài này bị giảm, và không thể hoàn tác.'}
+              </p>
+            )}
+            <p>
+              {lang === 'en'
+                ? 'Your current canvas will be replaced. You can still bring it back with Undo (Ctrl/Cmd+Z) until you switch lab.'
+                : 'Canvas hiện tại sẽ bị thay thế. Bạn vẫn có thể khôi phục bằng Hoàn tác (Ctrl/Cmd+Z) cho tới khi đổi bài.'}
+            </p>
+          </>
+        }
+        confirmLabel={
+          pendingPreset === 'reference'
+            ? lang === 'en'
+              ? 'View reference'
+              : 'Vẫn xem mẫu'
+            : lang === 'en'
+              ? 'Replace canvas'
+              : 'Thay canvas'
+        }
+        cancelLabel={lang === 'en' ? 'Cancel' : 'Huỷ'}
+        onConfirm={confirmPendingPreset}
+        onCancel={() => setPendingPreset(null)}
+      />
     </div>
   );
 };
@@ -3504,7 +4723,7 @@ const NodeInspectorForm: React.FC<NodeInspectorFormProps> = ({
             <button
               type="button"
               onClick={onDelete}
-              title={lang === 'en' ? 'Delete node' : 'Xoá thành phần'}
+              title={lang === 'en' ? 'Delete node (Del)' : 'Xoá thành phần (Del)'}
               className="inline-flex h-6 w-6 items-center justify-center rounded-lg border border-[var(--dts-line-strong)] bg-[var(--dts-rose-soft)] text-[var(--dts-rose-ink)]"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -3830,6 +5049,34 @@ const NodeInspectorForm: React.FC<NodeInspectorFormProps> = ({
             </div>
           )}
 
+          {/* NoSQL hot-key salting */}
+          {node.kind === 'nosql' && (
+            <div>
+              <div className="flex items-center justify-between font-mono text-[10px] font-bold">
+                <span className="text-[var(--dts-ink-muted)]">
+                  {lang === 'en' ? 'hotKeySalt (key splitting 1..16)' : 'hotKeySalt (chia nhỏ khoá nóng 1..16)'}
+                </span>
+                <span className="font-extrabold">
+                  ×{Math.max(1, Math.round(Number(node.params.hotKeySalt ?? 1)))}
+                </span>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={16}
+                step={1}
+                value={Math.max(1, Math.round(Number(node.params.hotKeySalt ?? 1)))}
+                onChange={(e) => setParam('hotKeySalt', Number(e.target.value))}
+                className="w-full cursor-pointer accent-[var(--dts-blue-ink)]"
+              />
+              <div className="mt-0.5 text-[10px] text-[var(--dts-ink-muted)]">
+                {lang === 'en'
+                  ? 'Splits one hot key into N sub-keys across shards (reads then scatter-gather N sub-keys).'
+                  : 'Chia một khoá nóng thành N khoá con rải trên nhiều shard (đổi lại đọc phải gom từ N khoá con).'}
+              </div>
+            </div>
+          )}
+
           {/* Queue dlq */}
           {node.kind === 'queue' && (
             <label className="flex items-center justify-between rounded-lg border border-[var(--dts-line-strong)] bg-[var(--dts-panel)] px-2.5 py-1.5 font-mono text-[11px] font-bold">
@@ -3958,7 +5205,7 @@ const LinkInspectorForm: React.FC<LinkInspectorFormProps> = ({
         <button
           type="button"
           onClick={onDelete}
-          title={lang === 'en' ? 'Delete link' : 'Xoá kết nối'}
+          title={lang === 'en' ? 'Delete link (Del)' : 'Xoá kết nối (Del)'}
           className="inline-flex h-6 w-6 items-center justify-center rounded-lg border border-[var(--dts-line-strong)] bg-[var(--dts-rose-soft)] text-[var(--dts-rose-ink)]"
         >
           <Trash2 className="h-3.5 w-3.5" />
@@ -3997,6 +5244,7 @@ const LinkInspectorForm: React.FC<LinkInspectorFormProps> = ({
               mode
             </label>
             <select
+              title={pick(LINK_MODE_HELP[link.mode], lang)}
               value={link.mode}
               onChange={(e) => {
                 const nextMode = e.target.value as LinkSpec['mode'];
@@ -4012,11 +5260,22 @@ const LinkInspectorForm: React.FC<LinkInspectorFormProps> = ({
               }}
               className="mt-0.5 w-full rounded-lg border border-[var(--dts-line-strong)] bg-[var(--dts-panel)] px-2 py-1 font-mono text-[11px] font-bold"
             >
-              <option value="sync">sync (đồng bộ)</option>
-              <option value="async">async (bất đồng bộ)</option>
-              <option value="pull">pull (Queue → Worker)</option>
-              <option value="replicate">replicate (nhân bản DB)</option>
+              <option value="sync" title={pick(LINK_MODE_HELP.sync, lang)}>
+                {lang === 'en' ? 'sync (caller waits)' : 'sync (đồng bộ)'}
+              </option>
+              <option value="async" title={pick(LINK_MODE_HELP.async, lang)}>
+                {lang === 'en' ? 'async (fire-and-forget)' : 'async (bất đồng bộ)'}
+              </option>
+              <option value="pull" title={pick(LINK_MODE_HELP.pull, lang)}>
+                pull (Queue → Worker)
+              </option>
+              <option value="replicate" title={pick(LINK_MODE_HELP.replicate, lang)}>
+                {lang === 'en' ? 'replicate (data copy)' : 'replicate (nhân bản dữ liệu)'}
+              </option>
             </select>
+            <p className="mt-1 text-[10.5px] leading-snug text-[var(--dts-ink-muted)]">
+              {pick(LINK_MODE_HELP[link.mode], lang)}
+            </p>
           </div>
 
           <div>
@@ -4024,6 +5283,7 @@ const LinkInspectorForm: React.FC<LinkInspectorFormProps> = ({
               carries
             </label>
             <select
+              title={pick(LINK_CARRIES_HELP[link.carries ?? 'rw'], lang)}
               value={link.carries ?? 'rw'}
               onChange={(e) => {
                 const nextCarries = e.target.value as 'rw' | 'r' | 'w';
@@ -4034,10 +5294,19 @@ const LinkInspectorForm: React.FC<LinkInspectorFormProps> = ({
               }}
               className="mt-0.5 w-full rounded-lg border border-[var(--dts-line-strong)] bg-[var(--dts-panel)] px-2 py-1 font-mono text-[11px] font-bold"
             >
-              <option value="rw">rw (Đọc + Ghi)</option>
-              <option value="r">r (Chỉ đọc)</option>
-              <option value="w">w (Chỉ ghi)</option>
+              <option value="rw" title={pick(LINK_CARRIES_HELP.rw, lang)}>
+                {lang === 'en' ? 'rw (read + write)' : 'rw (Đọc + Ghi)'}
+              </option>
+              <option value="r" title={pick(LINK_CARRIES_HELP.r, lang)}>
+                {lang === 'en' ? 'r (read only)' : 'r (Chỉ đọc)'}
+              </option>
+              <option value="w" title={pick(LINK_CARRIES_HELP.w, lang)}>
+                {lang === 'en' ? 'w (write only)' : 'w (Chỉ ghi)'}
+              </option>
             </select>
+            <p className="mt-1 text-[10.5px] leading-snug text-[var(--dts-ink-muted)]">
+              {pick(LINK_CARRIES_HELP[link.carries ?? 'rw'], lang)}
+            </p>
           </div>
         </div>
 

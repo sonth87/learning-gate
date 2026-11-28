@@ -14,22 +14,33 @@ import {
 } from '@/data/reference/pdfDeepDivesData';
 import { LevelBadge } from '@/components/common/LevelBadge';
 import { RichTextWithTerms } from '@/components/common/RichTextWithTerms';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { CleanArchExplorer } from './CleanArchExplorer';
 
 export const ReferenceHub: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
+
   return (
     <div className="mx-auto max-w-[1400px] px-3 sm:px-6 py-4 sm:py-6 space-y-6 sm:space-y-8">
       {/* Banner */}
       <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-sky-500/10 to-slate-900 p-4 sm:p-6 space-y-2">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-400">
           <Compass className="h-4 w-4 shrink-0" aria-hidden="true" />
-          <span>Cẩm nang Bổ trợ & Tham chiếu Hệ sinh thái (Từ Tài liệu PDF)</span>
+          <span>
+            {lang === 'en'
+              ? 'Supplemental Guide & Ecosystem Reference (From PDF)'
+              : 'Cẩm nang Bổ trợ & Tham chiếu Hệ sinh thái (Từ Tài liệu PDF)'}
+          </span>
         </div>
         <h1 className="font-mono text-lg sm:text-2xl font-extrabold text-white">
-          Bản đồ Đối chiếu Hệ sinh thái, Ma trận Xử lý Đồng thời & Clean Architecture
+          {lang === 'en'
+            ? 'Ecosystem Mapping, Concurrency Matrix & Clean Architecture'
+            : 'Bản đồ Đối chiếu Hệ sinh thái, Ma trận Xử lý Đồng thời & Clean Architecture'}
         </h1>
         <p className="text-xs sm:text-sm text-slate-300 max-w-4xl leading-relaxed">
-          Tổng hợp toàn bộ các bảng đối chiếu công cụ hiện đại (Rust-based Python tooling), ma trận chọn công nghệ Concurrency/Parallelism vượt qua GIL, sơ đồ dự án FastAPI 4 tầng và 8 dự án Portfolio thực chiến kèm phương pháp học 30 – 50 – 20.
+          {lang === 'en'
+            ? 'Comprehensive reference of modern Rust-based Python tooling, Concurrency/Parallelism selection matrix beyond the GIL, 4-layer FastAPI project blueprint, and 8 practical Portfolio projects with the 30 – 50 – 20 learning method.'
+            : 'Tổng hợp toàn bộ các bảng đối chiếu công cụ hiện đại (Rust-based Python tooling), ma trận chọn công nghệ Concurrency/Parallelism vượt qua GIL, sơ đồ dự án FastAPI 4 tầng và 8 dự án Portfolio thực chiến kèm phương pháp học 30 – 50 – 20.'}
         </p>
       </div>
 
@@ -44,10 +55,14 @@ export const ReferenceHub: React.FC = () => {
           </div>
           <div>
             <h2 className="text-sm sm:text-lg font-extrabold text-white">
-              Chuyên đề 2 (PDF): Ma trận Chọn Công nghệ Xử lý Đồng thời & Tác động của GIL
+              {lang === 'en'
+                ? 'Topic 2 (PDF): Concurrency Selection Matrix & GIL Impact'
+                : 'Chuyên đề 2 (PDF): Ma trận Chọn Công nghệ Xử lý Đồng thời & Tác động của GIL'}
             </h2>
             <p className="text-xs text-slate-400">
-              Cách chọn đúng công cụ giữa AsyncIO, Threading, Multiprocessing và Celery cho từng loại tải.
+              {lang === 'en'
+                ? 'How to choose the right tool among AsyncIO, Threading, Multiprocessing, and Celery for each workload.'
+                : 'Cách chọn đúng công cụ giữa AsyncIO, Threading, Multiprocessing và Celery cho từng loại tải.'}
             </p>
           </div>
         </div>
@@ -66,7 +81,7 @@ export const ReferenceHub: React.FC = () => {
               <div className="grid grid-cols-1 gap-1.5 rounded-lg bg-slate-900/80 p-2.5">
                 <div>
                   <span className="text-[10px] uppercase text-slate-400 block">
-                    Công cụ Python chuẩn:
+                    {lang === 'en' ? 'Standard Python Tool:' : 'Công cụ Python chuẩn:'}
                   </span>
                   <span className="font-mono text-sky-300 font-semibold">
                     <RichTextWithTerms text={row.pythonTool} />
@@ -74,7 +89,7 @@ export const ReferenceHub: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-[10px] uppercase text-slate-400 block">
-                    Tương đương Node.js:
+                    {lang === 'en' ? 'Node.js Equivalent:' : 'Tương đương Node.js:'}
                   </span>
                   <span className="font-mono text-amber-200">
                     {row.nodeJsEquivalent}
@@ -82,7 +97,9 @@ export const ReferenceHub: React.FC = () => {
                 </div>
               </div>
               <p className="text-slate-300 leading-relaxed">
-                <strong className="text-rose-300">Cơ chế GIL: </strong>
+                <strong className="text-rose-300">
+                  {lang === 'en' ? 'GIL Mechanism: ' : 'Cơ chế GIL: '}
+                </strong>
                 <RichTextWithTerms text={row.gilMechanismAndImpact} />
               </p>
             </div>
@@ -94,11 +111,11 @@ export const ReferenceHub: React.FC = () => {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-950 text-slate-300 uppercase text-[11px]">
               <tr>
-                <th className="p-3.5">Bài toán thực tế</th>
-                <th className="p-3.5">Công cụ Python chuẩn</th>
-                <th className="p-3.5">Tương đương ở Node.js</th>
-                <th className="p-3.5">Cơ chế & Tác động của GIL</th>
-                <th className="p-3.5">Cấp độ</th>
+                <th className="p-3.5">{lang === 'en' ? 'Workload Type' : 'Bài toán thực tế'}</th>
+                <th className="p-3.5">{lang === 'en' ? 'Standard Python Tool' : 'Công cụ Python chuẩn'}</th>
+                <th className="p-3.5">{lang === 'en' ? 'Node.js Equivalent' : 'Tương đương ở Node.js'}</th>
+                <th className="p-3.5">{lang === 'en' ? 'GIL Mechanism & Impact' : 'Cơ chế & Tác động của GIL'}</th>
+                <th className="p-3.5">{lang === 'en' ? 'Level' : 'Cấp độ'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800 bg-slate-900/40">
@@ -134,10 +151,14 @@ export const ReferenceHub: React.FC = () => {
           </div>
           <div>
             <h2 className="text-sm sm:text-lg font-extrabold text-white">
-              Phần 1 (PDF): Bản đồ Đối chiếu Hệ sinh thái JS/TS ↔ Python Hiện đại
+              {lang === 'en'
+                ? 'Part 1 (PDF): JS/TS ↔ Modern Python Ecosystem Mapping'
+                : 'Phần 1 (PDF): Bản đồ Đối chiếu Hệ sinh thái JS/TS ↔ Python Hiện đại'}
             </h2>
             <p className="text-xs text-slate-400">
-              Áp dụng ngay bộ công cụ thế hệ mới (nhiều công cụ viết bằng Rust) có tốc độ vượt trội.
+              {lang === 'en'
+                ? 'Adopt next-generation tooling (many written in Rust) with superior speed.'
+                : 'Áp dụng ngay bộ công cụ thế hệ mới (nhiều công cụ viết bằng Rust) có tốc độ vượt trội.'}
             </p>
           </div>
         </div>
@@ -161,7 +182,9 @@ export const ReferenceHub: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-[10px] uppercase text-slate-400 block">
-                    Python Hiện đại (Khuyên dùng):
+                    {lang === 'en'
+                      ? 'Modern Python (Recommended):'
+                      : 'Python Hiện đại (Khuyên dùng):'}
                   </span>
                   <span className="font-semibold text-sky-300">
                     <RichTextWithTerms text={row.modernPythonStack} />
@@ -180,10 +203,10 @@ export const ReferenceHub: React.FC = () => {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-950 text-slate-300 uppercase text-[11px]">
               <tr>
-                <th className="p-3.5">Hạng mục</th>
-                <th className="p-3.5">Hệ sinh thái JS / TS / Node.js</th>
-                <th className="p-3.5">Tương đương trong Python Hiện đại (Khuyên dùng)</th>
-                <th className="p-3.5">Lý do & Ưu điểm vượt trội</th>
+                <th className="p-3.5">{lang === 'en' ? 'Category' : 'Hạng mục'}</th>
+                <th className="p-3.5">{lang === 'en' ? 'JS / TS / Node.js Ecosystem' : 'Hệ sinh thái JS / TS / Node.js'}</th>
+                <th className="p-3.5">{lang === 'en' ? 'Modern Python Equivalent (Recommended)' : 'Tương đương trong Python Hiện đại (Khuyên dùng)'}</th>
+                <th className="p-3.5">{lang === 'en' ? 'Why & Key Advantages' : 'Lý do & Ưu điểm vượt trội'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800 bg-slate-900/40">
@@ -212,10 +235,14 @@ export const ReferenceHub: React.FC = () => {
           </div>
           <div>
             <h2 className="text-sm sm:text-lg font-extrabold text-white">
-              Phần 6 (PDF): Ma trận Thứ tự Ưu tiên & Danh mục 8 Dự án Thực hành (Portfolio Milestones)
+              {lang === 'en'
+                ? 'Part 6 (PDF): Priority Matrix & 8 Hands-on Portfolio Milestones'
+                : 'Phần 6 (PDF): Ma trận Thứ tự Ưu tiên & Danh mục 8 Dự án Thực hành (Portfolio Milestones)'}
             </h2>
             <p className="text-xs text-slate-400">
-              Khóa chặt kiến thức của mỗi chặng bằng một dự án thực tế theo phương pháp phân bổ 30% Lý thuyết – 50% Code Dự án – 20% Đọc Source/Debug.
+              {lang === 'en'
+                ? 'Lock in each stage with a real-world project using the 30% Theory – 50% Project Coding – 20% Source Reading/Debugging method.'
+                : 'Khóa chặt kiến thức của mỗi chặng bằng một dự án thực tế theo phương pháp phân bổ 30% Lý thuyết – 50% Code Dự án – 20% Đọc Source/Debug.'}
             </p>
           </div>
         </div>
@@ -229,7 +256,7 @@ export const ReferenceHub: React.FC = () => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <span className="rounded bg-slate-800 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-300">
-                    Mức ưu tiên #{proj.order} • {proj.priority}
+                    {lang === 'en' ? `Priority #${proj.order}` : `Mức ưu tiên #${proj.order}`} • {proj.priority}
                   </span>
                   <LevelBadge level={proj.level} />
                 </div>
@@ -263,15 +290,21 @@ export const ReferenceHub: React.FC = () => {
             <BookOpen className="h-5 w-5 text-indigo-400 shrink-0" aria-hidden="true" />
             <div>
               <strong className="text-white block">
-                Chiến lược học tập 30 – 50 – 20 & Nguồn tài liệu chuẩn:
+                {lang === 'en'
+                  ? '30 – 50 – 20 Learning Strategy & Core References:'
+                  : 'Chiến lược học tập 30 – 50 – 20 & Nguồn tài liệu chuẩn:'}
               </strong>
               <span className="text-slate-300">
-                30% Đọc khái niệm & đối chiếu tư duy • 50% Gõ code bài tập & xây dựng 8 dự án • 20% Đọc mã nguồn FastAPI/Pydantic & chạy Debugger.
+                {lang === 'en'
+                  ? '30% Reading concepts & mental-model mapping • 50% Coding exercises & building 8 projects • 20% Reading FastAPI/Pydantic source & debugging.'
+                  : '30% Đọc khái niệm & đối chiếu tư duy • 50% Gõ code bài tập & xây dựng 8 dự án • 20% Đọc mã nguồn FastAPI/Pydantic & chạy Debugger.'}
               </span>
             </div>
           </div>
           <div className="text-[11px] text-indigo-200 font-mono">
-            Sách gối đầu giường: Python Crash Course (3rd Ed) & Fluent Python (2nd Ed)
+            {lang === 'en'
+              ? 'Essential Books: Python Crash Course (3rd Ed) & Fluent Python (2nd Ed)'
+              : 'Sách gối đầu giường: Python Crash Course (3rd Ed) & Fluent Python (2nd Ed)'}
           </div>
         </div>
       </section>

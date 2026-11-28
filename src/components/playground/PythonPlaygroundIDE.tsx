@@ -43,6 +43,7 @@ import {
 import { renderHighlightedPython } from '@/utils/pythonHighlighter';
 import { IDE_THEMES, getIdeThemeConfig } from '@/utils/ideThemes';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { getAppContainerWidth } from '@/utils/viewport';
 import { cn } from '@/utils/cn';
 
@@ -151,6 +152,8 @@ type ConsoleTab = 'output' | 'terminal' | 'logs' | 'variables';
 type MobilePlaygroundView = 'split' | 'editor' | 'console' | 'packages';
 
 export const PythonPlaygroundIDE: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
+  const isEn = lang === 'en';
   const { ideTheme, setIdeTheme } = useSettingsStore();
   const activeIdeTheme = getIdeThemeConfig(ideTheme);
 
@@ -203,7 +206,9 @@ export const PythonPlaygroundIDE: React.FC = () => {
     {
       id: 'welcome-1',
       kind: 'output',
-      text: 'Python 3.12.7 Interactive REPL & uv CLI — Gõ biểu thức Python (VD: 2 ** 10), tên biến hoặc lệnh CLI (help, uv add pydantic, pip list, ls)',
+      text: isEn
+        ? 'Python 3.12.7 Interactive REPL & uv CLI — Type Python expressions (e.g. 2 ** 10), variable names, or CLI commands (help, uv add pydantic, pip list, ls)'
+        : 'Python 3.12.7 Interactive REPL & uv CLI — Gõ biểu thức Python (VD: 2 ** 10), tên biến hoặc lệnh CLI (help, uv add pydantic, pip list, ls)',
     },
   ]);
   const [terminalInput, setTerminalInput] = useState('');
@@ -366,7 +371,9 @@ export const PythonPlaygroundIDE: React.FC = () => {
         timestamp: new Date().toTimeString().split(' ')[0],
         level: 'INFO',
         source: 'uv package manager',
-        message: `Đã cài đặt & kích hoạt gói '${cleanId}' trong môi trường dự án`,
+        message: isEn
+          ? `Installed & activated package '${cleanId}' in project environment`
+          : `Đã cài đặt & kích hoạt gói '${cleanId}' trong môi trường dự án`,
       },
       ...prev,
     ]);
@@ -390,7 +397,7 @@ export const PythonPlaygroundIDE: React.FC = () => {
           : `${pkg.importStatement}\n${f.content}`;
         return {
           ...f,
-          content: `${nextHeader.trimEnd()}\n\n# Thử nghiệm ${pkg.name}:\n${pkg.sampleSnippet}\n`,
+          content: `${nextHeader.trimEnd()}\n\n# ${isEn ? 'Try' : 'Thử nghiệm'} ${pkg.name}:\n${pkg.sampleSnippet}\n`,
         };
       })
     );
@@ -414,19 +421,19 @@ export const PythonPlaygroundIDE: React.FC = () => {
       setNewFileNameInput('');
       return;
     }
-    const lang: PlaygroundFile['language'] = name.endsWith('.toml')
+    const fileLang: PlaygroundFile['language'] = name.endsWith('.toml')
       ? 'toml'
       : name.endsWith('.json')
       ? 'json'
       : 'python';
     const starter =
-      lang === 'python'
-        ? `# Module: ${name}\n\ndef helper_message() -> str:\n    return "Xin chào từ module ${name}!"\n`
-        : lang === 'json'
+      fileLang === 'python'
+        ? `# Module: ${name}\n\ndef helper_message() -> str:\n    return "${isEn ? 'Hello from module' : 'Xin chào từ module'} ${name}!"\n`
+        : fileLang === 'json'
         ? `{\n  "env": "development"\n}\n`
         : '';
 
-    setFiles((prev) => [...prev, { name, language: lang, content: starter }]);
+    setFiles((prev) => [...prev, { name, language: fileLang, content: starter }]);
     setActiveFileName(name);
     setNewFileModalOpen(false);
     setNewFileNameInput('');
@@ -716,7 +723,9 @@ export const PythonPlaygroundIDE: React.FC = () => {
                 </span>
               </div>
               <p className="hidden sm:block text-xs text-slate-400">
-                Viết code, tự động gợi ý hàm/module, import thư viện, chia tách đa file (`.py`), xem Output, Logs, Biến bộ nhớ & gõ lệnh trực tiếp trên cả Desktop và Mobile/Tablet.
+                {isEn
+                  ? 'Write code, auto-complete functions/modules, import libraries, split multi-file (`.py`), inspect Output, Logs, Memory Variables & run commands directly on Desktop and Mobile/Tablet.'
+                  : 'Viết code, tự động gợi ý hàm/module, import thư viện, chia tách đa file (`.py`), xem Output, Logs, Biến bộ nhớ & gõ lệnh trực tiếp trên cả Desktop và Mobile/Tablet.'}
               </p>
             </div>
           </div>
@@ -726,7 +735,11 @@ export const PythonPlaygroundIDE: React.FC = () => {
             <button
               type="button"
               onClick={() => setPreferPyodide((v) => !v)}
-              title="Chuyển đổi giữa Instant Engine (chạy tức thì 0ms) và CPython 3.12 WebAssembly (Pyodide)"
+              title={
+                isEn
+                  ? 'Switch between Instant Engine (0ms instant run) and CPython 3.12 WebAssembly (Pyodide)'
+                  : 'Chuyển đổi giữa Instant Engine (chạy tức thì 0ms) và CPython 3.12 WebAssembly (Pyodide)'
+              }
               className={cn(
                 'inline-flex items-center justify-center gap-1.5 rounded-xl border px-2.5 py-2 text-[11px] sm:text-xs font-bold transition-all cursor-pointer truncate',
                 preferPyodide
@@ -760,14 +773,22 @@ export const PythonPlaygroundIDE: React.FC = () => {
               )}
             >
               <Package className="h-3.5 w-3.5 text-violet-400 shrink-0" />
-              <span className="truncate">Thư viện & Import ({installedPackages.length})</span>
+              <span className="truncate">
+                {isEn
+                  ? `Packages & Import (${installedPackages.length})`
+                  : `Thư viện & Import (${installedPackages.length})`}
+              </span>
             </button>
 
             <div className="col-span-2 sm:col-span-1 flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={handleResetWorkspace}
-                title="Khôi phục mẫu code ban đầu"
+                title={
+                  isEn
+                    ? 'Reset to initial template code'
+                    : 'Khôi phục mẫu code ban đầu'
+                }
                 className="inline-flex items-center justify-center gap-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:border-slate-600 transition-colors cursor-pointer shrink-0"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
@@ -781,7 +802,15 @@ export const PythonPlaygroundIDE: React.FC = () => {
                 className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-extrabold text-[#020617] hover:bg-emerald-400 disabled:opacity-60 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer"
               >
                 <Play className="h-3.5 w-3.5 fill-current shrink-0" />
-                <span>{isRunning ? 'Đang chạy...' : 'Chạy Code'}</span>
+                <span>
+                  {isRunning
+                    ? isEn
+                      ? 'Running...'
+                      : 'Đang chạy...'
+                    : isEn
+                    ? 'Run Code'
+                    : 'Chạy Code'}
+                </span>
                 <kbd className="hidden md:inline-block rounded bg-emerald-950/30 px-1.5 py-0.2 font-mono text-[10px] text-emerald-950">
                   ⌘↵
                 </kbd>
@@ -805,14 +834,14 @@ export const PythonPlaygroundIDE: React.FC = () => {
                 className="relative flex min-w-0 items-center gap-2"
               >
                 <span className="hidden md:inline text-[11px] font-bold uppercase tracking-wider text-slate-400 shrink-0">
-                  Mẫu Playground:
+                  {isEn ? 'Playground Template:' : 'Mẫu Playground:'}
                 </span>
                 <button
                   type="button"
                   onClick={() => setShowTemplateMenu((v) => !v)}
                   aria-expanded={showTemplateMenu}
                   aria-haspopup="listbox"
-                  aria-label="Chọn mẫu Playground"
+                  aria-label={isEn ? 'Select Playground template' : 'Chọn mẫu Playground'}
                   className="flex min-w-0 flex-1 sm:flex-initial sm:min-w-[340px] sm:max-w-[520px] items-center justify-between gap-2 rounded-xl border border-emerald-500/45 bg-emerald-500/12 px-3 py-1.5 text-left text-xs font-bold text-emerald-300 hover:border-emerald-500/70 transition-colors cursor-pointer"
                 >
                   <span className="truncate">{currentTemplate.title}</span>
@@ -832,7 +861,7 @@ export const PythonPlaygroundIDE: React.FC = () => {
                 {showTemplateMenu && (
                   <div
                     role="listbox"
-                    aria-label="Danh sách mẫu Playground"
+                    aria-label={isEn ? 'Playground templates list' : 'Danh sách mẫu Playground'}
                     className="absolute left-0 top-full z-40 mt-1.5 w-[min(90vw,480px)] rounded-2xl border border-slate-700 bg-slate-900 p-1.5 shadow-2xl"
                   >
                     <div className="max-h-[60vh] space-y-1 overflow-y-auto">
@@ -900,7 +929,7 @@ export const PythonPlaygroundIDE: React.FC = () => {
           )}
         >
           <SplitSquareVertical className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">Chia đôi</span>
+          <span className="truncate">{isEn ? 'Split' : 'Chia đôi'}</span>
         </button>
         <button
           type="button"
@@ -941,7 +970,7 @@ export const PythonPlaygroundIDE: React.FC = () => {
           )}
         >
           <Package className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">Thư viện</span>
+          <span className="truncate">{isEn ? 'Packages' : 'Thư viện'}</span>
         </button>
       </div>
 
@@ -958,18 +987,32 @@ export const PythonPlaygroundIDE: React.FC = () => {
               <h2 className="text-sm sm:text-base font-extrabold text-white flex items-center gap-2">
                 <Package className="h-4 w-4 text-violet-400" />
                 <span>
-                  Trình Quản lý Thư viện, Cài đặt (`uv add`) & Chèn Nhanh `import`
+                  {isEn
+                    ? 'Package Manager, Install (`uv add`) & Quick `import` Snippet'
+                    : 'Trình Quản lý Thư viện, Cài đặt (`uv add`) & Chèn Nhanh `import`'}
                 </span>
               </h2>
               <p className="text-xs text-slate-400">
-                Bấm <strong>"Chèn Import + Code mẫu"</strong> để tự động khai báo thư viện vào file `.py` và cập nhật `pyproject.toml`.
+                {isEn ? (
+                  <>
+                    Click <strong>&quot;Insert Import + Sample&quot;</strong> to automatically declare the package in your `.py` file and update `pyproject.toml`.
+                  </>
+                ) : (
+                  <>
+                    Bấm <strong>&quot;Chèn Import + Code mẫu&quot;</strong> để tự động khai báo thư viện vào file `.py` và cập nhật `pyproject.toml`.
+                  </>
+                )}
               </p>
             </div>
             <input
               type="text"
               value={pkgSearch}
               onChange={(e) => setPkgSearch(e.target.value)}
-              placeholder="Tìm thư viện (math, decimal, json, pydantic, httpx...)"
+              placeholder={
+                isEn
+                  ? 'Search packages (math, decimal, json, pydantic, httpx...)'
+                  : 'Tìm thư viện (math, decimal, json, pydantic, httpx...)'
+              }
               className="w-full sm:w-72 rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:border-violet-500 focus:outline-none"
             />
           </div>
@@ -1001,7 +1044,7 @@ export const PythonPlaygroundIDE: React.FC = () => {
                       </div>
                       {isInstalled && (
                         <span className="text-[10px] font-bold text-emerald-400">
-                          ✓ Đã nạp
+                          {isEn ? '✓ Installed' : '✓ Đã nạp'}
                         </span>
                       )}
                     </div>
@@ -1020,7 +1063,11 @@ export const PythonPlaygroundIDE: React.FC = () => {
                       className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-violet-500/20 border border-violet-500/40 px-2.5 py-1.5 text-[11px] font-bold text-violet-200 hover:bg-violet-500/30 transition-colors cursor-pointer"
                     >
                       <Download className="h-3 w-3" />
-                      <span>Chèn Import + Code mẫu</span>
+                      <span>
+                        {isEn
+                          ? 'Insert Import + Sample'
+                          : 'Chèn Import + Code mẫu'}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -1104,7 +1151,11 @@ export const PythonPlaygroundIDE: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleDeleteFile(file.name)}
-                          title={`Xóa file ${file.name}`}
+                          title={
+                            isEn
+                              ? `Delete file ${file.name}`
+                              : `Xóa file ${file.name}`
+                          }
                           className="pr-2 pl-0.5 text-slate-400 hover:text-rose-400 cursor-pointer"
                         >
                           <Trash2 className="h-3 w-3" />
@@ -1117,7 +1168,11 @@ export const PythonPlaygroundIDE: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setNewFileModalOpen((v) => !v)}
-                  title="Tạo thêm file module .py mới trong dự án"
+                  title={
+                    isEn
+                      ? 'Create a new .py module file in this project'
+                      : 'Tạo thêm file module .py mới trong dự án'
+                  }
                   style={{
                     backgroundColor: activeIdeTheme.btnBg,
                     borderColor: activeIdeTheme.barBorder,
@@ -1149,7 +1204,9 @@ export const PythonPlaygroundIDE: React.FC = () => {
                   {copiedCode ? (
                     <>
                       <Check className="h-3.5 w-3.5 text-emerald-500" />
-                      <span className="text-emerald-500">Đã chép</span>
+                      <span className="text-emerald-500">
+                        {isEn ? 'Copied' : 'Đã chép'}
+                      </span>
                     </>
                   ) : (
                     <>
@@ -1165,7 +1222,7 @@ export const PythonPlaygroundIDE: React.FC = () => {
                   className="inline-flex items-center gap-1 rounded-lg bg-emerald-500 px-3 py-1 text-xs font-extrabold text-[#020617] hover:bg-emerald-400 transition-colors shadow-sm cursor-pointer"
                 >
                   <Play className="h-3.5 w-3.5 fill-current" />
-                  <span>Chạy</span>
+                  <span>{isEn ? 'Run' : 'Chạy'}</span>
                 </button>
               </div>
             </div>
@@ -1177,13 +1234,17 @@ export const PythonPlaygroundIDE: React.FC = () => {
                 className="flex items-center gap-2 border-b border-slate-800 bg-slate-950/90 px-3.5 py-2"
               >
                 <span className="text-xs font-semibold text-slate-300">
-                  Tên file mới:
+                  {isEn ? 'New file name:' : 'Tên file mới:'}
                 </span>
                 <input
                   type="text"
                   value={newFileNameInput}
                   onChange={(e) => setNewFileNameInput(e.target.value)}
-                  placeholder="VD: helpers.py hoặc schemas.py"
+                  placeholder={
+                    isEn
+                      ? 'e.g. helpers.py or schemas.py'
+                      : 'VD: helpers.py hoặc schemas.py'
+                  }
                   autoFocus
                   className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 font-mono text-xs text-white focus:border-emerald-500 focus:outline-none"
                 />
@@ -1191,14 +1252,14 @@ export const PythonPlaygroundIDE: React.FC = () => {
                   type="submit"
                   className="rounded-lg bg-emerald-500 px-3 py-1 text-xs font-bold text-slate-950 hover:bg-emerald-400 cursor-pointer"
                 >
-                  Tạo file
+                  {isEn ? 'Create file' : 'Tạo file'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setNewFileModalOpen(false)}
                   className="rounded-lg border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:text-white cursor-pointer"
                 >
-                  Hủy
+                  {isEn ? 'Cancel' : 'Hủy'}
                 </button>
               </form>
             )}
@@ -1295,7 +1356,11 @@ export const PythonPlaygroundIDE: React.FC = () => {
                   autoCorrect="off"
                   wrap="off"
                   style={{ fontVariantLigatures: 'none', letterSpacing: '0px', tabSize: 4 }}
-                  aria-label={`Soạn thảo file ${activeFile.name}`}
+                  aria-label={
+                    isEn
+                      ? `Edit file ${activeFile.name}`
+                      : `Soạn thảo file ${activeFile.name}`
+                  }
                   className={cn(
                     'ide-code-textarea absolute inset-0 h-full w-full resize-none overflow-auto border-0 bg-transparent p-4 font-mono text-[13px] leading-6 whitespace-pre text-transparent focus:outline-none [-webkit-text-fill-color:transparent]',
                     activeIdeTheme.caretClass,
@@ -1324,10 +1389,14 @@ export const PythonPlaygroundIDE: React.FC = () => {
                       className="flex items-center justify-between gap-2 px-3 py-1.5 border-b text-[10px] font-mono whitespace-nowrap"
                     >
                       <span className="font-bold">
-                        Gợi ý Python & Module (IntelliSense)
+                        {isEn
+                          ? 'Python & Module Suggestions (IntelliSense)'
+                          : 'Gợi ý Python & Module (IntelliSense)'}
                       </span>
                       <span className="opacity-90">
-                        ↑↓ chọn • Tab/Enter chèn • Esc
+                        {isEn
+                          ? '↑↓ select • Tab/Enter insert • Esc'
+                          : '↑↓ chọn • Tab/Enter chèn • Esc'}
                       </span>
                     </div>
 
@@ -1429,7 +1498,7 @@ export const PythonPlaygroundIDE: React.FC = () => {
                 }}
                 className="rounded-lg border px-2 py-1 text-[11px] font-semibold shrink-0 active:scale-95 cursor-pointer"
               >
-                ⇤ Lùi
+                {isEn ? '⇤ Unindent' : '⇤ Lùi'}
               </button>
               <button
                 type="button"
@@ -1447,7 +1516,7 @@ export const PythonPlaygroundIDE: React.FC = () => {
                 }}
                 className="rounded-lg border px-2.5 py-1 text-[11px] font-bold shrink-0 active:scale-95 cursor-pointer"
               >
-                💡 Gợi ý
+                {isEn ? '💡 Suggest' : '💡 Gợi ý'}
               </button>
               {[
                 { label: 'import', text: 'import ', back: 0 },
@@ -1496,7 +1565,9 @@ export const PythonPlaygroundIDE: React.FC = () => {
                 </span>
                 <span className="hidden sm:inline opacity-40">|</span>
                 <span className="hidden sm:inline opacity-80">
-                  Gõ `import `, `math.`, `json.` hoặc Ctrl+Space để mở gợi ý
+                  {isEn
+                    ? 'Type `import `, `math.`, `json.` or Ctrl+Space for suggestions'
+                    : 'Gõ `import `, `math.`, `json.` hoặc Ctrl+Space để mở gợi ý'}
                 </span>
               </div>
 
@@ -1551,7 +1622,9 @@ export const PythonPlaygroundIDE: React.FC = () => {
                           }}
                           className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border-b"
                         >
-                          Chọn Màu Giao Diện IDE
+                          {isEn
+                            ? 'Select IDE Color Theme'
+                            : 'Chọn Màu Giao Diện IDE'}
                         </div>
                         {IDE_THEMES.map((t) => {
                           const active = t.id === activeIdeTheme.id;
@@ -1693,7 +1766,11 @@ export const PythonPlaygroundIDE: React.FC = () => {
                   )}
                 >
                   <Layers className="h-3.5 w-3.5 shrink-0" />
-                  <span>Biến ({variables.length})</span>
+                  <span>
+                    {isEn
+                      ? `Variables (${variables.length})`
+                      : `Biến (${variables.length})`}
+                  </span>
                 </button>
               </div>
             </div>
@@ -1735,7 +1812,7 @@ export const PythonPlaygroundIDE: React.FC = () => {
                     }}
                     className="rounded border border-slate-700 bg-slate-800/80 px-2 py-0.5 text-[10px] text-slate-300 hover:text-white cursor-pointer"
                   >
-                    {copiedOutput ? 'Đã copy' : 'Copy Output'}
+                    {copiedOutput ? (isEn ? 'Copied' : 'Đã copy') : 'Copy Output'}
                   </button>
                   <button
                     type="button"
@@ -1745,7 +1822,7 @@ export const PythonPlaygroundIDE: React.FC = () => {
                     }}
                     className="rounded border border-slate-700 bg-slate-800/80 px-2 py-0.5 text-[10px] text-slate-300 hover:text-white cursor-pointer"
                   >
-                    Xóa
+                    {isEn ? 'Clear' : 'Xóa'}
                   </button>
                 </div>
               )}
@@ -1772,9 +1849,19 @@ export const PythonPlaygroundIDE: React.FC = () => {
 
                 {stdoutLines.length === 0 && stderrLines.length === 0 ? (
                   <div className="py-12 text-center text-slate-500 font-sans text-xs">
-                    Chưa có dữ liệu đầu ra. Hãy dùng hàm{' '}
-                    <code className="text-emerald-400 font-mono">print()</code>{' '}
-                    và bấm <strong>Chạy Code</strong>!
+                    {isEn ? (
+                      <>
+                        No output yet. Use{' '}
+                        <code className="text-emerald-400 font-mono">print()</code>{' '}
+                        and click <strong>Run Code</strong>!
+                      </>
+                    ) : (
+                      <>
+                        Chưa có dữ liệu đầu ra. Hãy dùng hàm{' '}
+                        <code className="text-emerald-400 font-mono">print()</code>{' '}
+                        và bấm <strong>Chạy Code</strong>!
+                      </>
+                    )}
                   </div>
                 ) : (
                   <>
@@ -1805,7 +1892,7 @@ export const PythonPlaygroundIDE: React.FC = () => {
                 {/* Quick One-Tap REPL / CLI Command Pills */}
                 <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar border-b border-slate-800/80 bg-slate-900/60 px-3 py-1.5">
                   <span className="text-[10px] font-bold text-slate-400 shrink-0">
-                    Lệnh mẫu:
+                    {isEn ? 'Sample cmds:' : 'Lệnh mẫu:'}
                   </span>
                   {[
                     '[x**2 for x in range(6)]',
@@ -1883,7 +1970,11 @@ export const PythonPlaygroundIDE: React.FC = () => {
                     type="text"
                     value={terminalInput}
                     onChange={(e) => setTerminalInput(e.target.value)}
-                    placeholder="Gõ lệnh Python (2**10) hoặc CLI (uv add httpx, pip list, ls, help)..."
+                    placeholder={
+                      isEn
+                        ? 'Type Python (2**10) or CLI command (uv add httpx, pip list, ls, help)...'
+                        : 'Gõ lệnh Python (2**10) hoặc CLI (uv add httpx, pip list, ls, help)...'
+                    }
                     className="flex-1 bg-transparent font-mono text-xs text-white placeholder-slate-500 focus:outline-none"
                   />
                   <button
@@ -1891,7 +1982,7 @@ export const PythonPlaygroundIDE: React.FC = () => {
                     className="inline-flex items-center gap-1 rounded-lg bg-amber-400 px-2.5 py-1 text-[11px] font-extrabold text-slate-950 hover:bg-amber-300 cursor-pointer"
                   >
                     <Send className="h-3 w-3" />
-                    <span>Gửi</span>
+                    <span>{isEn ? 'Send' : 'Gửi'}</span>
                   </button>
                 </form>
               </div>
@@ -1934,11 +2025,15 @@ export const PythonPlaygroundIDE: React.FC = () => {
             {consoleTab === 'variables' && (
               <div className="p-3.5 min-h-[340px] max-h-[520px] overflow-y-auto space-y-2.5 bg-slate-950/90">
                 <div className="text-xs text-slate-400">
-                  Danh sách các biến toàn cục trong bộ nhớ sau lần chạy gần nhất:
+                  {isEn
+                    ? 'Global variables in memory after the latest run:'
+                    : 'Danh sách các biến toàn cục trong bộ nhớ sau lần chạy gần nhất:'}
                 </div>
                 {variables.length === 0 ? (
                   <div className="py-10 text-center text-xs text-slate-500">
-                    Chưa có biến nào được ghi nhận.
+                    {isEn
+                      ? 'No variables recorded yet.'
+                      : 'Chưa có biến nào được ghi nhận.'}
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -1970,24 +2065,50 @@ export const PythonPlaygroundIDE: React.FC = () => {
           <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-3.5 text-xs text-slate-300 space-y-1.5">
             <div className="font-bold text-amber-300 flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>Mẹo sử dụng Playground hiệu quả:</span>
+              <span>
+                {isEn
+                  ? 'Tips for using the Playground effectively:'
+                  : 'Mẹo sử dụng Playground hiệu quả:'}
+              </span>
             </div>
             <ul className="space-y-1 text-[11px] text-slate-400 list-disc pl-4">
-              <li>
-                Gõ <code className="text-emerald-300">import </code> hoặc{' '}
-                <code className="text-emerald-300">math.</code>,{' '}
-                <code className="text-emerald-300">json.</code>,{' '}
-                <code className="text-emerald-300">re.</code> để mở danh sách gợi ý hàm tự động (IntelliSense).
-              </li>
-              <li>
-                Bấm nút <strong>+ File .py</strong> trên thanh tab của Editor để tạo thêm module mới và dùng{' '}
-                <code className="text-sky-300">from ten_file import ...</code>.
-              </li>
-              <li>
-                Chuyển sang tab <strong>Terminal &amp; REPL (&gt;&gt;&gt;)</strong> để tính nhanh biểu thức hoặc gõ{' '}
-                <code className="text-amber-300">uv add pydantic</code>,{' '}
-                <code className="text-amber-300">pip list</code>.
-              </li>
+              {isEn ? (
+                <>
+                  <li>
+                    Type <code className="text-emerald-300">import </code> or{' '}
+                    <code className="text-emerald-300">math.</code>,{' '}
+                    <code className="text-emerald-300">json.</code>,{' '}
+                    <code className="text-emerald-300">re.</code> to open auto-complete suggestions (IntelliSense).
+                  </li>
+                  <li>
+                    Click <strong>+ File .py</strong> on the Editor tab bar to create a new module and use{' '}
+                    <code className="text-sky-300">from module_name import ...</code>.
+                  </li>
+                  <li>
+                    Switch to the <strong>Terminal &amp; REPL (&gt;&gt;&gt;)</strong> tab to evaluate expressions or run{' '}
+                    <code className="text-amber-300">uv add pydantic</code>,{' '}
+                    <code className="text-amber-300">pip list</code>.
+                  </li>
+                </>
+              ) : (
+                <>
+                  <li>
+                    Gõ <code className="text-emerald-300">import </code> hoặc{' '}
+                    <code className="text-emerald-300">math.</code>,{' '}
+                    <code className="text-emerald-300">json.</code>,{' '}
+                    <code className="text-emerald-300">re.</code> để mở danh sách gợi ý hàm tự động (IntelliSense).
+                  </li>
+                  <li>
+                    Bấm nút <strong>+ File .py</strong> trên thanh tab của Editor để tạo thêm module mới và dùng{' '}
+                    <code className="text-sky-300">from ten_file import ...</code>.
+                  </li>
+                  <li>
+                    Chuyển sang tab <strong>Terminal &amp; REPL (&gt;&gt;&gt;)</strong> để tính nhanh biểu thức hoặc gõ{' '}
+                    <code className="text-amber-300">uv add pydantic</code>,{' '}
+                    <code className="text-amber-300">pip list</code>.
+                  </li>
+                </>
+              )}
             </ul>
           </div>
         </div>

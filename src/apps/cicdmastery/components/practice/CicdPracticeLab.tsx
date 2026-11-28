@@ -13,10 +13,12 @@ import {
 import { CICD_PRACTICE_EXERCISES } from '../../data/cicdPracticeData';
 import { useCicdNavigationStore } from '../../stores/useCicdNavigationStore';
 import { useUserDataStore } from '@/stores/useUserDataStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { LevelBadge } from '@/components/common/LevelBadge';
 import { cn } from '@/utils/cn';
 
 export const CicdPracticeLab: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
   const { selectedExerciseId, selectExercise } = useCicdNavigationStore();
   const { submissions, saveExerciseSubmission } = useUserDataStore();
 
@@ -94,7 +96,8 @@ export const CicdPracticeLab: React.FC = () => {
                 <FileCode2 className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
               )}
               <span>
-                Bài {idx + 1}: {ex.category.toUpperCase()}
+                {lang === 'en' ? `Lab ${idx + 1}` : `Bài ${idx + 1}`}:{' '}
+                {ex.category.toUpperCase()}
               </span>
             </button>
           );
@@ -105,9 +108,9 @@ export const CicdPracticeLab: React.FC = () => {
       <div className="lg:hidden grid grid-cols-3 gap-1 rounded-xl border border-slate-800 bg-slate-900 p-1 text-xs">
         {(
           [
-            { id: 'all', label: '👁️ Tất cả' },
-            { id: 'prompt', label: '📝 Đề bài' },
-            { id: 'editor', label: '💻 Viết Code' },
+            { id: 'all', label: lang === 'en' ? '👁️ All' : '👁️ Tất cả' },
+            { id: 'prompt', label: lang === 'en' ? '📝 Prompt' : '📝 Đề bài' },
+            { id: 'editor', label: lang === 'en' ? '💻 Code' : '💻 Viết Code' },
           ] as const
         ).map((tab) => (
           <button
@@ -145,7 +148,9 @@ export const CicdPracticeLab: React.FC = () => {
           </h1>
 
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-slate-200 space-y-1">
-            <div className="font-bold text-amber-300">📌 Bối cảnh Thực tế:</div>
+            <div className="font-bold text-amber-300">
+              {lang === 'en' ? '📌 Real-World Context:' : '📌 Bối cảnh Thực tế:'}
+            </div>
             <p className="leading-relaxed">{exercise.scenario}</p>
           </div>
 
@@ -155,7 +160,9 @@ export const CicdPracticeLab: React.FC = () => {
 
           <div className="space-y-2">
             <div className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-              Yêu cầu Kiểm định Tự động (Linter & Architecture Gate):
+              {lang === 'en'
+                ? 'Automated Verification Requirements (Linter & Architecture Gate):'
+                : 'Yêu cầu Kiểm định Tự động (Linter & Architecture Gate):'}
             </div>
             <ul className="space-y-2">
               {exercise.requirements.map((req, idx) => (
@@ -176,7 +183,15 @@ export const CicdPracticeLab: React.FC = () => {
               className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/15 px-3 py-1.5 text-xs font-bold text-amber-300"
             >
               <Lightbulb className="h-3.5 w-3.5" />
-              <span>{showHints ? 'Ẩn Gợi ý' : 'Xem Gợi ý'}</span>
+              <span>
+                {showHints
+                  ? lang === 'en'
+                    ? 'Hide Hints'
+                    : 'Ẩn Gợi ý'
+                  : lang === 'en'
+                  ? 'Show Hints'
+                  : 'Xem Gợi ý'}
+              </span>
             </button>
             <button
               onClick={() => {
@@ -186,7 +201,11 @@ export const CicdPracticeLab: React.FC = () => {
               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:border-cyan-500/40"
             >
               <Eye className="h-3.5 w-3.5 text-cyan-400" />
-              <span>Điền Cấu hình Mẫu Chuẩn</span>
+              <span>
+                {lang === 'en'
+                  ? 'Fill Reference Solution'
+                  : 'Điền Cấu hình Mẫu Chuẩn'}
+              </span>
             </button>
           </div>
 
@@ -228,7 +247,9 @@ export const CicdPracticeLab: React.FC = () => {
                   className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-extrabold text-slate-950 hover:bg-emerald-400"
                 >
                   <Play className="h-3.5 w-3.5 fill-current" />
-                  <span>Chấm điểm Cấu hình</span>
+                  <span>
+                    {lang === 'en' ? 'Verify Config' : 'Chấm điểm Cấu hình'}
+                  </span>
                 </button>
               </div>
             </div>
@@ -256,11 +277,15 @@ export const CicdPracticeLab: React.FC = () => {
                 {checkResult.allPassed ? (
                   <span className="text-emerald-300 flex items-center gap-2">
                     <Sparkles className="h-5 w-5" />
-                    CHÍNH XÁC 100%! Cấu hình đạt chuẩn kiến trúc thực chiến!
+                    {lang === 'en'
+                      ? '100% PASSED! Configuration meets production architecture standards!'
+                      : 'CHÍNH XÁC 100%! Cấu hình đạt chuẩn kiến trúc thực chiến!'}
                   </span>
                 ) : (
                   <span className="text-rose-300">
-                    ⚠️ Còn một số chốt kiểm tra chưa đạt. Hãy xem chi tiết bên dưới:
+                    {lang === 'en'
+                      ? '⚠️ Some validation checks failed. See details below:'
+                      : '⚠️ Còn một số chốt kiểm tra chưa đạt. Hãy xem chi tiết bên dưới:'}
                   </span>
                 )}
               </div>

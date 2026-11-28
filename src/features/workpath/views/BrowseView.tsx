@@ -5,9 +5,18 @@ import { useWpNav, useWpProgress } from '../store';
 import type { CatalogStatus } from '../types';
 import { Callout, PageHeader, Pill, Spinner, Stars } from '../components/ui';
 import { cn } from '@/utils/cn';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 
 const PAGE = 50;
 type Preset = 'forme' | 'all' | 'curated' | 'security' | undefined;
+
+const CATALOG_STATUS_EN: Record<CatalogStatus, string> = {
+  todo: 'unread',
+  reading: 'reading',
+  done: 'understood',
+  rewritten: 'rewritten',
+  skip: 'skipped',
+};
 
 const initial = (preset: Preset): BrowseFilter => ({
   q: '',
@@ -26,6 +35,8 @@ export const BrowseView: React.FC<{ preset?: Preset }> = ({ preset }) => {
   const { data: cur } = useCurriculum();
   const s = useWpProgress((x) => x.state);
   const go = useWpNav((x) => x.go);
+  const lang = useWorkbenchStore((x) => x.language);
+  const isEn = lang === 'en';
   const [f, setF] = useState<BrowseFilter>(() => initial(preset));
   const [limit, setLimit] = useState(PAGE);
 
@@ -43,38 +54,48 @@ export const BrowseView: React.FC<{ preset?: Preset }> = ({ preset }) => {
   return (
     <div className="mx-auto max-w-6xl p-4 sm:p-6">
       <PageHeader
-        title="Đọc code thật: kho Python-master"
-        sub={`${cat.items.length} bài của repo geekcomputers/Python, đã phân nhóm, chấm chất lượng và gắn cờ cảnh báo. Bạn đang ở cấp ${myLevel}: mặc định chỉ hiện bài hợp với cấp của bạn.`}
+        title={isEn ? 'Read real code: Python-master repo' : 'Đọc code thật: kho Python-master'}
+        sub={
+          isEn
+            ? `${cat.items.length} items from geekcomputers/Python, categorized, quality-rated, and flagged. You are at level ${myLevel}: by default only items suited to your level are shown.`
+            : `${cat.items.length} bài của repo geekcomputers/Python, đã phân nhóm, chấm chất lượng và gắn cờ cảnh báo. Bạn đang ở cấp ${myLevel}: mặc định chỉ hiện bài hợp với cấp của bạn.`
+        }
       />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <input value={f.q} onChange={(e) => set('q', e.target.value)} placeholder="Tìm theo tên file…" className={cn(selectCls, 'w-48')} aria-label="Tìm theo tên file" />
-        <select value={f.category} onChange={(e) => set('category', e.target.value)} className={selectCls} aria-label="Nhóm">
-          <option value="">Mọi nhóm</option>
+        <input
+          value={f.q}
+          onChange={(e) => set('q', e.target.value)}
+          placeholder={isEn ? 'Search by filename…' : 'Tìm theo tên file…'}
+          className={cn(selectCls, 'w-48')}
+          aria-label={isEn ? 'Search by filename' : 'Tìm theo tên file'}
+        />
+        <select value={f.category} onChange={(e) => set('category', e.target.value)} className={selectCls} aria-label={isEn ? 'Category' : 'Nhóm'}>
+          <option value="">{isEn ? 'All categories' : 'Mọi nhóm'}</option>
           {Object.entries(cat.categories).map(([k, v]) => (
             <option key={k} value={k}>
               {v}
             </option>
           ))}
         </select>
-        <select value={f.maxLevel ?? ''} onChange={(e) => set('maxLevel', e.target.value ? Number(e.target.value) : null)} className={selectCls} aria-label="Cấp tối đa">
-          <option value="">Mọi cấp</option>
+        <select value={f.maxLevel ?? ''} onChange={(e) => set('maxLevel', e.target.value ? Number(e.target.value) : null)} className={selectCls} aria-label={isEn ? 'Max level' : 'Cấp tối đa'}>
+          <option value="">{isEn ? 'All levels' : 'Mọi cấp'}</option>
           {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
             <option key={n} value={n}>
-              Cấp ≤ {n}
+              {isEn ? `Level ≤ ${n}` : `Cấp ≤ ${n}`}
             </option>
           ))}
         </select>
-        <select value={f.status} onChange={(e) => set('status', e.target.value as CatalogStatus | '')} className={selectCls} aria-label="Trạng thái">
-          <option value="">Mọi trạng thái</option>
+        <select value={f.status} onChange={(e) => set('status', e.target.value as CatalogStatus | '')} className={selectCls} aria-label={isEn ? 'Status' : 'Trạng thái'}>
+          <option value="">{isEn ? 'All statuses' : 'Mọi trạng thái'}</option>
           {(Object.keys(CATALOG_STATUS_LABEL) as CatalogStatus[]).map((k) => (
             <option key={k} value={k}>
-              {CATALOG_STATUS_LABEL[k]}
+              {isEn ? CATALOG_STATUS_EN[k] : CATALOG_STATUS_LABEL[k]}
             </option>
           ))}
         </select>
-        <select value={f.minStars} onChange={(e) => set('minStars', Number(e.target.value))} className={selectCls} aria-label="Chất lượng tối thiểu">
-          <option value={0}>Mọi chất lượng</option>
+        <select value={f.minStars} onChange={(e) => set('minStars', Number(e.target.value))} className={selectCls} aria-label={isEn ? 'Min quality' : 'Chất lượng tối thiểu'}>
+          <option value={0}>{isEn ? 'Any quality' : 'Mọi chất lượng'}</option>
           {[3, 4, 5].map((n) => (
             <option key={n} value={n}>
               ≥ {n} ★
@@ -82,15 +103,19 @@ export const BrowseView: React.FC<{ preset?: Preset }> = ({ preset }) => {
           ))}
         </select>
         <label className="flex items-center gap-1.5 text-sm text-slate-300">
-          <input type="checkbox" checked={f.forMe} onChange={(e) => set('forMe', e.target.checked)} className="accent-emerald-500" /> hợp cấp của tôi
+          <input type="checkbox" checked={f.forMe} onChange={(e) => set('forMe', e.target.checked)} className="accent-emerald-500" />{' '}
+          {isEn ? 'matches my level' : 'hợp cấp của tôi'}
         </label>
         <label className="flex items-center gap-1.5 text-sm text-slate-300">
-          <input type="checkbox" checked={f.curated} onChange={(e) => set('curated', e.target.checked)} className="accent-emerald-500" /> tuyển chọn ✅
+          <input type="checkbox" checked={f.curated} onChange={(e) => set('curated', e.target.checked)} className="accent-emerald-500" />{' '}
+          {isEn ? 'curated ✅' : 'tuyển chọn ✅'}
         </label>
       </div>
 
       <p className="mb-2 text-xs text-slate-500">
-        {items.length} bài khớp bộ lọc · chủ đề nhiều biến thể (để so sánh cách làm):{' '}
+        {isEn
+          ? `${items.length} items match filter · topics with multiple variants (to compare approaches): `
+          : `${items.length} bài khớp bộ lọc · chủ đề nhiều biến thể (để so sánh cách làm): `}
         {Object.entries(topics)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 8)
@@ -103,12 +128,12 @@ export const BrowseView: React.FC<{ preset?: Preset }> = ({ preset }) => {
           <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-3 py-2">#</th>
-              <th className="px-3 py-2">Bài</th>
-              <th className="px-3 py-2">Cấp</th>
-              <th className="hidden px-3 py-2 sm:table-cell">Chất lượng</th>
-              <th className="hidden px-3 py-2 md:table-cell">Dòng</th>
-              <th className="px-3 py-2">Trạng thái</th>
-              <th className="hidden px-3 py-2 lg:table-cell">Lưu ý</th>
+              <th className="px-3 py-2">{isEn ? 'Item' : 'Bài'}</th>
+              <th className="px-3 py-2">{isEn ? 'Level' : 'Cấp'}</th>
+              <th className="hidden px-3 py-2 sm:table-cell">{isEn ? 'Quality' : 'Chất lượng'}</th>
+              <th className="hidden px-3 py-2 md:table-cell">{isEn ? 'Lines' : 'Dòng'}</th>
+              <th className="px-3 py-2">{isEn ? 'Status' : 'Trạng thái'}</th>
+              <th className="hidden px-3 py-2 lg:table-cell">{isEn ? 'Notes' : 'Lưu ý'}</th>
             </tr>
           </thead>
           <tbody>
@@ -127,21 +152,31 @@ export const BrowseView: React.FC<{ preset?: Preset }> = ({ preset }) => {
                     <Stars n={it.quality} />
                   </td>
                   <td className="hidden px-3 py-2 md:table-cell">{it.loc}</td>
-                  <td className="px-3 py-2">{st !== 'todo' && <Pill>{CATALOG_STATUS_LABEL[st]}</Pill>}</td>
+                  <td className="px-3 py-2">{st !== 'todo' && <Pill>{isEn ? CATALOG_STATUS_EN[st] : CATALOG_STATUS_LABEL[st]}</Pill>}</td>
                   <td className="hidden px-3 py-2 text-xs text-slate-500 lg:table-cell">{it.flags.map((x) => cat.flagLabels[x] ?? x).join(', ')}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-        {items.length === 0 && <p className="p-6 text-center text-slate-500">Không có bài nào khớp. Thử bỏ bớt bộ lọc.</p>}
+        {items.length === 0 && (
+          <p className="p-6 text-center text-slate-500">
+            {isEn ? 'No matching items. Try clearing some filters.' : 'Không có bài nào khớp. Thử bỏ bớt bộ lọc.'}
+          </p>
+        )}
       </div>
       {items.length > limit && (
         <button onClick={() => setLimit(limit + PAGE)} className="mt-3 rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
-          Hiện thêm ({items.length - limit} bài nữa)
+          {isEn ? `Show more (${items.length - limit} more)` : `Hiện thêm (${items.length - limit} bài nữa)`}
         </button>
       )}
-      {preset === 'security' && <Callout tone="bad" className="mt-4">Chỉ đọc và phân tích, không chạy các script này nhắm vào hệ thống không phải của bạn.</Callout>}
+      {preset === 'security' && (
+        <Callout tone="bad" className="mt-4">
+          {isEn
+            ? 'Read and analyze only; do not run these scripts against systems you do not own.'
+            : 'Chỉ đọc và phân tích, không chạy các script này nhắm vào hệ thống không phải của bạn.'}
+        </Callout>
+      )}
     </div>
   );
 };

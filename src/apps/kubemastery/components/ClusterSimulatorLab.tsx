@@ -18,6 +18,7 @@ import {
   Send,
   Box,
 } from 'lucide-react';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { cn } from '@/utils/cn';
 
 interface SimPod {
@@ -87,6 +88,7 @@ const INITIAL_PODS: SimPod[] = [
 ];
 
 export const ClusterSimulatorLab: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
   const [nodes, setNodes] = useState<SimNode[]>(INITIAL_NODES);
   const [pods, setPods] = useState<SimPod[]>(INITIAL_PODS);
   const [desiredReplicas, setDesiredReplicas] = useState<number>(3);
@@ -97,9 +99,12 @@ export const ClusterSimulatorLab: React.FC = () => {
   const [mobileClusterTab, setMobileClusterTab] = useState<
     'nodes' | 'control' | 'terminal'
   >('nodes');
-  const [controlLoopEvent, setControlLoopEvent] = useState<string>(
-    'Control Loop 24/7: Trạng thái thực tế (3/3 Pods) khớp 100% với Sổ cái etcd.'
-  );
+  const [controlLoopEvent, setControlLoopEvent] = useState<string | null>(null);
+
+  const defaultControlLoopEvent =
+    lang === 'en'
+      ? '24/7 Control Loop: Actual state (3/3 Pods) matches the etcd Ledger 100%.'
+      : 'Control Loop 24/7: Trạng thái thực tế (3/3 Pods) khớp 100% với Sổ cái etcd.';
 
   const [terminalInput, setTerminalInput] = useState<string>('');
   const [terminalLogs, setTerminalLogs] = useState<
@@ -107,8 +112,7 @@ export const ClusterSimulatorLab: React.FC = () => {
   >([
     {
       id: 'init-1',
-      output:
-        'Chào mừng đến với Phòng Mô phỏng Cụm Kubernetes & Docker Thực chiến! Gõ lệnh kubectl / docker bên dưới hoặc bấm các nút Tình huống ở trên để quan sát cụm K8s tự phục hồi và co giãn trực tiếp.',
+      output: '',
       type: 'info',
     },
   ]);
@@ -140,10 +144,14 @@ export const ClusterSimulatorLab: React.FC = () => {
     const victim = runningPods[Math.floor(Math.random() * runningPods.length)];
 
     setControlLoopEvent(
-      `⚠️ PHÁT HIỆN SỰ CỐ: Pod ${victim.name} trên ${victim.nodeName} vừa bị tiêu diệt! Đội Thanh tra (Controller Manager) phát hiện quân số tụt xuống ${runningPods.length - 1}/${desiredReplicas}!`
+      lang === 'en'
+        ? `⚠️ INCIDENT DETECTED: Pod ${victim.name} on ${victim.nodeName} was just killed! Controller Manager detected count dropped to ${runningPods.length - 1}/${desiredReplicas}!`
+        : `⚠️ PHÁT HIỆN SỰ CỐ: Pod ${victim.name} trên ${victim.nodeName} vừa bị tiêu diệt! Đội Thanh tra (Controller Manager) phát hiện quân số tụt xuống ${runningPods.length - 1}/${desiredReplicas}!`
     );
     appendLog(
-      `[CHAOS] Đã bắn sập Pod ${victim.name} (${victim.ip}). Quân số thực tế tụt xuống ${runningPods.length - 1}/${desiredReplicas}.`,
+      lang === 'en'
+        ? `[CHAOS] Terminated Pod ${victim.name} (${victim.ip}). Actual count dropped to ${runningPods.length - 1}/${desiredReplicas}.`
+        : `[CHAOS] Đã bắn sập Pod ${victim.name} (${victim.ip}). Quân số thực tế tụt xuống ${runningPods.length - 1}/${desiredReplicas}.`,
       'warn',
       `kubectl delete pod ${victim.name} -n production`
     );
@@ -163,7 +171,9 @@ export const ClusterSimulatorLab: React.FC = () => {
       const newIp = `10.244.${targetNode.slice(-1)}.${Math.floor(20 + Math.random() * 70)}`;
 
       setControlLoopEvent(
-        `🔄 SELF-HEALING: Trưởng phòng Scheduler đã chọn ${targetNode} và Kubelet đang giải nén Pod bù ${newPodName} (${newIp})...`
+        lang === 'en'
+          ? `🔄 SELF-HEALING: Scheduler selected ${targetNode} and Kubelet is creating replacement Pod ${newPodName} (${newIp})...`
+          : `🔄 SELF-HEALING: Trưởng phòng Scheduler đã chọn ${targetNode} và Kubelet đang giải nén Pod bù ${newPodName} (${newIp})...`
       );
 
       setPods((prev) => [
@@ -189,10 +199,14 @@ export const ClusterSimulatorLab: React.FC = () => {
           )
         );
         setControlLoopEvent(
-          `✅ ĐÃ TỰ PHỤC HỒI (Self-Healed): Pod mới ${newPodName} đã vượt qua Readiness Probe và nhận khách tại ${newIp}. Quân số cân bằng ${desiredReplicas}/${desiredReplicas}!`
+          lang === 'en'
+            ? `✅ SELF-HEALED: New Pod ${newPodName} passed Readiness Probe and is serving traffic at ${newIp}. Replicas balanced ${desiredReplicas}/${desiredReplicas}!`
+            : `✅ ĐÃ TỰ PHỤC HỒI (Self-Healed): Pod mới ${newPodName} đã vượt qua Readiness Probe và nhận khách tại ${newIp}. Quân số cân bằng ${desiredReplicas}/${desiredReplicas}!`
         );
         appendLog(
-          `[CONTROL-LOOP] ReplicaSet Controller đã tự động tạo bù Pod ${newPodName} trên ${targetNode} (${newIp}) -> Trạng thái: 1/1 Running!`,
+          lang === 'en'
+            ? `[CONTROL-LOOP] ReplicaSet Controller auto-spawned Pod ${newPodName} on ${targetNode} (${newIp}) -> Status: 1/1 Running!`
+            : `[CONTROL-LOOP] ReplicaSet Controller đã tự động tạo bù Pod ${newPodName} trên ${targetNode} (${newIp}) -> Trạng thái: 1/1 Running!`,
           'success'
         );
       }, 1100);
@@ -207,7 +221,9 @@ export const ClusterSimulatorLab: React.FC = () => {
     setIsRollingUpdating(true);
 
     setControlLoopEvent(
-      `🚀 ROLLING UPDATE (${currentVersion} → ${nextVer}): Bật dư 1 Pod ${nextVer} mới (maxSurge: 1), đợi Readiness Probe báo khỏe rồi mới tắt Pod cũ (maxUnavailable: 0)!`
+      lang === 'en'
+        ? `🚀 ROLLING UPDATE (${currentVersion} → ${nextVer}): Spawning 1 surge Pod ${nextVer} (maxSurge: 1), waiting for Readiness Probe before terminating old Pod (maxUnavailable: 0)!`
+        : `🚀 ROLLING UPDATE (${currentVersion} → ${nextVer}): Bật dư 1 Pod ${nextVer} mới (maxSurge: 1), đợi Readiness Probe báo khỏe rồi mới tắt Pod cũ (maxUnavailable: 0)!`
     );
     appendLog(
       `deployment.apps/web-app-deployment image updated to myregistry.io/shop-web:${nextVer} (RollingUpdate: maxSurge=1, maxUnavailable=0)`,
@@ -257,7 +273,9 @@ export const ClusterSimulatorLab: React.FC = () => {
             setCurrentVersion(nextVer);
             setIsRollingUpdating(false);
             setControlLoopEvent(
-              `✅ HOÀN TẤT ROLLING UPDATE: Toàn bộ ${snapshotPods.length} Pod đã nâng cấp lên bản ${nextVer} êm ái với 0 giây gián đoạn (Zero Downtime)!`
+              lang === 'en'
+                ? `✅ ROLLING UPDATE COMPLETE: All ${snapshotPods.length} Pods upgraded smoothly to ${nextVer} with Zero Downtime!`
+                : `✅ HOÀN TẤT ROLLING UPDATE: Toàn bộ ${snapshotPods.length} Pod đã nâng cấp lên bản ${nextVer} êm ái với 0 giây gián đoạn (Zero Downtime)!`
             );
             appendLog(
               `deployment "web-app-deployment" successfully rolled out to ${nextVer} (Zero Downtime verified!)`,
@@ -283,10 +301,14 @@ export const ClusterSimulatorLab: React.FC = () => {
       );
       const affectedPods = pods.filter((p) => p.nodeName === 'worker-node-2');
       setControlLoopEvent(
-        `⚡ CHÁY NGUỒN MÁY CHỦ: worker-node-2 mất liên lạc (NotReady)! K8s lập tức di tản ${affectedPods.length} Pod sang worker-node-1 và worker-node-3!`
+        lang === 'en'
+          ? `⚡ SERVER POWER LOSS: worker-node-2 is unreachable (NotReady)! K8s is immediately evacuating ${affectedPods.length} Pods to worker-node-1 and worker-node-3!`
+          : `⚡ CHÁY NGUỒN MÁY CHỦ: worker-node-2 mất liên lạc (NotReady)! K8s lập tức di tản ${affectedPods.length} Pod sang worker-node-1 và worker-node-3!`
       );
       appendLog(
-        `[NODE OUTAGE] Quản đốc Kubelet trên worker-node-2 ngừng gửi báo cáo -> Node chuyển sang NotReady. Đang di tản ${affectedPods.length} Pod sang máy chủ khác...`,
+        lang === 'en'
+          ? `[NODE OUTAGE] Kubelet on worker-node-2 stopped heartbeating -> Node marked NotReady. Evacuating ${affectedPods.length} Pods to healthy nodes...`
+          : `[NODE OUTAGE] Quản đốc Kubelet trên worker-node-2 ngừng gửi báo cáo -> Node chuyển sang NotReady. Đang di tản ${affectedPods.length} Pod sang máy chủ khác...`,
         'warn'
       );
 
@@ -307,7 +329,9 @@ export const ClusterSimulatorLab: React.FC = () => {
           })
         );
         appendLog(
-          `[EVACUATION COMPLETE] Toàn bộ Pod trên worker-node-2 đã được giải nén lại an toàn trên worker-node-1 & worker-node-3!`,
+          lang === 'en'
+            ? `[EVACUATION COMPLETE] All Pods from worker-node-2 safely rescheduled onto worker-node-1 & worker-node-3!`
+            : `[EVACUATION COMPLETE] Toàn bộ Pod trên worker-node-2 đã được giải nén lại an toàn trên worker-node-1 & worker-node-3!`,
           'success'
         );
       }, 900);
@@ -319,7 +343,9 @@ export const ClusterSimulatorLab: React.FC = () => {
         )
       );
       setControlLoopEvent(
-        `✅ KHÔI PHỤC MÁY CHỦ: Quản đốc Kubelet trên worker-node-2 đã gửi báo cáo trở lại. Cả 3 Worker Nodes đều Ready!`
+        lang === 'en'
+          ? `✅ NODE RECOVERED: Kubelet on worker-node-2 resumed heartbeating. All 3 Worker Nodes are Ready!`
+          : `✅ KHÔI PHỤC MÁY CHỦ: Quản đốc Kubelet trên worker-node-2 đã gửi báo cáo trở lại. Cả 3 Worker Nodes đều Ready!`
       );
       appendLog(
         `node/worker-node-2 status changed from NotReady to Ready.`,
@@ -334,7 +360,9 @@ export const ClusterSimulatorLab: React.FC = () => {
       setHpaActive(true);
       setDesiredReplicas(6);
       setControlLoopEvent(
-        `📈 KHUYẾN MÃI 0H00: Lượng khách tăng gấp 10 lần làm CPU vọt lên 92% (> 70%)! HPA lập tức nhân bản từ ${pods.length} lên 6 Pods!`
+        lang === 'en'
+          ? `📈 00:00 FLASH SALE: 10x traffic spike pushed CPU to 92% (> 70%)! HPA immediately scaled from ${pods.length} to 6 Pods!`
+          : `📈 KHUYẾN MÃI 0H00: Lượng khách tăng gấp 10 lần làm CPU vọt lên 92% (> 70%)! HPA lập tức nhân bản từ ${pods.length} lên 6 Pods!`
       );
       appendLog(
         `[HPA AUTOSCALER] CPU utilization 92% > target 70%. Scaling web-app-deployment replicas from ${pods.length} -> 6!`,
@@ -375,7 +403,9 @@ export const ClusterSimulatorLab: React.FC = () => {
           .map((p) => ({ ...p, cpuMillicores: 180, memoryMi: 210 }))
       );
       setControlLoopEvent(
-        `🌙 02H00 SÁNG HẾT GIỜ CAO ĐIỂM: CPU giảm về 22%. HPA tự động thu gọn từ 6 về 3 Pods để tiết kiệm tiền thuê máy chủ!`
+        lang === 'en'
+          ? `🌙 02:00 AM OFF-PEAK: CPU dropped to 22%. HPA auto-scaled down from 6 to 3 Pods to save cloud compute costs!`
+          : `🌙 02H00 SÁNG HẾT GIỜ CAO ĐIỂM: CPU giảm về 22%. HPA tự động thu gọn từ 6 về 3 Pods để tiết kiệm tiền thuê máy chủ!`
       );
       appendLog(
         `[HPA AUTOSCALER] Traffic cooled down (CPU 22%). Scaled down web-app-deployment replicas 6 -> 3.`,
@@ -392,9 +422,7 @@ export const ClusterSimulatorLab: React.FC = () => {
     setCurrentVersion('v1.2.0');
     setHpaActive(false);
     setIsRollingUpdating(false);
-    setControlLoopEvent(
-      'Đã khôi phục cụm Kubernetes về trạng thái chuẩn (3 Worker Nodes Ready, 3 Pods v1.2.0 Running).'
-    );
+    setControlLoopEvent(null);
     appendLog('Cluster state reset to default 3 Ready Nodes & 3 Running Pods.', 'info');
   };
 
@@ -452,7 +480,9 @@ export const ClusterSimulatorLab: React.FC = () => {
       setCurrentVersion(targetVer);
       setPods((prev) => prev.map((p) => ({ ...p, version: targetVer })));
       setControlLoopEvent(
-        `⏪ ROLLBACK KHẨN CẤP: Đã quay lui toàn bộ Deployment về phiên bản ổn định ${targetVer}!`
+        lang === 'en'
+          ? `⏪ EMERGENCY ROLLBACK: Rolled back entire Deployment to stable revision ${targetVer}!`
+          : `⏪ ROLLBACK KHẨN CẤP: Đã quay lui toàn bộ Deployment về phiên bản ổn định ${targetVer}!`
       );
       appendLog(
         `deployment.apps/web-app-deployment rolled back to revision (${targetVer})`,
@@ -484,7 +514,9 @@ export const ClusterSimulatorLab: React.FC = () => {
       });
       setPods(updatedPods);
       setControlLoopEvent(
-        `⚖️ SCALE DEPLOYMENT: Đã điều chỉnh quân số cam kết (replicas) thành ${count} Pods!`
+        lang === 'en'
+          ? `⚖️ SCALE DEPLOYMENT: Adjusted desired replicas to ${count} Pods!`
+          : `⚖️ SCALE DEPLOYMENT: Đã điều chỉnh quân số cam kết (replicas) thành ${count} Pods!`
       );
       appendLog(
         `deployment.apps/web-app-deployment scaled to ${count} replicas.`,
@@ -499,7 +531,9 @@ export const ClusterSimulatorLab: React.FC = () => {
       );
     } else {
       appendLog(
-        `Lệnh gợi ý có sẵn:\n  • kubectl get pods -o wide\n  • kubectl get nodes\n  • kubectl get svc,endpoints\n  • kubectl top pods\n  • kubectl scale deploy web-app-deployment --replicas=5\n  • kubectl rollout undo deploy/web-app-deployment\n  • docker ps`,
+        lang === 'en'
+          ? `Available suggested commands:\n  • kubectl get pods -o wide\n  • kubectl get nodes\n  • kubectl get svc,endpoints\n  • kubectl top pods\n  • kubectl scale deploy web-app-deployment --replicas=5\n  • kubectl rollout undo deploy/web-app-deployment\n  • docker ps`
+          : `Lệnh gợi ý có sẵn:\n  • kubectl get pods -o wide\n  • kubectl get nodes\n  • kubectl get svc,endpoints\n  • kubectl top pods\n  • kubectl scale deploy web-app-deployment --replicas=5\n  • kubectl rollout undo deploy/web-app-deployment\n  • docker ps`,
         'info',
         cmd
       );
@@ -514,10 +548,16 @@ export const ClusterSimulatorLab: React.FC = () => {
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-400">
               <Server className="h-4 w-4 shrink-0" />
-              <span>Mô Phỏng Cụm Kubernetes & Docker Sống Động Như Thật (Live Cluster Lab)</span>
+              <span>
+                {lang === 'en'
+                  ? 'Live Kubernetes & Docker Cluster Simulator (Live Cluster Lab)'
+                  : 'Mô Phỏng Cụm Kubernetes & Docker Sống Động Như Thật (Live Cluster Lab)'}
+              </span>
             </div>
             <h1 className="font-mono text-lg sm:text-2xl font-extrabold text-white">
-              Trải Nghiệm Trực Tiếp Self-Healing, Rolling Update, HPA & Terminal Thực Thi
+              {lang === 'en'
+                ? 'Experience Live Self-Healing, Rolling Update, HPA & Interactive CLI'
+                : 'Trải Nghiệm Trực Tiếp Self-Healing, Rolling Update, HPA & Terminal Thực Thi'}
             </h1>
           </div>
 
@@ -526,7 +566,7 @@ export const ClusterSimulatorLab: React.FC = () => {
             className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 px-3.5 text-xs font-semibold text-slate-200 hover:bg-slate-800 self-start lg:self-auto"
           >
             <RotateCcw className="h-3.5 w-3.5 text-sky-400" />
-            <span>Reset Cụm Về Mặc Định</span>
+            <span>{lang === 'en' ? 'Reset Cluster' : 'Reset Cụm Về Mặc Định'}</span>
           </button>
         </div>
 
@@ -538,9 +578,11 @@ export const ClusterSimulatorLab: React.FC = () => {
           >
             <Flame className="h-4 w-4 text-rose-400 shrink-0" />
             <div>
-              <div>🔥 Bắn Sập 1 Pod Ngẫu Nhiên</div>
+              <div>{lang === 'en' ? '🔥 Kill a Random Pod' : '🔥 Bắn Sập 1 Pod Ngẫu Nhiên'}</div>
               <div className="text-[11px] font-normal text-rose-300/90">
-                Xem K8s tự đẻ bù Pod mới (Self-Heal)
+                {lang === 'en'
+                  ? 'Watch K8s auto-spawn a replacement Pod (Self-Heal)'
+                  : 'Xem K8s tự đẻ bù Pod mới (Self-Heal)'}
               </div>
             </div>
           </button>
@@ -562,7 +604,7 @@ export const ClusterSimulatorLab: React.FC = () => {
                 {currentVersion === 'v1.2.0' ? 'v1.3.0' : 'v1.2.0'})
               </div>
               <div className="text-[11px] font-normal text-sky-300/90">
-                Nâng cấp cuốn chiếu Zero-Downtime
+                {lang === 'en' ? 'Zero-Downtime rolling upgrade' : 'Nâng cấp cuốn chiếu Zero-Downtime'}
               </div>
             </div>
           </button>
@@ -575,11 +617,13 @@ export const ClusterSimulatorLab: React.FC = () => {
             <div>
               <div>
                 {nodes.find((n) => n.name === 'worker-node-2')?.status === 'Ready'
-                  ? '⚡ Đốt Sập Nguồn Worker Node 2'
-                  : '🔌 Khôi Phục Điện Worker Node 2'}
+                  ? (lang === 'en' ? '⚡ Cut Power to Worker Node 2' : '⚡ Đốt Sập Nguồn Worker Node 2')
+                  : (lang === 'en' ? '🔌 Restore Worker Node 2' : '🔌 Khôi Phục Điện Worker Node 2')}
               </div>
               <div className="text-[11px] font-normal text-amber-300/90">
-                Xem K8s tự di tản Pod sang máy khác
+                {lang === 'en'
+                  ? 'Watch K8s reschedule Pods to healthy nodes'
+                  : 'Xem K8s tự di tản Pod sang máy khác'}
               </div>
             </div>
           </button>
@@ -592,11 +636,11 @@ export const ClusterSimulatorLab: React.FC = () => {
             <div>
               <div>
                 {hpaActive
-                  ? '🌙 Hết Khuyến Mãi (Thu về 3 Pods)'
-                  : '📈 Khuyến Mãi 0h00 (HPA → 6 Pods)'}
+                  ? (lang === 'en' ? '🌙 Flash Sale Ended (Scale to 3 Pods)' : '🌙 Hết Khuyến Mãi (Thu về 3 Pods)')
+                  : (lang === 'en' ? '📈 00:00 Flash Sale (HPA → 6 Pods)' : '📈 Khuyến Mãi 0h00 (HPA → 6 Pods)')}
               </div>
               <div className="text-[11px] font-normal text-violet-300/90">
-                Tự động co giãn theo tải CPU 92%
+                {lang === 'en' ? 'Auto-scale on 92% CPU load' : 'Tự động co giãn theo tải CPU 92%'}
               </div>
             </div>
           </button>
@@ -606,7 +650,7 @@ export const ClusterSimulatorLab: React.FC = () => {
         <div className="flex items-center gap-2.5 rounded-xl border border-emerald-500/40 bg-slate-950/90 px-3.5 py-2.5 text-xs">
           <Activity className="h-4 w-4 text-emerald-400 shrink-0 animate-pulse" />
           <span className="font-mono font-semibold text-emerald-300">
-            {controlLoopEvent}
+            {controlLoopEvent ?? defaultControlLoopEvent}
           </span>
         </div>
       </div>
@@ -623,7 +667,9 @@ export const ClusterSimulatorLab: React.FC = () => {
           )}
         >
           <Server className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">3 Nodes ({pods.length} Pod)</span>
+          <span className="truncate">
+            {lang === 'en' ? `3 Nodes (${pods.length} Pods)` : `3 Nodes (${pods.length} Pod)`}
+          </span>
         </button>
         <button
           onClick={() => setMobileClusterTab('control')}
@@ -635,7 +681,7 @@ export const ClusterSimulatorLab: React.FC = () => {
           )}
         >
           <Layers className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">Control & Mạng</span>
+          <span className="truncate">{lang === 'en' ? 'Control & Net' : 'Control & Mạng'}</span>
         </button>
         <button
           onClick={() => setMobileClusterTab('terminal')}
@@ -670,10 +716,10 @@ export const ClusterSimulatorLab: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
               <div>
                 <span className="font-mono text-[10px] font-bold uppercase text-sky-400">
-                  CONTROL PLANE (BAN GIÁM ĐỐC)
+                  {lang === 'en' ? 'CONTROL PLANE (HEADQUARTERS)' : 'CONTROL PLANE (BAN GIÁM ĐỐC)'}
                 </span>
                 <h3 className="text-sm font-extrabold text-white">
-                  Tổng Hành Dinh Điều Khiển
+                  {lang === 'en' ? 'Cluster Control Center' : 'Tổng Hành Dinh Điều Khiển'}
                 </h3>
               </div>
               <span className="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-300">
@@ -684,10 +730,14 @@ export const ClusterSimulatorLab: React.FC = () => {
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-2.5">
                 <div className="font-mono font-bold text-sky-300">kube-apiserver</div>
-                <div className="text-[11px] text-slate-400">Quầy lễ tân trung tâm</div>
+                <div className="text-[11px] text-slate-400">
+                  {lang === 'en' ? 'Central API reception' : 'Quầy lễ tân trung tâm'}
+                </div>
               </div>
               <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-2.5">
-                <div className="font-mono font-bold text-amber-300">etcd (Sổ cái)</div>
+                <div className="font-mono font-bold text-amber-300">
+                  {lang === 'en' ? 'etcd (Ledger)' : 'etcd (Sổ cái)'}
+                </div>
                 <div className="text-[11px] text-slate-400">
                   Desired: {desiredReplicas} Pods ({currentVersion})
                 </div>
@@ -695,7 +745,9 @@ export const ClusterSimulatorLab: React.FC = () => {
               <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-2.5">
                 <div className="font-mono font-bold text-violet-300">kube-scheduler</div>
                 <div className="text-[11px] text-slate-400">
-                  {getHealthyNodes(nodes).length}/3 Nodes khả dụng
+                  {lang === 'en'
+                    ? `${getHealthyNodes(nodes).length}/3 Nodes available`
+                    : `${getHealthyNodes(nodes).length}/3 Nodes khả dụng`}
                 </div>
               </div>
               <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-2.5">
@@ -711,7 +763,9 @@ export const ClusterSimulatorLab: React.FC = () => {
           <div className="rounded-2xl border border-violet-500/35 bg-slate-900/80 p-4 space-y-3">
             <div className="border-b border-slate-800 pb-2.5">
               <span className="font-mono text-[10px] font-bold uppercase text-violet-400">
-                INGRESS & SERVICE (LỄ TÂN & TỔNG ĐÀI)
+                {lang === 'en'
+                  ? 'INGRESS & SERVICE (GATEWAY & ROUTER)'
+                  : 'INGRESS & SERVICE (LỄ TÂN & TỔNG ĐÀI)'}
               </span>
               <h3 className="text-sm font-extrabold text-white">
                 https://shop.com → web-app-service:80
@@ -835,14 +889,20 @@ export const ClusterSimulatorLab: React.FC = () => {
                   {/* Pods inside this Worker Node */}
                   <div className="space-y-2 pt-1">
                     <div className="font-mono text-[10px] uppercase tracking-wider text-slate-400">
-                      Căn hộ Pods đang chạy ({nodePods.length}):
+                      {lang === 'en'
+                        ? `Running Pods (${nodePods.length}):`
+                        : `Căn hộ Pods đang chạy (${nodePods.length}):`}
                     </div>
 
                     {nodePods.length === 0 ? (
                       <div className="rounded-xl border border-dashed border-slate-800 p-4 text-center text-xs text-slate-500">
                         {isReady
-                          ? 'Chưa có Pod nào trên máy chủ này'
-                          : 'Node mất điện — Các Pod đã được di tản!'}
+                          ? (lang === 'en'
+                              ? 'No Pods scheduled on this node'
+                              : 'Chưa có Pod nào trên máy chủ này')
+                          : (lang === 'en'
+                              ? 'Node offline — Pods evacuated!'
+                              : 'Node mất điện — Các Pod đã được di tản!')}
                       </div>
                     ) : (
                       nodePods.map((pod) => (
@@ -902,7 +962,9 @@ export const ClusterSimulatorLab: React.FC = () => {
           <div className="flex items-center gap-2 shrink-0">
             <Terminal className="h-4 w-4 text-emerald-400 shrink-0" />
             <span className="font-mono text-xs font-bold text-white">
-              Terminal Thực Thi Trực Tiếp (kubectl & docker CLI)
+              {lang === 'en'
+                ? 'Live Execution Terminal (kubectl & docker CLI)'
+                : 'Terminal Thực Thi Trực Tiếp (kubectl & docker CLI)'}
             </span>
           </div>
 
@@ -945,7 +1007,11 @@ export const ClusterSimulatorLab: React.FC = () => {
                   log.type === 'info' && 'border-sky-500 text-slate-200'
                 )}
               >
-                {log.output}
+                {log.id === 'init-1'
+                  ? (lang === 'en'
+                      ? 'Welcome to the Live Kubernetes & Docker Cluster Simulator! Type kubectl / docker commands below or click the scenario buttons above to watch K8s self-heal and autoscale in real time.'
+                      : 'Chào mừng đến với Phòng Mô phỏng Cụm Kubernetes & Docker Thực chiến! Gõ lệnh kubectl / docker bên dưới hoặc bấm các nút Tình huống ở trên để quan sát cụm K8s tự phục hồi và co giãn trực tiếp.')
+                  : log.output}
               </pre>
             </div>
           ))}
@@ -968,7 +1034,11 @@ export const ClusterSimulatorLab: React.FC = () => {
             type="text"
             value={terminalInput}
             onChange={(e) => setTerminalInput(e.target.value)}
-            placeholder="Nhập lệnh (ví dụ: kubectl get pods -o wide, kubectl get endpoints, docker ps)..."
+            placeholder={
+              lang === 'en'
+                ? 'Enter command (e.g., kubectl get pods -o wide, kubectl get endpoints, docker ps)...'
+                : 'Nhập lệnh (ví dụ: kubectl get pods -o wide, kubectl get endpoints, docker ps)...'
+            }
             className="flex-1 bg-transparent font-mono text-xs text-white placeholder-slate-500 focus:outline-none"
           />
           <button
@@ -976,7 +1046,7 @@ export const ClusterSimulatorLab: React.FC = () => {
             className="inline-flex items-center gap-1 rounded-lg bg-emerald-500 px-3 py-1 font-mono text-xs font-bold text-slate-950 hover:bg-emerald-400"
           >
             <Send className="h-3 w-3" />
-            <span>Chạy</span>
+            <span>{lang === 'en' ? 'Run' : 'Chạy'}</span>
           </button>
         </form>
       </div>

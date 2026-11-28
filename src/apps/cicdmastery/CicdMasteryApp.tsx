@@ -10,6 +10,7 @@ import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { DevOpsCourseApp } from '@/features/devops-course/DevOpsCourseApp';
 import { useCourseCurriculum } from '@/features/devops-course/data';
 import { buildDevOpsScaleLessons } from '@/features/devops-course/scale/courseLessonBuilder';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
 import { useCicdNav, useCicdProgress } from '@/features/devops-course/store';
 import type { RelatedToolLink } from '@/features/devops-course/types';
 import { ScaleCommandPalette } from '@/components/scale-workbench/ScaleCommandPalette';
@@ -53,12 +54,13 @@ export const CicdMasteryApp: React.FC<CicdMasteryAppProps> = ({ windowId }) => {
   const setExpandedLevel = useWorkbenchStore((s) => s.setExpandedLevel);
 
   const { data: cur } = useCourseCurriculum('cicd');
+  const enOverlay = useCourseEnOverlay('cicd');
   const scaleLessons = useMemo(
     () =>
       cur
-        ? buildDevOpsScaleLessons('cicd', cur, CICD_LEVEL_TITLES, CICD_BLUEPRINTS)
+        ? buildDevOpsScaleLessons('cicd', cur, CICD_LEVEL_TITLES, CICD_BLUEPRINTS, enOverlay)
         : [],
-    [cur]
+    [cur, enOverlay]
   );
 
   useEffect(() => {

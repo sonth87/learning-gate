@@ -19,6 +19,8 @@ import {
 import { usePmpCurriculum } from '../data';
 import { pmpDueCards } from '../logic';
 import { usePmpNav, usePmpProgress } from '../store';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
+import type { CourseEnCardOverlay } from '@/data/i18n/types';
 import { CourseMarkdown } from '@/features/devops-course/components/CourseMarkdown';
 import { CourseBar, CourseBtn } from '@/features/devops-course/components/CourseUi';
 import { Callout, Spinner } from '@/features/workpath/components/ui';
@@ -76,6 +78,20 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
   const rate = usePmpProgress((x) => x.rateCard);
   const { go, back } = usePmpNav();
   const lang = useWorkbenchStore((s) => s.language);
+  const enOverlay = useCourseEnOverlay('pmp');
+
+  const cardOverlayById = useMemo(() => {
+    const map = new Map<string, CourseEnCardOverlay>();
+    if (!enOverlay?.modules) return map;
+    for (const modEn of Object.values(enOverlay.modules)) {
+      if (modEn.cards) {
+        for (const [cId, cEn] of Object.entries(modEn.cards)) {
+          map.set(cId, cEn);
+        }
+      }
+    }
+    return map;
+  }, [enOverlay]);
 
   const [mode, setMode] = useState<DeckMode>('term-to-def');
   const [selectedArea, setSelectedArea] = useState<PmpTermAreaId | 'all'>('all');
@@ -296,25 +312,25 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
           <div className="mt-2 flex flex-wrap items-center gap-3 font-mono text-xs">
             <span>
               <b className="text-[var(--dts-ink)]">{PMP_BOOK_TERM_DECK.length}</b>{' '}
-              <span className="text-[var(--dts-ink-muted)]">thẻ sách</span>
+              <span className="text-[var(--dts-ink-muted)]">{lang === 'en' ? 'book cards' : 'thẻ sách'}</span>
             </span>
             <span>
               <b className="text-[var(--dts-green-ink)]">{deckState.knownIds.length}</b>{' '}
-              <span className="text-[var(--dts-ink-muted)]">đã thuộc</span>
+              <span className="text-[var(--dts-ink-muted)]">{lang === 'en' ? 'known' : 'đã thuộc'}</span>
             </span>
             <span>
               <b className="text-[var(--dts-amber-ink)]">{deckState.learningIds.length}</b>{' '}
-              <span className="text-[var(--dts-ink-muted)]">đang ôn</span>
+              <span className="text-[var(--dts-ink-muted)]">{lang === 'en' ? 'learning' : 'đang ôn'}</span>
             </span>
             <span>
               <b className="text-[var(--dts-rose-ink)]">{deckState.flaggedIds.length}</b>{' '}
-              <span className="text-[var(--dts-ink-muted)]">gắn cờ</span>
+              <span className="text-[var(--dts-ink-muted)]">{lang === 'en' ? 'flagged' : 'gắn cờ'}</span>
             </span>
           </div>
         </div>
 
         <CourseBtn accent="amber" onClick={back}>
-          <ArrowLeft className="h-4 w-4" /> Quay lại
+          <ArrowLeft className="h-4 w-4" /> {lang === 'en' ? 'Back' : 'Quay lại'}
         </CourseBtn>
       </div>
 
@@ -322,10 +338,10 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
       <div className="mb-3 flex flex-wrap items-center gap-1.5">
         {(
           [
-            { id: 'term-to-def', label: 'Thuật ngữ → Định nghĩa' },
-            { id: 'def-to-term', label: 'Định nghĩa → Thuật ngữ' },
-            { id: 'match-group', label: 'Ghép nhóm 4 cặp' },
-            { id: 'srs-reflex', label: 'Phản xạ SRS (Leitner)' },
+            { id: 'term-to-def', label: lang === 'en' ? 'Term → Definition' : 'Thuật ngữ → Định nghĩa' },
+            { id: 'def-to-term', label: lang === 'en' ? 'Definition → Term' : 'Định nghĩa → Thuật ngữ' },
+            { id: 'match-group', label: lang === 'en' ? 'Match 4 Pairs' : 'Ghép nhóm 4 cặp' },
+            { id: 'srs-reflex', label: lang === 'en' ? 'SRS Reflex (Leitner)' : 'Phản xạ SRS (Leitner)' },
           ] as Array<{ id: DeckMode; label: string }>
         ).map((tab) => {
           const active = mode === tab.id;
@@ -361,7 +377,7 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
                   : 'border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] text-[var(--dts-ink-soft)] hover:text-[var(--dts-ink)]'
               )}
             >
-              Tất cả · {PMP_BOOK_TERM_DECK.length}
+              {lang === 'en' ? 'All' : 'Tất cả'} · {PMP_BOOK_TERM_DECK.length}
             </button>
             {PMP_TERM_AREAS.map((area) => {
               const count = areaCounts.get(area.id) ?? 0;
@@ -378,7 +394,7 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
                       : 'border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] text-[var(--dts-ink-soft)] hover:text-[var(--dts-ink)]'
                   )}
                 >
-                  {area.labelVi} · {count}
+                  {lang === 'en' ? area.labelEn : area.labelVi} · {count}
                 </button>
               );
             })}
@@ -393,7 +409,7 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
                   onChange={(e) => setOnlyLearning(e.target.checked)}
                   className="accent-amber-600"
                 />
-                <span>Chỉ thẻ đang ôn</span>
+                <span>{lang === 'en' ? 'Learning only' : 'Chỉ thẻ đang ôn'}</span>
               </label>
               <label className="inline-flex items-center gap-1.5 cursor-pointer select-none">
                 <input
@@ -402,7 +418,7 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
                   onChange={(e) => setOnlyFlagged(e.target.checked)}
                   className="accent-rose-600"
                 />
-                <span>Chỉ thẻ gắn cờ ⚑</span>
+                <span>{lang === 'en' ? 'Flagged only ⚑' : 'Chỉ thẻ gắn cờ ⚑'}</span>
               </label>
             </div>
           )}
@@ -415,7 +431,7 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
           {!activeCard ? (
             <div className="dts-panel rounded-2xl p-6 text-center space-y-3">
               <p className="font-mono text-sm font-bold">
-                Không có thẻ nào khớp bộ lọc hiện tại.
+                {lang === 'en' ? 'No cards match the current filter.' : 'Không có thẻ nào khớp bộ lọc hiện tại.'}
               </p>
               <button
                 type="button"
@@ -426,7 +442,7 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
                 }}
                 className="dts-btn-tactile rounded-xl bg-[var(--dts-amber-bg)] px-3.5 py-1.5 font-mono text-xs font-extrabold text-[var(--dts-amber-ink)]"
               >
-                Hiển thị lại toàn bộ thẻ
+                {lang === 'en' ? 'Show all cards again' : 'Hiển thị lại toàn bộ thẻ'}
               </button>
             </div>
           ) : (
@@ -443,17 +459,17 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
                     <div className="flex items-center gap-1.5">
                       {knownSet.has(activeCard.id) && (
                         <span className="rounded bg-[var(--dts-green-bg)] px-1.5 py-0.5 text-[9.5px] text-[var(--dts-green-ink)]">
-                          Đã thuộc
+                          {lang === 'en' ? 'Known' : 'Đã thuộc'}
                         </span>
                       )}
                       {learningSet.has(activeCard.id) && (
                         <span className="rounded bg-[var(--dts-amber-bg)] px-1.5 py-0.5 text-[9.5px] text-[var(--dts-amber-ink)]">
-                          Đang ôn
+                          {lang === 'en' ? 'Learning' : 'Đang ôn'}
                         </span>
                       )}
                       {flaggedSet.has(activeCard.id) && (
                         <span className="rounded bg-[var(--dts-rose-bg)] px-1.5 py-0.5 text-[9.5px] text-[var(--dts-rose-ink)]">
-                          ⚑ Đã gắn cờ
+                          {lang === 'en' ? '⚑ Flagged' : '⚑ Đã gắn cờ'}
                         </span>
                       )}
                     </div>
@@ -478,7 +494,7 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
                       {mode === 'term-to-def' ? (
                         <>
                           <div className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--dts-amber-soft)] px-2.5 py-1 font-mono text-xs font-extrabold text-[var(--dts-amber-ink)]">
-                            Tiếng Việt: {activeCard.viTerm}
+                            {lang === 'en' ? 'Vietnamese:' : 'Tiếng Việt:'} {activeCard.viTerm}
                           </div>
                           <p className="text-sm sm:text-[15px] leading-relaxed font-medium text-[var(--dts-ink)]">
                             {activeCard.definition}
@@ -490,14 +506,14 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
                             {activeCard.term}
                           </div>
                           <div className="font-mono text-xs font-bold text-[var(--dts-amber-ink)]">
-                            Tiếng Việt: {activeCard.viTerm}
+                            {lang === 'en' ? 'Vietnamese:' : 'Tiếng Việt:'} {activeCard.viTerm}
                           </div>
                         </>
                       )}
 
                       {activeCard.compareWith && activeCard.compareWith.length > 0 && (
                         <div className="flex flex-wrap items-center gap-1.5 pt-1 font-mono text-[11px] text-[var(--dts-ink-muted)]">
-                          <span>Đối chiếu phân biệt:</span>
+                          <span>{lang === 'en' ? 'Compare with:' : 'Đối chiếu phân biệt:'}</span>
                           {activeCard.compareWith.map((cw) => (
                             <span
                               key={cw}
@@ -514,10 +530,16 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
 
                 <div className="mt-6 font-mono text-xs text-[var(--dts-ink-muted)]">
                   {cardFlipped
-                    ? 'Nhấn để úp thẻ lại · hoặc chọn mức độ nắm vững bên dưới.'
+                    ? lang === 'en'
+                      ? 'Click to flip back · or rate your mastery below.'
+                      : 'Nhấn để úp thẻ lại · hoặc chọn mức độ nắm vững bên dưới.'
                     : mode === 'term-to-def'
-                      ? 'Tự nhẩm định nghĩa trong đầu, rồi bấm vào thẻ (hoặc Space) để lật.'
-                      : 'Đây là thuật ngữ nào? Bấm vào thẻ (hoặc Space) để kiểm tra.'}
+                      ? lang === 'en'
+                        ? 'Recall the definition mentally, then click the card (or press Space) to flip.'
+                        : 'Tự nhẩm định nghĩa trong đầu, rồi bấm vào thẻ (hoặc Space) để lật.'
+                      : lang === 'en'
+                        ? 'Which term is this? Click the card (or press Space) to check.'
+                        : 'Đây là thuật ngữ nào? Bấm vào thẻ (hoặc Space) để kiểm tra.'}
                 </div>
               </div>
 
@@ -532,7 +554,7 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
                       setCardFlipped(false);
                     }}
                     className="dts-btn-tactile inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--dts-panel-elevated)] disabled:opacity-40 cursor-pointer"
-                    aria-label="Thẻ trước"
+                    aria-label={lang === 'en' ? 'Previous card' : 'Thẻ trước'}
                   >
                     <ArrowLeft className="h-4 w-4" />
                   </button>
@@ -544,7 +566,7 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
                       setCardFlipped(false);
                     }}
                     className="dts-btn-tactile inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--dts-panel-elevated)] disabled:opacity-40 cursor-pointer"
-                    aria-label="Thẻ tiếp theo"
+                    aria-label={lang === 'en' ? 'Next card' : 'Thẻ tiếp theo'}
                   >
                     <ArrowRight className="h-4 w-4" />
                   </button>
@@ -557,7 +579,7 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
                     }}
                     className="dts-btn-tactile inline-flex h-9 items-center gap-1.5 rounded-xl bg-[var(--dts-panel-elevated)] px-3 font-mono text-xs font-bold cursor-pointer"
                   >
-                    <Shuffle className="h-3.5 w-3.5" /> Xáo trộn
+                    <Shuffle className="h-3.5 w-3.5" /> {lang === 'en' ? 'Shuffle' : 'Xáo trộn'}
                   </button>
                   <button
                     type="button"
@@ -570,7 +592,13 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
                     )}
                   >
                     <Flag className="h-3.5 w-3.5" />
-                    {flaggedSet.has(activeCard.id) ? 'Đã gắn cờ' : 'Gắn cờ'}
+                    {flaggedSet.has(activeCard.id)
+                      ? lang === 'en'
+                        ? 'Flagged'
+                        : 'Đã gắn cờ'
+                      : lang === 'en'
+                        ? 'Flag'
+                        : 'Gắn cờ'}
                   </button>
                 </div>
 
@@ -590,7 +618,7 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
                     }}
                     className="dts-btn-tactile rounded-xl bg-[var(--dts-rose-bg)] px-3.5 py-2 font-mono text-xs font-extrabold text-[var(--dts-rose-ink)] cursor-pointer"
                   >
-                    Cần ôn lại <kbd className="ml-1 hidden opacity-70 sm:inline">1</kbd>
+                    {lang === 'en' ? 'Needs review' : 'Cần ôn lại'} <kbd className="ml-1 hidden opacity-70 sm:inline">1</kbd>
                   </button>
                   <button
                     type="button"
@@ -603,18 +631,31 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
                     }}
                     className="dts-btn-tactile rounded-xl bg-[var(--dts-green-bg)] px-3.5 py-2 font-mono text-xs font-extrabold text-[var(--dts-green-ink)] cursor-pointer"
                   >
-                    Đã thuộc <kbd className="ml-1 hidden opacity-70 sm:inline">2</kbd>
+                    {lang === 'en' ? 'Known' : 'Đã thuộc'} <kbd className="ml-1 hidden opacity-70 sm:inline">2</kbd>
                   </button>
                 </div>
               </div>
 
               <p className="mt-2 font-mono text-[11px] text-[var(--dts-ink-muted)]">
-                Phím tắt: <kbd className="rounded border px-1">Space</kbd> lật thẻ ·{' '}
-                <kbd className="rounded border px-1">←</kbd>{' '}
-                <kbd className="rounded border px-1">→</kbd> chuyển thẻ ·{' '}
-                <kbd className="rounded border px-1">1</kbd> Cần ôn ·{' '}
-                <kbd className="rounded border px-1">2</kbd> Đã thuộc ·{' '}
-                <kbd className="rounded border px-1">F</kbd> Gắn cờ
+                {lang === 'en' ? (
+                  <>
+                    Shortcuts: <kbd className="rounded border px-1">Space</kbd> flip ·{' '}
+                    <kbd className="rounded border px-1">←</kbd>{' '}
+                    <kbd className="rounded border px-1">→</kbd> navigate ·{' '}
+                    <kbd className="rounded border px-1">1</kbd> Needs review ·{' '}
+                    <kbd className="rounded border px-1">2</kbd> Known ·{' '}
+                    <kbd className="rounded border px-1">F</kbd> Flag
+                  </>
+                ) : (
+                  <>
+                    Phím tắt: <kbd className="rounded border px-1">Space</kbd> lật thẻ ·{' '}
+                    <kbd className="rounded border px-1">←</kbd>{' '}
+                    <kbd className="rounded border px-1">→</kbd> chuyển thẻ ·{' '}
+                    <kbd className="rounded border px-1">1</kbd> Cần ôn ·{' '}
+                    <kbd className="rounded border px-1">2</kbd> Đã thuộc ·{' '}
+                    <kbd className="rounded border px-1">F</kbd> Gắn cờ
+                  </>
+                )}
               </p>
             </>
           )}
@@ -629,12 +670,14 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
               {areaMeta(activeGroup.area).labelEn} · {activeGroup.subtopic}
             </span>
             <span className="text-[var(--dts-ink-muted)]">
-              Bộ {safeGroupIdx + 1}/{matchGroups.length}
+              {lang === 'en' ? `Set ${safeGroupIdx + 1}/${matchGroups.length}` : `Bộ ${safeGroupIdx + 1}/${matchGroups.length}`}
               {matchChecked && (
                 <>
                   {' · '}
                   <b className="text-[var(--dts-green-ink)]">
-                    Đúng {matchedCount}/{activeGroup.items.length} cặp
+                    {lang === 'en'
+                      ? `${matchedCount}/${activeGroup.items.length} pairs matched`
+                      : `Đúng ${matchedCount}/${activeGroup.items.length} cặp`}
                   </b>
                 </>
               )}
@@ -645,12 +688,20 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
             {/* Left column: Term Chips */}
             <div>
               <div className="mb-2 font-mono text-xs font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
-                Thuật ngữ ({unassignedChips.length})
+                {lang === 'en' ? `Terms (${unassignedChips.length})` : `Thuật ngữ (${unassignedChips.length})`}
               </div>
               <div className="space-y-2 rounded-2xl border border-dashed border-[var(--dts-line-strong)] bg-[var(--dts-panel)] p-3 min-h-[140px]">
                 {unassignedChips.length === 0 ? (
                   <p className="text-center font-mono text-[11px] text-[var(--dts-ink-muted)] py-6">
-                    Đã ghép hết tất cả thẻ sang ô định nghĩa! Bấm <b>Kiểm tra</b> bên dưới.
+                    {lang === 'en' ? (
+                      <>
+                        All terms placed! Click <b>Check</b> below.
+                      </>
+                    ) : (
+                      <>
+                        Đã ghép hết tất cả thẻ sang ô định nghĩa! Bấm <b>Kiểm tra</b> bên dưới.
+                      </>
+                    )}
                   </p>
                 ) : (
                   unassignedChips.map((chip) => {
@@ -685,7 +736,7 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
             {/* Right column: Definition Drop Slots */}
             <div>
               <div className="mb-2 font-mono text-xs font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
-                Định nghĩa theo sách
+                {lang === 'en' ? 'Book Definitions' : 'Định nghĩa theo sách'}
               </div>
               <div className="space-y-2.5">
                 {activeGroup.items.map((defItem) => {
@@ -758,22 +809,26 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
                             </span>
                             {!matchChecked && (
                               <span className="text-[10.5px] text-[var(--dts-ink-muted)]">
-                                Bấm để gỡ
+                                {lang === 'en' ? 'Click to remove' : 'Bấm để gỡ'}
                               </span>
                             )}
                           </>
                         ) : (
                           <span className="text-[11px] text-[var(--dts-ink-muted)]">
                             {selectedChipId
-                              ? 'Bấm vào đây để đặt thuật ngữ đang chọn'
-                              : 'Kéo thuật ngữ vào đây (hoặc chạm chọn thẻ bên trái rồi chạm vào ô này)'}
+                              ? lang === 'en'
+                                ? 'Click here to place the selected term'
+                                : 'Bấm vào đây để đặt thuật ngữ đang chọn'
+                              : lang === 'en'
+                                ? 'Drag a term here (or tap a card on the left, then tap this slot)'
+                                : 'Kéo thuật ngữ vào đây (hoặc chạm chọn thẻ bên trái rồi chạm vào ô này)'}
                           </span>
                         )}
                       </div>
 
                       {isWrong && (
                         <div className="mt-2 font-mono text-[11px] font-extrabold text-[var(--dts-rose-ink)]">
-                          Đáp án đúng: {defItem.term} ({defItem.viTerm})
+                          {lang === 'en' ? 'Correct answer:' : 'Đáp án đúng:'} {defItem.term} ({defItem.viTerm})
                         </div>
                       )}
                     </div>
@@ -789,7 +844,7 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
               onClick={resetMatchState}
               className="dts-btn-tactile inline-flex items-center gap-1.5 rounded-xl bg-[var(--dts-panel-elevated)] px-3.5 py-2 font-mono text-xs font-bold cursor-pointer"
             >
-              <RotateCcw className="h-3.5 w-3.5" /> Làm lại
+              <RotateCcw className="h-3.5 w-3.5" /> {lang === 'en' ? 'Reset' : 'Làm lại'}
             </button>
             <button
               type="button"
@@ -802,7 +857,7 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
               }}
               className="dts-btn-tactile inline-flex items-center gap-1.5 rounded-xl bg-[var(--dts-blue-bg)] px-4 py-2 font-mono text-xs font-extrabold text-[var(--dts-blue-ink)] cursor-pointer"
             >
-              <Check className="h-3.5 w-3.5" /> Kiểm tra
+              <Check className="h-3.5 w-3.5" /> {lang === 'en' ? 'Check' : 'Kiểm tra'}
             </button>
             <button
               type="button"
@@ -812,7 +867,7 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
               }}
               className="dts-btn-tactile inline-flex items-center gap-1.5 rounded-xl bg-[var(--dts-green-bg)] px-4 py-2 font-mono text-xs font-extrabold text-[var(--dts-green-ink)] cursor-pointer"
             >
-              Bộ tiếp theo <ArrowRight className="h-3.5 w-3.5" />
+              {lang === 'en' ? 'Next Set' : 'Bộ tiếp theo'} <ArrowRight className="h-3.5 w-3.5" />
             </button>
           </div>
 
@@ -822,14 +877,14 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
               <div className="mb-3 flex items-center justify-between">
                 <div className="inline-flex items-center gap-1.5 font-mono text-xs font-extrabold uppercase tracking-wider text-[var(--dts-ink)]">
                   <Sparkles className="h-3.5 w-3.5 text-[var(--dts-amber-ink)]" />
-                  Đối chiếu chi tiết bộ thẻ này
+                  {lang === 'en' ? 'Detailed comparison for this set' : 'Đối chiếu chi tiết bộ thẻ này'}
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowGroupReview((v) => !v)}
                   className="font-mono text-xs font-bold text-[var(--dts-ink-muted)] hover:text-[var(--dts-ink)] cursor-pointer"
                 >
-                  {showGroupReview ? 'Thu gọn' : 'Mở rộng'}
+                  {showGroupReview ? (lang === 'en' ? 'Collapse' : 'Thu gọn') : lang === 'en' ? 'Expand' : 'Mở rộng'}
                 </button>
               </div>
               {showGroupReview && (
@@ -860,11 +915,11 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
                           >
                             {ok ? (
                               <>
-                                <Check className="h-3 w-3" /> khớp
+                                <Check className="h-3 w-3" /> {lang === 'en' ? 'matched' : 'khớp'}
                               </>
                             ) : (
                               <>
-                                <X className="h-3 w-3" /> nhầm
+                                <X className="h-3 w-3" /> {lang === 'en' ? 'missed' : 'nhầm'}
                               </>
                             )}
                           </span>
@@ -875,7 +930,7 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
                         <div className="flex items-center justify-between pt-1">
                           {item.compareWith && item.compareWith.length > 0 ? (
                             <span className="font-mono text-[10px] text-[var(--dts-ink-muted)]">
-                              So với: {item.compareWith.join(', ')}
+                              {lang === 'en' ? 'Vs:' : 'So với:'} {item.compareWith.join(', ')}
                             </span>
                           ) : (
                             <span />
@@ -891,7 +946,13 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
                             )}
                           >
                             <Flag className="h-2.5 w-2.5" />
-                            {flaggedSet.has(item.id) ? 'Đã cờ' : 'Gắn cờ'}
+                            {flaggedSet.has(item.id)
+                              ? lang === 'en'
+                                ? 'Flagged'
+                                : 'Đã cờ'
+                              : lang === 'en'
+                                ? 'Flag'
+                                : 'Gắn cờ'}
                           </button>
                         </div>
                       </div>
@@ -910,62 +971,82 @@ export const PmpFlashView: React.FC<{ moduleId?: string }> = ({ moduleId }) => {
           <div className="mb-3 flex items-center justify-between">
             <span className="inline-flex items-center gap-1.5 font-mono text-xs font-bold text-[var(--dts-ink-muted)]">
               <Layers className="h-3.5 w-3.5" />
-              Lặp lại ngắt quãng 5 hộp: nhớ → giãn lịch 1 · 2 · 4 · 8 · 16 ngày
+              {lang === 'en'
+                ? '5-box spaced repetition: recall → intervals of 1 · 2 · 4 · 8 · 16 days'
+                : 'Lặp lại ngắt quãng 5 hộp: nhớ → giãn lịch 1 · 2 · 4 · 8 · 16 ngày'}
             </span>
           </div>
 
           {srsCards.length === 0 ? (
             <div className="space-y-3">
               <Callout tone="ok">
-                Không có thẻ phản xạ nào đến hạn ôn hôm nay 🎉. Đọc thêm module để mở khoá thẻ mới, hoặc bấm bên dưới để ôn trước bộ thẻ phản xạ cốt lõi.
+                {lang === 'en'
+                  ? 'No reflex cards due today 🎉. Read more modules to unlock new cards, or click below to practice core reflex cards now.'
+                  : 'Không có thẻ phản xạ nào đến hạn ôn hôm nay 🎉. Đọc thêm module để mở khoá thẻ mới, hoặc bấm bên dưới để ôn trước bộ thẻ phản xạ cốt lõi.'}
               </Callout>
               <CourseBtn variant="primary" accent="amber" onClick={() => setSrsPracticeAll(true)}>
-                Ôn thử ngay các thẻ có sẵn
+                {lang === 'en' ? 'Practice Available Cards Now' : 'Ôn thử ngay các thẻ có sẵn'}
               </CourseBtn>
             </div>
           ) : srsIdx >= srsCards.length ? (
             <div className="space-y-3">
               <Callout tone="ok">
-                Hoàn tất phiên ôn phản xạ: nhớ vững <b>{srsRemembered}</b>/{srsCards.length} thẻ.
+                {lang === 'en' ? (
+                  <>
+                    Reflex session complete: mastered <b>{srsRemembered}</b>/{srsCards.length} cards.
+                  </>
+                ) : (
+                  <>
+                    Hoàn tất phiên ôn phản xạ: nhớ vững <b>{srsRemembered}</b>/{srsCards.length} thẻ.
+                  </>
+                )}
               </Callout>
               <CourseBtn variant="primary" accent="amber" onClick={() => go({ name: 'home' })}>
-                Về tổng quan
+                {lang === 'en' ? 'Back to Overview' : 'Về tổng quan'}
               </CourseBtn>
             </div>
           ) : (
-            <>
-              <div className="mb-2 flex items-center gap-3 font-mono text-xs text-[var(--dts-ink-muted)]">
-                <span>
-                  Thẻ {srsIdx + 1}/{srsCards.length} · {activeSrsCard.id}
-                </span>
-                <CourseBar value={srsIdx / srsCards.length} accent="amber" className="max-w-[200px]" />
-              </div>
-              <div className="dts-card-tactile flex min-h-[240px] flex-col justify-center rounded-2xl bg-[var(--dts-panel-elevated)] p-6 sm:p-8">
-                <CourseMarkdown source={activeSrsCard.front} accent="amber" className="text-lg" />
-                {srsFlipped && (
-                  <>
-                    <hr className="my-4 border-[var(--dts-border-soft)]" />
-                    <CourseMarkdown source={activeSrsCard.back} accent="amber" />
-                  </>
-                )}
-              </div>
-              <div className="mt-4 flex flex-wrap justify-center gap-3">
-                {srsFlipped ? (
-                  <>
-                    <CourseBtn variant="danger" accent="amber" onClick={() => answerSrs(false)}>
-                      Chưa chắc / Quên <kbd className="ml-1 hidden rounded bg-black/15 px-1 text-[10px] sm:inline">1</kbd>
-                    </CourseBtn>
-                    <CourseBtn variant="primary" accent="amber" onClick={() => answerSrs(true)}>
-                      ✔ Phản xạ chuẩn <kbd className="ml-1 hidden rounded bg-black/15 px-1 text-[10px] sm:inline">2</kbd>
-                    </CourseBtn>
-                  </>
-                ) : (
-                  <CourseBtn variant="primary" accent="amber" onClick={() => setSrsFlipped(true)}>
-                    Lật xem phản xạ chuẩn PMI <kbd className="ml-1 hidden rounded bg-black/15 px-1 text-[10px] sm:inline">Space</kbd>
-                  </CourseBtn>
-                )}
-              </div>
-            </>
+            (() => {
+              const srsEn = lang === 'en' ? cardOverlayById.get(activeSrsCard.id) : undefined;
+              return (
+                <>
+                  <div className="mb-2 flex items-center gap-3 font-mono text-xs text-[var(--dts-ink-muted)]">
+                    <span>
+                      {lang === 'en' ? 'Card' : 'Thẻ'} {srsIdx + 1}/{srsCards.length} · {activeSrsCard.id}
+                    </span>
+                    <CourseBar value={srsIdx / srsCards.length} accent="amber" className="max-w-[200px]" />
+                  </div>
+                  <div className="dts-card-tactile flex min-h-[240px] flex-col justify-center rounded-2xl bg-[var(--dts-panel-elevated)] p-6 sm:p-8">
+                    <CourseMarkdown source={srsEn?.frontEn ?? activeSrsCard.front} accent="amber" className="text-lg" />
+                    {srsFlipped && (
+                      <>
+                        <hr className="my-4 border-[var(--dts-border-soft)]" />
+                        <CourseMarkdown source={srsEn?.backEn ?? activeSrsCard.back} accent="amber" />
+                      </>
+                    )}
+                  </div>
+                  <div className="mt-4 flex flex-wrap justify-center gap-3">
+                    {srsFlipped ? (
+                      <>
+                        <CourseBtn variant="danger" accent="amber" onClick={() => answerSrs(false)}>
+                          {lang === 'en' ? 'Unsure / Forgot' : 'Chưa chắc / Quên'}{' '}
+                          <kbd className="ml-1 hidden rounded bg-black/15 px-1 text-[10px] sm:inline">1</kbd>
+                        </CourseBtn>
+                        <CourseBtn variant="primary" accent="amber" onClick={() => answerSrs(true)}>
+                          {lang === 'en' ? '✔ PMI Reflex' : '✔ Phản xạ chuẩn'}{' '}
+                          <kbd className="ml-1 hidden rounded bg-black/15 px-1 text-[10px] sm:inline">2</kbd>
+                        </CourseBtn>
+                      </>
+                    ) : (
+                      <CourseBtn variant="primary" accent="amber" onClick={() => setSrsFlipped(true)}>
+                        {lang === 'en' ? 'Flip to Reveal PMI Reflex' : 'Lật xem phản xạ chuẩn PMI'}{' '}
+                        <kbd className="ml-1 hidden rounded bg-black/15 px-1 text-[10px] sm:inline">Space</kbd>
+                      </CourseBtn>
+                    )}
+                  </div>
+                </>
+              );
+            })()
           )}
         </div>
       )}

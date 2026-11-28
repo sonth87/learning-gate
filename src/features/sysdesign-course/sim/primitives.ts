@@ -75,8 +75,11 @@ export const KIND_DEFAULTS: Record<PrimitiveKind, KindDefaults> = {
   },
   nosql: {
     stateful: true, scaling: 'partitioned', opsPerSec: 8_000, baseMs: 3, cv: 0.3, costPerHour: 0.5,
-    params: { shards: 3, applyRps: 4000, rewriteHotness: 0.02, maxConnections: 2000 },
-    knobs: [numKnob('shards', 'Số shard', 'Shards', 3, 1, 32, 1, { changeCost: 1 })],
+    params: { shards: 3, hotKeySalt: 1, applyRps: 4000, rewriteHotness: 0.02, maxConnections: 2000 },
+    knobs: [
+      numKnob('shards', 'Số shard', 'Shards', 3, 1, 32, 1, { changeCost: 1 }),
+      numKnob('hotKeySalt', 'Salt khoá nóng (chia nhỏ hot key)', 'Hot-key salt buckets (key splitting)', 1, 1, 16, 1),
+    ],
     failureModes: [{ kind: 'slow', note: bi('Shard nóng làm cả node chậm', 'Hot shard slows the node') }],
   },
   queue: {

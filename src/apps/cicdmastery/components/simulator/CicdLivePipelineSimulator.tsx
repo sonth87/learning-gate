@@ -17,6 +17,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { useCicdNavigationStore } from '../../stores/useCicdNavigationStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { cn } from '@/utils/cn';
 
 type SimPipelinePreset = 'gitlab-devsecops' | 'github-lean' | 'gitops-argocd';
@@ -565,6 +566,7 @@ spec:
 };
 
 export const CicdLivePipelineSimulator: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
   const { selectedSimulatorMode, setSimulatorMode } = useCicdNavigationStore();
 
   // --- MODE 1: PIPELINE & DAG SIMULATOR STATE ---
@@ -588,7 +590,9 @@ export const CicdLivePipelineSimulator: React.FC = () => {
   const [injectTrivyCve, setInjectTrivyCve] = useState(false);
   const [injectStaging500, setInjectStaging500] = useState(false);
   const [logs, setLogs] = useState<string[]>([
-    '[CI/CD Engine Ready] Bấm vào bất kỳ ô Job nào để soi Code YAML của bước đó, hoặc bấm "Kích hoạt Chạy Pipeline" để xem Code tự động nhảy theo từng bước đang chạy!',
+    lang === 'en'
+      ? '[CI/CD Engine Ready] Click any Job card to inspect its YAML Code, or click "Run Pipeline" to watch Code X-Ray follow each running step!'
+      : '[CI/CD Engine Ready] Bấm vào bất kỳ ô Job nào để soi Code YAML của bước đó, hoặc bấm "Kích hoạt Chạy Pipeline" để xem Code tự động nhảy theo từng bước đang chạy!',
   ]);
   const [runCounter, setRunCounter] = useState(104);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -609,7 +613,9 @@ export const CicdLivePipelineSimulator: React.FC = () => {
   >('k8s-deployment');
   const [isRolloutSimRunning, setIsRolloutSimRunning] = useState(false);
   const [rolloutPhaseText, setRolloutPhaseText] = useState(
-    'Hệ thống đang chạy ổn định ở phiên bản v1.0 (1,200 req/s).'
+    lang === 'en'
+      ? 'System running stably on v1.0 (1,200 req/s).'
+      : 'Hệ thống đang chạy ổn định ở phiên bản v1.0 (1,200 req/s).'
   );
   const [trafficMetrics, setTrafficMetrics] = useState({
     totalRequests: 12000,
@@ -618,7 +624,9 @@ export const CicdLivePipelineSimulator: React.FC = () => {
     p99LatencyMs: 38,
   });
   const [trafficEvents, setTrafficEvents] = useState<string[]>([
-    '[K8s Ingress] Đang điều phối 1,200 RPS. Bấm "Triển khai v2.0 Giữa Giờ Cao Điểm" để kiểm nghiệm Zero-Downtime!',
+    lang === 'en'
+      ? '[K8s Ingress] Routing 1,200 RPS. Click "Deploy v2.0 During Peak Traffic" to test Zero-Downtime!'
+      : '[K8s Ingress] Đang điều phối 1,200 RPS. Bấm "Triển khai v2.0 Giữa Giờ Cao Điểm" để kiểm nghiệm Zero-Downtime!',
   ]);
 
   const clearTimers = () => {
@@ -645,7 +653,9 @@ export const CicdLivePipelineSimulator: React.FC = () => {
     setJobs(freshJobs);
     setSelectedJobId(freshJobs[0].id);
     setLogs([
-      `[Pipeline #${runCounter}] Đã đặt lại trạng thái sạch (Ephemeral Environment). Bấm vào từng Job để xem Code YAML hoặc bấm "Kích hoạt Chạy Pipeline".`,
+      lang === 'en'
+        ? `[Pipeline #${runCounter}] Reset to clean state (Ephemeral Environment). Click any Job to inspect YAML or click "Run Pipeline".`
+        : `[Pipeline #${runCounter}] Đã đặt lại trạng thái sạch (Ephemeral Environment). Bấm vào từng Job để xem Code YAML hoặc bấm "Kích hoạt Chạy Pipeline".`,
     ]);
   };
 
@@ -664,17 +674,25 @@ export const CicdLivePipelineSimulator: React.FC = () => {
     const initialLog: string[] = [];
     if (isPrBurst) {
       initialLog.push(
-        `⚡ [Trigger] Dev vừa đẩy 3 commit liên tiếp lên nhánh PR trong 10 giây (#${nextRun - 2}, #${nextRun - 1}, #${nextRun})!`
+        lang === 'en'
+          ? `⚡ [Trigger] Dev just pushed 3 consecutive commits to PR branch within 10s (#${nextRun - 2}, #${nextRun - 1}, #${nextRun})!`
+          : `⚡ [Trigger] Dev vừa đẩy 3 commit liên tiếp lên nhánh PR trong 10 giây (#${nextRun - 2}, #${nextRun - 1}, #${nextRun})!`
       );
       initialLog.push(
-        `🛑 [Concurrency Guard] group: ci-workflow-refs/pull/18 -> Tự động CANCELLED Run #${nextRun - 2} & Run #${nextRun - 1} để tiết kiệm số phút Runner!`
+        lang === 'en'
+          ? `🛑 [Concurrency Guard] group: ci-workflow-refs/pull/18 -> Auto-CANCELLED Run #${nextRun - 2} & Run #${nextRun - 1} to save Runner minutes!`
+          : `🛑 [Concurrency Guard] group: ci-workflow-refs/pull/18 -> Tự động CANCELLED Run #${nextRun - 2} & Run #${nextRun - 1} để tiết kiệm số phút Runner!`
       );
     }
     initialLog.push(
-      `🚀 [Pipeline #${nextRun}] Khởi chạy với kiến trúc: ${preset.toUpperCase()} (Commit SHA: a1b2c3d)`
+      lang === 'en'
+        ? `🚀 [Pipeline #${nextRun}] Started with architecture: ${preset.toUpperCase()} (Commit SHA: a1b2c3d)`
+        : `🚀 [Pipeline #${nextRun}] Khởi chạy với kiến trúc: ${preset.toUpperCase()} (Commit SHA: a1b2c3d)`
     );
     initialLog.push(
-      `⚡ [DAG Engine] Kích hoạt song song ở t=0.0s: Job 'lint_and_warm_cache' VÀ Job 'secret_and_sast_scan' (nhờ needs: [])!`
+      lang === 'en'
+        ? `⚡ [DAG Engine] Triggered in parallel at t=0.0s: Job 'lint_and_warm_cache' AND Job 'secret_and_sast_scan' (via needs: [])!`
+        : `⚡ [DAG Engine] Kích hoạt song song ở t=0.0s: Job 'lint_and_warm_cache' VÀ Job 'secret_and_sast_scan' (nhờ needs: [])!`
     );
     setLogs(initialLog);
 
@@ -704,17 +722,23 @@ export const CicdLivePipelineSimulator: React.FC = () => {
           })
         );
         appendLog(
-          '🚨 [Gitleaks & Semgrep SAST] PHÁT HIỆN LỖ HỔNG NGHIÊM TRỌNG tại src/config/aws.ts: Hardcoded AWS_SECRET_ACCESS_KEY!'
+          lang === 'en'
+            ? '🚨 [Gitleaks & Semgrep SAST] CRITICAL VULNERABILITY DETECTED at src/config/aws.ts: Hardcoded AWS_SECRET_ACCESS_KEY!'
+            : '🚨 [Gitleaks & Semgrep SAST] PHÁT HIỆN LỖ HỔNG NGHIÊM TRỌNG tại src/config/aws.ts: Hardcoded AWS_SECRET_ACCESS_KEY!'
         );
         appendLog(
-          '❌ [Fail-Fast Security Gate] Step trả về exit code 1 -> Chặn đứng toàn bộ Pipeline ngay ở giây thứ 18! (Xem Tình huống B3 để ứng cứu)'
+          lang === 'en'
+            ? '❌ [Fail-Fast Security Gate] Step exited with code 1 -> Halted entire Pipeline at 18s! (See Scenario B3 for incident response)'
+            : '❌ [Fail-Fast Security Gate] Step trả về exit code 1 -> Chặn đứng toàn bộ Pipeline ngay ở giây thứ 18! (Xem Tình huống B3 để ứng cứu)'
         );
         setIsRunning(false);
         return;
       }
 
       appendLog(
-        '✅ [secret_and_sast_scan] Semgrep SAST & Gitleaks: 0 lỗ hổng SQLi/XSS/Secret (18s).'
+        lang === 'en'
+          ? '✅ [secret_and_sast_scan] Semgrep SAST & Gitleaks: 0 SQLi/XSS/Secret issues (18s).'
+          : '✅ [secret_and_sast_scan] Semgrep SAST & Gitleaks: 0 lỗ hổng SQLi/XSS/Secret (18s).'
       );
       setJobs((prev) =>
         prev.map((j) =>
@@ -728,10 +752,14 @@ export const CicdLivePipelineSimulator: React.FC = () => {
       if (injectSecretLeak) return;
       setSelectedJobId('unit_test_shards');
       appendLog(
-        '✅ [lint_and_warm_cache] npm ci + ESLint + Typecheck PASSED. Đã nén đẩy Cache ~/.npm (policy: pull-push).'
+        lang === 'en'
+          ? '✅ [lint_and_warm_cache] npm ci + ESLint + Typecheck PASSED. Pushed Cache ~/.npm (policy: pull-push).'
+          : '✅ [lint_and_warm_cache] npm ci + ESLint + Typecheck PASSED. Đã nén đẩy Cache ~/.npm (policy: pull-push).'
       );
       appendLog(
-        '🔀 [Test Sharding] Nhân bản 4 Container chạy song song (parallel: 4, jest --shard=1/4..4/4) kèm Postgres 16 & Redis 7 thật (policy: pull)...'
+        lang === 'en'
+          ? '🔀 [Test Sharding] Spawning 4 parallel Containers (parallel: 4, jest --shard=1/4..4/4) with live Postgres 16 & Redis 7 (policy: pull)...'
+          : '🔀 [Test Sharding] Nhân bản 4 Container chạy song song (parallel: 4, jest --shard=1/4..4/4) kèm Postgres 16 & Redis 7 thật (policy: pull)...'
       );
       setJobs((prev) =>
         prev.map((j) => {
@@ -747,10 +775,14 @@ export const CicdLivePipelineSimulator: React.FC = () => {
       if (injectSecretLeak) return;
       setSelectedJobId('build_and_trivy_scan');
       appendLog(
-        '✅ [unit_and_integration_test] Cả 4/4 Shards hoàn tất 1.200 bài test trong 3m00s (tiết kiệm 9 phút)! Không tốn thời gian nén lại Cache nhờ policy: pull.'
+        lang === 'en'
+          ? '✅ [unit_and_integration_test] All 4/4 Shards completed 1,200 tests in 3m00s (saved 9 min)! Skipped cache re-upload via policy: pull.'
+          : '✅ [unit_and_integration_test] Cả 4/4 Shards hoàn tất 1.200 bài test trong 3m00s (tiết kiệm 9 phút)! Không tốn thời gian nén lại Cache nhờ policy: pull.'
       );
       appendLog(
-        '🐳 [build_and_trivy_scan] Đang đóng gói Multi-stage Docker Image (tag: registry.app.vn/api:a1b2c3d) và quét lỗ hổng bằng Trivy...'
+        lang === 'en'
+          ? '🐳 [build_and_trivy_scan] Building Multi-stage Docker Image (tag: registry.app.vn/api:a1b2c3d) and scanning CVEs with Trivy...'
+          : '🐳 [build_and_trivy_scan] Đang đóng gói Multi-stage Docker Image (tag: registry.app.vn/api:a1b2c3d) và quét lỗ hổng bằng Trivy...'
       );
       setJobs((prev) =>
         prev.map((j) => {
@@ -783,7 +815,9 @@ export const CicdLivePipelineSimulator: React.FC = () => {
           '🚨 [Trivy Scan] trivy image --exit-code 1 --ignore-unfixed --severity CRITICAL,HIGH'
         );
         appendLog(
-          '❌ [Trivy Scan] Phát hiện CVE-2026-9912 (CRITICAL - Đã có bản vá 1.4.2) trong gói thư viện! Chặn đứng lệnh docker push!'
+          lang === 'en'
+            ? '❌ [Trivy Scan] Detected CVE-2026-9912 (CRITICAL - Fix available 1.4.2) in package! Blocked docker push!'
+            : '❌ [Trivy Scan] Phát hiện CVE-2026-9912 (CRITICAL - Đã có bản vá 1.4.2) trong gói thư viện! Chặn đứng lệnh docker push!'
         );
         setIsRunning(false);
         return;
@@ -791,10 +825,14 @@ export const CicdLivePipelineSimulator: React.FC = () => {
 
       setSelectedJobId('deploy_to_staging');
       appendLog(
-        '✅ [build_and_trivy_scan] Trivy Scan PASSED (0 lỗi CRITICAL/HIGH có bản vá). Đã đẩy Image registry.app.vn/api:a1b2c3d.'
+        lang === 'en'
+          ? '✅ [build_and_trivy_scan] Trivy Scan PASSED (0 fixable CRITICAL/HIGH CVEs). Pushed Image registry.app.vn/api:a1b2c3d.'
+          : '✅ [build_and_trivy_scan] Trivy Scan PASSED (0 lỗi CRITICAL/HIGH có bản vá). Đã đẩy Image registry.app.vn/api:a1b2c3d.'
       );
       appendLog(
-        '🚀 [deploy_to_staging] Đang giữ khóa resource_group: staging-cluster-lock và triển khai lên Staging...'
+        lang === 'en'
+          ? '🚀 [deploy_to_staging] Acquiring resource_group: staging-cluster-lock and deploying to Staging...'
+          : '🚀 [deploy_to_staging] Đang giữ khóa resource_group: staging-cluster-lock và triển khai lên Staging...'
       );
       setJobs((prev) =>
         prev.map((j) => {
@@ -820,10 +858,14 @@ export const CicdLivePipelineSimulator: React.FC = () => {
           })
         );
         appendLog(
-          '🚨 [Smoke Test] curl --fail --retry 5 https://staging.app.vn/health -> HTTP 500 Internal Server Error (5/5 lần thử thất bại)!'
+          lang === 'en'
+            ? '🚨 [Smoke Test] curl --fail --retry 5 https://staging.app.vn/health -> HTTP 500 Internal Server Error (5/5 retries failed)!'
+            : '🚨 [Smoke Test] curl --fail --retry 5 https://staging.app.vn/health -> HTTP 500 Internal Server Error (5/5 lần thử thất bại)!'
         );
         appendLog(
-          '⏪ [Auto-Rollback] Cờ --fail trả về exit code 22 -> Tự động cuộn ngược Staging về bản ổn định trước đó và chặn lên Production!'
+          lang === 'en'
+            ? '⏪ [Auto-Rollback] --fail flag returned exit code 22 -> Auto-rolled back Staging to previous stable release and blocked Production!'
+            : '⏪ [Auto-Rollback] Cờ --fail trả về exit code 22 -> Tự động cuộn ngược Staging về bản ổn định trước đó và chặn lên Production!'
         );
         setIsRunning(false);
         return;
@@ -834,10 +876,14 @@ export const CicdLivePipelineSimulator: React.FC = () => {
         '✅ [deploy_to_staging] Smoke Test: curl --fail --retry 5 https://staging.app.vn/health -> HTTP 200 OK {"status":"ready"}.'
       );
       appendLog(
-        '⏸️ [MANUAL APPROVAL GATE] Pipeline tạm dừng tại Job "approve_and_deploy_prod" (when: manual, allow_failure: false, Protected Environment).'
+        lang === 'en'
+          ? '⏸️ [MANUAL APPROVAL GATE] Pipeline paused at Job "approve_and_deploy_prod" (when: manual, allow_failure: false, Protected Environment).'
+          : '⏸️ [MANUAL APPROVAL GATE] Pipeline tạm dừng tại Job "approve_and_deploy_prod" (when: manual, allow_failure: false, Protected Environment).'
       );
       appendLog(
-        '👉 Hãy bấm nút "Tech Lead: Approve & Deploy Prod" màu vàng trên thẻ Job thứ 6 để cấp JWT OIDC và hoàn tất Rollout!'
+        lang === 'en'
+          ? '👉 Click the yellow "Approve & Deploy" button on Job #6 to issue the OIDC JWT and complete Rollout!'
+          : '👉 Hãy bấm nút "Tech Lead: Approve & Deploy Prod" màu vàng trên thẻ Job thứ 6 để cấp JWT OIDC và hoàn tất Rollout!'
       );
       setJobs((prev) =>
         prev.map((j) => {
@@ -861,10 +907,14 @@ export const CicdLivePipelineSimulator: React.FC = () => {
       )
     );
     appendLog(
-      '🔐 [Release Manager Gate] Đã xác nhận chữ ký Tech Lead (prevent_self_review: true).'
+      lang === 'en'
+        ? '🔐 [Release Manager Gate] Tech Lead signature verified (prevent_self_review: true).'
+        : '🔐 [Release Manager Gate] Đã xác nhận chữ ký Tech Lead (prevent_self_review: true).'
     );
     appendLog(
-      '🪪 [OIDC Federation] Cấp thẻ JWT Token ngắn hạn (ref: refs/heads/main) -> AWS STS cấp Temporary Token (15 phút).'
+      lang === 'en'
+        ? '🪪 [OIDC Federation] Issued short-lived JWT Token (ref: refs/heads/main) -> AWS STS granted Temporary Token (15 min).'
+        : '🪪 [OIDC Federation] Cấp thẻ JWT Token ngắn hạn (ref: refs/heads/main) -> AWS STS cấp Temporary Token (15 phút).'
     );
     const t = setTimeout(() => {
       setJobs((prev) =>
@@ -873,7 +923,9 @@ export const CicdLivePipelineSimulator: React.FC = () => {
         )
       );
       appendLog(
-        '🎉 [Production Live] Rollout hoàn tất với resource_group: prod-cluster-lock! Phiên bản a1b2c3d đã chạy trên Production với 0% Downtime!'
+        lang === 'en'
+          ? '🎉 [Production Live] Rollout complete with resource_group: prod-cluster-lock! Version a1b2c3d is live on Production with 0% Downtime!'
+          : '🎉 [Production Live] Rollout hoàn tất với resource_group: prod-cluster-lock! Phiên bản a1b2c3d đã chạy trên Production với 0% Downtime!'
       );
     }, 1000);
     timersRef.current.push(t);
@@ -887,7 +939,9 @@ export const CicdLivePipelineSimulator: React.FC = () => {
     if (deployStrategy === 'recreate') {
       setActiveTrafficCodeTab('strategy-manifest');
       newEvents.push(
-        '⚠️ [Recreate Strategy] Tắt toàn bộ 4 Pod v1.0 trước khi bật Pod v2.0 -> Hệ thống bị gián đoạn (Downtime) hoàn toàn trong lúc chờ Pod mới khởi động!'
+        lang === 'en'
+          ? '⚠️ [Recreate Strategy] Terminating all 4 v1.0 Pods before starting v2.0 Pods -> Complete service Downtime while waiting for new Pods!'
+          : '⚠️ [Recreate Strategy] Tắt toàn bộ 4 Pod v1.0 trước khi bật Pod v2.0 -> Hệ thống bị gián đoạn (Downtime) hoàn toàn trong lúc chờ Pod mới khởi động!'
       );
       setTrafficMetrics({
         totalRequests: 15000,
@@ -896,7 +950,9 @@ export const CicdLivePipelineSimulator: React.FC = () => {
         p99LatencyMs: 2400,
       });
       setRolloutPhaseText(
-        '❌ Recreate gây gián đoạn dịch vụ (1,800 request bị lỗi 502/503) — Chỉ dùng cho môi trường nội bộ!'
+        lang === 'en'
+          ? '❌ Recreate caused service outage (1,800 failed 502/503 requests) — Use only for internal environments!'
+          : '❌ Recreate gây gián đoạn dịch vụ (1,800 request bị lỗi 502/503) — Chỉ dùng cho môi trường nội bộ!'
       );
       setTrafficEvents(newEvents);
       setIsRolloutSimRunning(false);
@@ -909,11 +965,15 @@ export const CicdLivePipelineSimulator: React.FC = () => {
       droppedRequests += 68;
       setActiveTrafficCodeTab('k8s-deployment');
       newEvents.push(
-        '🚨 [Thiếu Mảnh ghép 3: preStop sleep 5] NGINX Ingress mất 1–3 giây để rút IP Pod v1.0, nhưng ứng dụng đã đóng cổng HTTP ngay ở mili-giây đầu tiên -> 68 request đâm vào cổng đóng bị lỗi 502 Bad Gateway!'
+        lang === 'en'
+          ? '🚨 [Missing Piece 3: preStop sleep 5] NGINX Ingress takes 1–3s to drain the v1.0 Pod IP, but the app closed its HTTP port at 0ms -> 68 requests hit a closed socket (502 Bad Gateway)!'
+          : '🚨 [Thiếu Mảnh ghép 3: preStop sleep 5] NGINX Ingress mất 1–3 giây để rút IP Pod v1.0, nhưng ứng dụng đã đóng cổng HTTP ngay ở mili-giây đầu tiên -> 68 request đâm vào cổng đóng bị lỗi 502 Bad Gateway!'
       );
     } else {
       newEvents.push(
-        '✅ [Mảnh ghép 3: preStop sleep 5] Pod v1.0 ngủ chờ 5 giây cho NGINX Ingress rút sạch IP khỏi bảng định tuyến trước khi phát SIGTERM.'
+        lang === 'en'
+          ? '✅ [Piece 3: preStop sleep 5] v1.0 Pod sleeps 5s so NGINX Ingress can drain its IP from routing tables before SIGTERM is sent.'
+          : '✅ [Mảnh ghép 3: preStop sleep 5] Pod v1.0 ngủ chờ 5 giây cho NGINX Ingress rút sạch IP khỏi bảng định tuyến trước khi phát SIGTERM.'
       );
     }
 
@@ -921,11 +981,15 @@ export const CicdLivePipelineSimulator: React.FC = () => {
       droppedRequests += 45;
       setActiveTrafficCodeTab('dockerfile');
       newEvents.push(
-        '🚨 [Thiếu Mảnh ghép 1: dumb-init Exec Form] Dùng CMD "npm start" khiến /bin/sh chiếm PID 1 và nuốt mất tín hiệu SIGTERM! Đợi hết 35s Kernel giết cứng bằng SIGKILL làm đứt 45 giao dịch!'
+        lang === 'en'
+          ? '🚨 [Missing Piece 1: dumb-init Exec Form] Using CMD "npm start" makes /bin/sh hold PID 1 and swallow SIGTERM! After 35s, Kernel sends SIGKILL, severing 45 active transactions!'
+          : '🚨 [Thiếu Mảnh ghép 1: dumb-init Exec Form] Dùng CMD "npm start" khiến /bin/sh chiếm PID 1 và nuốt mất tín hiệu SIGTERM! Đợi hết 35s Kernel giết cứng bằng SIGKILL làm đứt 45 giao dịch!'
       );
     } else {
       newEvents.push(
-        '✅ [Mảnh ghép 1: dumb-init + Exec Form] PID 1 chuyển tiếp chính xác tín hiệu SIGTERM vào tiến trình Node.js.'
+        lang === 'en'
+          ? '✅ [Piece 1: dumb-init + Exec Form] PID 1 cleanly forwards SIGTERM to the Node.js process.'
+          : '✅ [Mảnh ghép 1: dumb-init + Exec Form] PID 1 chuyển tiếp chính xác tín hiệu SIGTERM vào tiến trình Node.js.'
       );
     }
 
@@ -933,11 +997,15 @@ export const CicdLivePipelineSimulator: React.FC = () => {
       droppedRequests += 32;
       setActiveTrafficCodeTab('server-ts');
       newEvents.push(
-        '🚨 [Thiếu Mảnh ghép 2: server.close()] Ứng dụng nhận SIGTERM và thoát ngay lập tức làm ngắt 32 câu lệnh SQL đang thanh toán dở!'
+        lang === 'en'
+          ? '🚨 [Missing Piece 2: server.close()] App exited immediately upon SIGTERM, aborting 32 in-flight SQL payment queries!'
+          : '🚨 [Thiếu Mảnh ghép 2: server.close()] Ứng dụng nhận SIGTERM và thoát ngay lập tức làm ngắt 32 câu lệnh SQL đang thanh toán dở!'
       );
     } else {
       newEvents.push(
-        '✅ [Mảnh ghép 2: server.close() → dbPool.end()] Ngừng nhận TCP mới nhưng giữ sống các HTTP request đang xử lý dở cho đến khi trả kết quả 200 OK xong.'
+        lang === 'en'
+          ? '✅ [Piece 2: server.close() → dbPool.end()] Stops accepting new TCP connections while draining all in-flight HTTP requests to 200 OK.'
+          : '✅ [Mảnh ghép 2: server.close() → dbPool.end()] Ngừng nhận TCP mới nhưng giữ sống các HTTP request đang xử lý dở cho đến khi trả kết quả 200 OK xong.'
       );
     }
 
@@ -954,11 +1022,15 @@ export const CicdLivePipelineSimulator: React.FC = () => {
       if (deployStrategy === 'blue-green') setBlueGreenActive('green');
       if (deployStrategy === 'canary') setCanaryWeight(100);
       setRolloutPhaseText(
-        '🎉 ZERO-DOWNTIME TUYỆT ĐỐI: Đủ cả 3 mảnh ghép (Dockerfile + SIGTERM server.close + K8s preStop) — 15,600/15,600 request thành công (0 lỗi 502)!'
+        lang === 'en'
+          ? '🎉 TRUE ZERO-DOWNTIME: All 3 pieces active (Dockerfile + SIGTERM server.close + K8s preStop) — 15,600/15,600 requests succeeded (0 502 errors)!'
+          : '🎉 ZERO-DOWNTIME TUYỆT ĐỐI: Đủ cả 3 mảnh ghép (Dockerfile + SIGTERM server.close + K8s preStop) — 15,600/15,600 request thành công (0 lỗi 502)!'
       );
     } else {
       setRolloutPhaseText(
-        `🚨 XUẤT HIỆN ${droppedRequests} LỖI 502 BAD GATEWAY! Xem ngay đoạn Code bị báo đỏ ở khung bên dưới để biết chính xác dòng cấu hình nào gây lỗi.`
+        lang === 'en'
+          ? `🚨 ${droppedRequests} 502 BAD GATEWAY ERRORS DETECTED! Inspect the red-highlighted Code panel below to see the exact misconfiguration.`
+          : `🚨 XUẤT HIỆN ${droppedRequests} LỖI 502 BAD GATEWAY! Xem ngay đoạn Code bị báo đỏ ở khung bên dưới để biết chính xác dòng cấu hình nào gây lỗi.`
       );
     }
 
@@ -983,18 +1055,34 @@ export const CicdLivePipelineSimulator: React.FC = () => {
           <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-cyan-400">
             <Workflow className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
             <span>
-              Giả lập CI/CD & Đồng bộ Code Thời gian Thực (Live Code X-Ray)
+              {lang === 'en'
+                ? 'CI/CD Simulator & Real-Time Code Sync (Live Code X-Ray)'
+                : 'Giả lập CI/CD & Đồng bộ Code Thời gian Thực (Live Code X-Ray)'}
             </span>
           </div>
           <h1 className="text-base sm:text-2xl font-extrabold text-white leading-snug">
-            Mô phỏng Đường ống CI/CD, Đồ thị DAG, Cổng Duyệt & Zero-Downtime Traffic
+            {lang === 'en'
+              ? 'Simulate CI/CD Pipelines, DAG Graphs, Approval Gates & Zero-Downtime Traffic'
+              : 'Mô phỏng Đường ống CI/CD, Đồ thị DAG, Cổng Duyệt & Zero-Downtime Traffic'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-300 max-w-3xl">
-            Quan sát trực tiếp từng bước Pipeline chạy đến đâu thì{' '}
-            <strong className="text-cyan-300">
-              đoạn Code YAML / Dockerfile / K8s tương ứng sáng lên đến đó
-            </strong>
-            .
+            {lang === 'en' ? (
+              <>
+                Watch each Pipeline step execute in real time while{' '}
+                <strong className="text-cyan-300">
+                  its corresponding YAML / Dockerfile / K8s code highlights automatically
+                </strong>
+                .
+              </>
+            ) : (
+              <>
+                Quan sát trực tiếp từng bước Pipeline chạy đến đâu thì{' '}
+                <strong className="text-cyan-300">
+                  đoạn Code YAML / Dockerfile / K8s tương ứng sáng lên đến đó
+                </strong>
+                .
+              </>
+            )}
           </p>
         </div>
 
@@ -1021,7 +1109,9 @@ export const CicdLivePipelineSimulator: React.FC = () => {
             )}
           >
             <Activity className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-            <span className="truncate">2. Traffic & Lỗi 502</span>
+            <span className="truncate">
+              {lang === 'en' ? '2. Traffic & 502 Errors' : '2. Traffic & Lỗi 502'}
+            </span>
           </button>
         </div>
       </div>
@@ -1041,13 +1131,23 @@ export const CicdLivePipelineSimulator: React.FC = () => {
               >
                 <Play className="h-3.5 w-3.5 fill-current shrink-0" />
                 <span>
-                  {isRunning ? 'Đang chạy Pipeline...' : 'Chạy Pipeline & Soi Code'}
+                  {isRunning
+                    ? lang === 'en'
+                      ? 'Running Pipeline...'
+                      : 'Đang chạy Pipeline...'
+                    : lang === 'en'
+                    ? 'Run Pipeline & X-Ray'
+                    : 'Chạy Pipeline & Soi Code'}
                 </span>
               </button>
               <button
                 onClick={() => startPipelineSimulation(true)}
                 disabled={isRunning}
-                title="Giả lập Push 3 Commit liên tiếp trên PR"
+                title={
+                  lang === 'en'
+                    ? 'Simulate Pushing 3 Consecutive Commits on PR'
+                    : 'Giả lập Push 3 Commit liên tiếp trên PR'
+                }
                 className="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/15 px-2.5 py-2 text-[11px] font-bold text-amber-300 disabled:opacity-50"
               >
                 <Zap className="h-3.5 w-3.5" />
@@ -1055,7 +1155,7 @@ export const CicdLivePipelineSimulator: React.FC = () => {
               </button>
               <button
                 onClick={() => resetPipeline(preset)}
-                title="Đặt lại Đường ống"
+                title={lang === 'en' ? 'Reset Pipeline' : 'Đặt lại Đường ống'}
                 className="inline-flex items-center justify-center rounded-lg border border-slate-800 bg-slate-900 p-2 text-slate-300"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
@@ -1065,14 +1165,20 @@ export const CicdLivePipelineSimulator: React.FC = () => {
             <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
               {(
                 [
-                  { id: 'all', label: 'Tất cả' },
+                  { id: 'all', label: lang === 'en' ? 'All' : 'Tất cả' },
                   {
                     id: 'board-code',
-                    label: `🔀 Sơ đồ & Code (${passedJobsCount}/${jobs.length})`,
+                    label:
+                      lang === 'en'
+                        ? `🔀 Board & Code (${passedJobsCount}/${jobs.length})`
+                        : `🔀 Sơ đồ & Code (${passedJobsCount}/${jobs.length})`,
                   },
                   {
                     id: 'config-chaos',
-                    label: `⚙️ Kịch bản & Bẫy (${activeChaosCount})`,
+                    label:
+                      lang === 'en'
+                        ? `⚙️ Config & Chaos (${activeChaosCount})`
+                        : `⚙️ Kịch bản & Bẫy (${activeChaosCount})`,
                   },
                   { id: 'logs', label: `📟 Log (${logs.length})` },
                 ] as const
@@ -1105,7 +1211,9 @@ export const CicdLivePipelineSimulator: React.FC = () => {
             >
             <div className="space-y-2">
               <div className="text-xs font-bold uppercase tracking-wider text-cyan-400">
-                1. Chọn Kiến trúc Đường ống (Tự động đổi bộ Code YAML)
+                {lang === 'en'
+                  ? '1. Select Pipeline Architecture (Auto-switches YAML)'
+                  : '1. Chọn Kiến trúc Đường ống (Tự động đổi bộ Code YAML)'}
               </div>
               <div className="grid gap-2">
                 {(
@@ -1118,12 +1226,21 @@ export const CicdLivePipelineSimulator: React.FC = () => {
                     {
                       id: 'github-lean',
                       title: 'Full Flow #1: GitHub Actions (lean-ci-cd.yml)',
-                      desc: 'Concurrency Guard + Postgres/Redis thật + Smoke Test',
+                      desc:
+                        lang === 'en'
+                          ? 'Concurrency Guard + Live Postgres/Redis + Smoke Test'
+                          : 'Concurrency Guard + Postgres/Redis thật + Smoke Test',
                     },
                     {
                       id: 'gitops-argocd',
-                      title: 'Mô hình GitOps Pull-based (ArgoCD + App CI)',
-                      desc: 'CI bump tag vào GitOps Repo ← ArgoCD nội bộ tự Pull',
+                      title:
+                        lang === 'en'
+                          ? 'Pull-based GitOps Model (ArgoCD + App CI)'
+                          : 'Mô hình GitOps Pull-based (ArgoCD + App CI)',
+                      desc:
+                        lang === 'en'
+                          ? 'CI bumps tag in GitOps Repo ← Internal ArgoCD auto-pulls'
+                          : 'CI bump tag vào GitOps Repo ← ArgoCD nội bộ tự Pull',
                     },
                   ] as const
                 ).map((item) => (
@@ -1153,10 +1270,16 @@ export const CicdLivePipelineSimulator: React.FC = () => {
             <div className="space-y-2.5 border-t border-slate-800 pt-4">
               <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-rose-400">
                 <ShieldAlert className="h-4 w-4" />
-                <span>2. Cài Bẫy Sự cố (Chaos / Fault Injection)</span>
+                <span>
+                  {lang === 'en'
+                    ? '2. Fault Injection (Chaos Engineering)'
+                    : '2. Cài Bẫy Sự cố (Chaos / Fault Injection)'}
+                </span>
               </div>
               <p className="text-[11px] text-slate-400">
-                Bật thử các lỗi thực tế để xem câu lệnh nào trong YAML bắt được lỗi và chặn đứng Pipeline:
+                {lang === 'en'
+                  ? 'Toggle realistic failures to see which YAML command catches the error and halts the Pipeline:'
+                  : 'Bật thử các lỗi thực tế để xem câu lệnh nào trong YAML bắt được lỗi và chặn đứng Pipeline:'}
               </p>
 
               <label className="flex items-start gap-2.5 rounded-xl border border-slate-800 bg-slate-950 p-3 cursor-pointer hover:border-rose-500/40">
@@ -1171,10 +1294,20 @@ export const CicdLivePipelineSimulator: React.FC = () => {
                 />
                 <div className="text-xs">
                   <div className="font-bold text-rose-300">
-                    🔑 Lộ AWS_SECRET_ACCESS_KEY trong code
+                    {lang === 'en'
+                      ? '🔑 Leaked AWS_SECRET_ACCESS_KEY in code'
+                      : '🔑 Lộ AWS_SECRET_ACCESS_KEY trong code'}
                   </div>
                   <div className="text-[11px] text-slate-400">
-                    Soi bước <code className="text-rose-200">secret_and_sast_scan</code> (gitleaks --exit-code 1) chặn ở giây thứ 0.
+                    {lang === 'en' ? (
+                      <>
+                        Inspect <code className="text-rose-200">secret_and_sast_scan</code> (gitleaks --exit-code 1) blocking at t=0s.
+                      </>
+                    ) : (
+                      <>
+                        Soi bước <code className="text-rose-200">secret_and_sast_scan</code> (gitleaks --exit-code 1) chặn ở giây thứ 0.
+                      </>
+                    )}
                   </div>
                 </div>
               </label>
@@ -1191,10 +1324,20 @@ export const CicdLivePipelineSimulator: React.FC = () => {
                 />
                 <div className="text-xs">
                   <div className="font-bold text-amber-300">
-                    🛡️ Thư viện chứa lỗ hổng CVE Critical (Đã có bản vá)
+                    {lang === 'en'
+                      ? '🛡️ Dependency with Critical CVE (Fix Available)'
+                      : '🛡️ Thư viện chứa lỗ hổng CVE Critical (Đã có bản vá)'}
                   </div>
                   <div className="text-[11px] text-slate-400">
-                    Soi bước <code className="text-amber-200">build_and_trivy_scan</code> (trivy --exit-code 1 --ignore-unfixed).
+                    {lang === 'en' ? (
+                      <>
+                        Inspect <code className="text-amber-200">build_and_trivy_scan</code> (trivy --exit-code 1 --ignore-unfixed).
+                      </>
+                    ) : (
+                      <>
+                        Soi bước <code className="text-amber-200">build_and_trivy_scan</code> (trivy --exit-code 1 --ignore-unfixed).
+                      </>
+                    )}
                   </div>
                 </div>
               </label>
@@ -1211,10 +1354,20 @@ export const CicdLivePipelineSimulator: React.FC = () => {
                 />
                 <div className="text-xs">
                   <div className="font-bold text-violet-300">
-                    💥 Cổng /health trên Staging trả về HTTP 500
+                    {lang === 'en'
+                      ? '💥 Staging /health endpoint returns HTTP 500'
+                      : '💥 Cổng /health trên Staging trả về HTTP 500'}
                   </div>
                   <div className="text-[11px] text-slate-400">
-                    Soi bước <code className="text-violet-200">deploy_to_staging</code> (curl --fail --retry 5).
+                    {lang === 'en' ? (
+                      <>
+                        Inspect <code className="text-violet-200">deploy_to_staging</code> (curl --fail --retry 5).
+                      </>
+                    ) : (
+                      <>
+                        Soi bước <code className="text-violet-200">deploy_to_staging</code> (curl --fail --retry 5).
+                      </>
+                    )}
                   </div>
                 </div>
               </label>
@@ -1228,7 +1381,11 @@ export const CicdLivePipelineSimulator: React.FC = () => {
                 className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-xs font-extrabold text-slate-950 hover:bg-emerald-400 disabled:opacity-50 transition-all shadow-lg"
               >
                 <Play className="h-4 w-4 fill-current" />
-                <span>Kích hoạt Chạy Pipeline (Đồng bộ Code theo Bước)</span>
+                <span>
+                  {lang === 'en'
+                    ? 'Run Pipeline (Live Code X-Ray Sync)'
+                    : 'Kích hoạt Chạy Pipeline (Đồng bộ Code theo Bước)'}
+                </span>
               </button>
 
               <button
@@ -1237,7 +1394,11 @@ export const CicdLivePipelineSimulator: React.FC = () => {
                 className="w-full flex items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/15 px-4 py-2.5 text-xs font-bold text-amber-300 hover:bg-amber-500/25 disabled:opacity-50 transition-all"
               >
                 <Zap className="h-4 w-4" />
-                <span>Giả lập Push 3 Commit Liên tiếp trên PR (Concurrency)</span>
+                <span>
+                  {lang === 'en'
+                    ? 'Simulate 3 Rapid PR Commits (Concurrency)'
+                    : 'Giả lập Push 3 Commit Liên tiếp trên PR (Concurrency)'}
+                </span>
               </button>
 
               <button
@@ -1245,7 +1406,7 @@ export const CicdLivePipelineSimulator: React.FC = () => {
                 className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-950 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                <span>Đặt lại Đường ống</span>
+                <span>{lang === 'en' ? 'Reset Pipeline' : 'Đặt lại Đường ống'}</span>
               </button>
             </div>
           </div>
@@ -1258,10 +1419,14 @@ export const CicdLivePipelineSimulator: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <span className="inline-flex items-center gap-1.5 font-mono text-xs font-extrabold text-amber-300">
                     <Zap className="h-4 w-4" />
-                    ĐOẠN CODE CONCURRENCY VỪA TỰ ĐỘNG HỦY 2 COMMIT CŨ TRÊN PR:
+                    {lang === 'en'
+                      ? 'CONCURRENCY CONFIG JUST AUTO-CANCELLED 2 STALE PR COMMITS:'
+                      : 'ĐOẠN CODE CONCURRENCY VỪA TỰ ĐỘNG HỦY 2 COMMIT CŨ TRÊN PR:'}
                   </span>
                   <span className="font-mono text-[11px] text-amber-200">
-                    Tiết kiệm 66% số phút CI Runner
+                    {lang === 'en'
+                      ? 'Saved 66% CI Runner minutes'
+                      : 'Tiết kiệm 66% số phút CI Runner'}
                   </span>
                 </div>
                 <pre className="rounded-xl border border-amber-500/30 bg-slate-950 p-3 font-mono text-xs text-amber-200 overflow-x-auto leading-relaxed">
@@ -1287,7 +1452,9 @@ concurrency:
                 <div className="flex items-center gap-2">
                   <GitCommitHorizontal className="h-4 w-4 text-cyan-400 shrink-0" />
                   <span className="font-mono text-xs font-bold text-white">
-                    Pipeline #{runCounter} • Bấm vào ô Job để soi Code YAML 👇
+                    {lang === 'en'
+                      ? `Pipeline #${runCounter} • Click any Job card to inspect YAML 👇`
+                      : `Pipeline #${runCounter} • Bấm vào ô Job để soi Code YAML 👇`}
                   </span>
                 </div>
                 <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-mono">
@@ -1397,14 +1564,18 @@ concurrency:
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs sm:text-sm font-extrabold text-white">
-                        Code CI/CD Tương ứng: {activeJob.name}
+                        {lang === 'en'
+                          ? `Corresponding CI/CD Code: ${activeJob.name}`
+                          : `Code CI/CD Tương ứng: ${activeJob.name}`}
                       </span>
                       <span className="rounded bg-slate-900 px-2 py-0.5 font-mono text-[10px] font-bold text-cyan-300 border border-slate-700">
                         {activeJob.codeFile} ({activeJob.lineRange})
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-400">
-                      Tự động nhảy theo bước đang chạy hoặc bước bạn đang bấm chọn ở sơ đồ trên
+                      {lang === 'en'
+                        ? 'Automatically follows the active running step or the Job you clicked above'
+                        : 'Tự động nhảy theo bước đang chạy hoặc bước bạn đang bấm chọn ở sơ đồ trên'}
                     </p>
                   </div>
                 </div>
@@ -1420,7 +1591,11 @@ concurrency:
                     )}
                   >
                     <Eye className="h-3.5 w-3.5" />
-                    <span>Code của Bước Này (X-Ray)</span>
+                    <span>
+                      {lang === 'en'
+                        ? 'Step Code (X-Ray)'
+                        : 'Code của Bước Này (X-Ray)'}
+                    </span>
                   </button>
                   <button
                     onClick={() => setCodeViewTab('full-file')}
@@ -1432,7 +1607,11 @@ concurrency:
                     )}
                   >
                     <Code2 className="h-3.5 w-3.5" />
-                    <span>Toàn bộ File Pipeline ({ jobs.length } Jobs)</span>
+                    <span>
+                      {lang === 'en'
+                        ? `Full Pipeline File (${jobs.length} Jobs)`
+                        : `Toàn bộ File Pipeline (${jobs.length} Jobs)`}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -1453,7 +1632,8 @@ concurrency:
                             'text-amber-400'
                         )}
                       >
-                        Trạng thái: {activeJob.status.toUpperCase()}
+                        {lang === 'en' ? 'Status:' : 'Trạng thái:'}{' '}
+                        {activeJob.status.toUpperCase()}
                       </span>
                     </div>
                     <pre className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5 font-mono text-xs text-cyan-200 overflow-x-auto leading-relaxed">
@@ -1470,7 +1650,9 @@ concurrency:
                           injectStaging500)) && (
                         <div className="rounded-xl border border-rose-500/40 bg-rose-950/30 p-3 space-y-1.5">
                           <div className="font-mono text-[11px] font-extrabold text-rose-300">
-                            🔍 Cận cảnh Lệnh Bắt Lỗi Khi Bật Bẫy Sự Cố (Chaos Injection):
+                            {lang === 'en'
+                              ? '🔍 Fault-Catching Command Under Chaos Injection:'
+                              : '🔍 Cận cảnh Lệnh Bắt Lỗi Khi Bật Bẫy Sự Cố (Chaos Injection):'}
                           </div>
                           <pre className="font-mono text-[11px] text-rose-200 overflow-x-auto leading-relaxed">
                             {activeJob.chaosFailSnippet}
@@ -1483,7 +1665,11 @@ concurrency:
                   <div className="min-w-0 lg:col-span-5 rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 space-y-2.5">
                     <div className="flex items-center gap-1.5 text-xs font-extrabold text-emerald-400">
                       <Sparkles className="h-4 w-4" />
-                      <span>Giải thích Ý nghĩa Từng Dòng Cấu hình:</span>
+                      <span>
+                        {lang === 'en'
+                          ? 'Line-by-Line Config Breakdown:'
+                          : 'Giải thích Ý nghĩa Từng Dòng Cấu hình:'}
+                      </span>
                     </div>
                     <ul className="space-y-2 text-xs text-slate-200">
                       {activeJob.codeBreakdown.map((item, idx) => (
@@ -1522,7 +1708,9 @@ concurrency:
                           </span>
                           {isCurrent && (
                             <span className="rounded bg-cyan-500/20 px-2 py-0.5 text-[10px] font-bold text-cyan-200">
-                              Đang chọn / Đang chạy
+                              {lang === 'en'
+                                ? 'Selected / Running'
+                                : 'Đang chọn / Đang chạy'}
                             </span>
                           )}
                         </div>
@@ -1593,7 +1781,9 @@ concurrency:
           <div className="min-w-0 lg:col-span-5 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 sm:p-5 space-y-5">
             <div className="space-y-2">
               <div className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                1. Chọn Chiến lược Điều phối Lưu lượng (Mục 3.1)
+                {lang === 'en'
+                  ? '1. Select Traffic Routing Strategy (Section 3.1)'
+                  : '1. Chọn Chiến lược Điều phối Lưu lượng (Mục 3.1)'}
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {(
@@ -1601,7 +1791,13 @@ concurrency:
                     { id: 'canary', label: 'Canary Release (5%→100%)' },
                     { id: 'blue-green', label: 'Blue-Green (100% Switch)' },
                     { id: 'rolling', label: 'Rolling Update (K8s)' },
-                    { id: 'recreate', label: 'Recreate (Có Downtime!)' },
+                    {
+                      id: 'recreate',
+                      label:
+                        lang === 'en'
+                          ? 'Recreate (Has Downtime!)'
+                          : 'Recreate (Có Downtime!)',
+                    },
                   ] as const
                 ).map((st) => (
                   <button
@@ -1626,7 +1822,9 @@ concurrency:
                 <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-300">
-                      Tỷ lệ lưu lượng sang Canary v2.0:
+                      {lang === 'en'
+                        ? 'Canary v2.0 Traffic Weight:'
+                        : 'Tỷ lệ lưu lượng sang Canary v2.0:'}
                     </span>
                     <span className="font-mono font-bold text-cyan-300">
                       Stable v1.0: {100 - canaryWeight}% | Canary v2.0:{' '}
@@ -1647,10 +1845,10 @@ concurrency:
                   />
                   <div className="flex justify-between text-[10px] font-mono text-slate-400">
                     <span>0%</span>
-                    <span>5% (Thử tải)</span>
+                    <span>{lang === 'en' ? '5% (Canary)' : '5% (Thử tải)'}</span>
                     <span>25%</span>
                     <span>50%</span>
-                    <span>100% (Hoàn tất)</span>
+                    <span>{lang === 'en' ? '100% (Full)' : '100% (Hoàn tất)'}</span>
                   </div>
                 </div>
               )}
@@ -1658,7 +1856,9 @@ concurrency:
               {deployStrategy === 'blue-green' && (
                 <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 flex items-center justify-between text-xs">
                   <span className="text-slate-300">
-                    Nhãn Load Balancer Service Selector:
+                    {lang === 'en'
+                      ? 'Load Balancer Service Selector Label:'
+                      : 'Nhãn Load Balancer Service Selector:'}
                   </span>
                   <button
                     onClick={() => {
@@ -1669,7 +1869,8 @@ concurrency:
                     }}
                     className="rounded-lg bg-cyan-500/20 border border-cyan-500/40 px-2.5 py-1 font-mono font-bold text-cyan-300 hover:bg-cyan-500/30"
                   >
-                    version: {blueGreenActive} (Bấm để Switch)
+                    version: {blueGreenActive}{' '}
+                    {lang === 'en' ? '(Click to Switch)' : '(Bấm để Switch)'}
                   </button>
                 </div>
               )}
@@ -1678,14 +1879,28 @@ concurrency:
             {/* The 3 Zero-Downtime Pieces (Full Flow #3 & Tình huống B7) */}
             <div className="space-y-2.5 border-t border-slate-800 pt-4">
               <div className="text-xs font-bold uppercase tracking-wider text-cyan-400">
-                2. Bộ 3 Mảnh ghép Code Chống Lỗi 502 Bad Gateway (Full Flow #3 & B7)
+                {lang === 'en'
+                  ? '2. The 3 Zero-Downtime Code Pieces Against 502 Errors (Full Flow #3 & B7)'
+                  : '2. Bộ 3 Mảnh ghép Code Chống Lỗi 502 Bad Gateway (Full Flow #3 & B7)'}
               </div>
               <p className="text-[11px] text-slate-400">
-                Bật/tắt từng mảnh ghép dưới đây để xem{' '}
-                <strong className="text-white">
-                  mã nguồn Dockerfile, server.ts và deployment.yaml ở khung bên phải biến đổi trực tiếp
-                </strong>{' '}
-                như thế nào:
+                {lang === 'en' ? (
+                  <>
+                    Toggle each piece below to watch{' '}
+                    <strong className="text-white">
+                      Dockerfile, server.ts, and deployment.yaml code on the right update live
+                    </strong>
+                    :
+                  </>
+                ) : (
+                  <>
+                    Bật/tắt từng mảnh ghép dưới đây để xem{' '}
+                    <strong className="text-white">
+                      mã nguồn Dockerfile, server.ts và deployment.yaml ở khung bên phải biến đổi trực tiếp
+                    </strong>{' '}
+                    như thế nào:
+                  </>
+                )}
               </p>
 
               <label
@@ -1708,7 +1923,9 @@ concurrency:
                 />
                 <div className="text-xs">
                   <div className="font-bold text-white">
-                    Mảnh ghép 1/3: Dockerfile dumb-init + Exec Form
+                    {lang === 'en'
+                      ? 'Piece 1/3: Dockerfile dumb-init + Exec Form'
+                      : 'Mảnh ghép 1/3: Dockerfile dumb-init + Exec Form'}
                   </div>
                   <div className="text-[11px] text-slate-400 font-mono">
                     ENTRYPOINT [&quot;/usr/bin/dumb-init&quot;, &quot;--&quot;]
@@ -1737,10 +1954,14 @@ concurrency:
                 />
                 <div className="text-xs">
                   <div className="font-bold text-white">
-                    Mảnh ghép 2/3: Backend bắt SIGTERM gọi server.close()
+                    {lang === 'en'
+                      ? 'Piece 2/3: Backend catches SIGTERM & calls server.close()'
+                      : 'Mảnh ghép 2/3: Backend bắt SIGTERM gọi server.close()'}
                   </div>
                   <div className="text-[11px] text-slate-400 font-mono">
-                    Giữ sống HTTP request đang thanh toán dở rồi mới đóng dbPool
+                    {lang === 'en'
+                      ? 'Drain active HTTP requests before closing dbPool'
+                      : 'Giữ sống HTTP request đang thanh toán dở rồi mới đóng dbPool'}
                   </div>
                 </div>
               </label>
@@ -1765,10 +1986,14 @@ concurrency:
                 />
                 <div className="text-xs">
                   <div className="font-bold text-white">
-                    Mảnh ghép 3/3: K8s maxUnavailable: 0 + preStop: sleep 5
+                    {lang === 'en'
+                      ? 'Piece 3/3: K8s maxUnavailable: 0 + preStop: sleep 5'
+                      : 'Mảnh ghép 3/3: K8s maxUnavailable: 0 + preStop: sleep 5'}
                   </div>
                   <div className="text-[11px] text-slate-400 font-mono">
-                    Ngủ 5s chờ NGINX Ingress rút xong IP Pod cũ (1–3s) trước khi gửi SIGTERM
+                    {lang === 'en'
+                      ? 'Sleep 5s for NGINX Ingress to drain old Pod IP (1–3s) before SIGTERM'
+                      : 'Ngủ 5s chờ NGINX Ingress rút xong IP Pod cũ (1–3s) trước khi gửi SIGTERM'}
                   </div>
                 </div>
               </label>
@@ -1780,7 +2005,11 @@ concurrency:
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-cyan-500 px-4 py-3 text-xs font-extrabold text-slate-950 hover:bg-cyan-400 transition-all shadow-lg"
             >
               <Play className="h-4 w-4 fill-current" />
-              <span>Triển khai v2.0 Giữa Giờ Cao Điểm (1,200 RPS)</span>
+              <span>
+                {lang === 'en'
+                  ? 'Deploy v2.0 During Peak Traffic (1,200 RPS)'
+                  : 'Triển khai v2.0 Giữa Giờ Cao Điểm (1,200 RPS)'}
+              </span>
             </button>
           </div>
 
@@ -1790,7 +2019,7 @@ concurrency:
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3.5">
                 <div className="text-[10px] uppercase text-slate-400 font-bold">
-                  Tổng Request
+                  {lang === 'en' ? 'Total Requests' : 'Tổng Request'}
                 </div>
                 <div className="font-mono text-lg font-extrabold text-white mt-1">
                   {trafficMetrics.totalRequests.toLocaleString()}
@@ -1813,7 +2042,7 @@ concurrency:
                 )}
               >
                 <div className="text-[10px] uppercase text-rose-300 font-bold">
-                  Lỗi 502 Bad Gateway
+                  {lang === 'en' ? '502 Bad Gateway Errors' : 'Lỗi 502 Bad Gateway'}
                 </div>
                 <div
                   className={cn(
@@ -1828,7 +2057,7 @@ concurrency:
               </div>
               <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3.5">
                 <div className="text-[10px] uppercase text-cyan-300 font-bold">
-                  Độ trễ P99
+                  {lang === 'en' ? 'P99 Latency' : 'Độ trễ P99'}
                 </div>
                 <div className="font-mono text-lg font-extrabold text-cyan-300 mt-1">
                   {trafficMetrics.p99LatencyMs} ms
@@ -1856,7 +2085,9 @@ concurrency:
                 <div className="flex items-center gap-2">
                   <FileCode2 className="h-4 w-4 text-cyan-400" />
                   <span className="font-mono text-xs font-extrabold text-white">
-                    Code Cấu hình Thực tế Đang Áp dụng (Tự động đổi khi Bật/Tắt Công tắc):
+                    {lang === 'en'
+                      ? 'Active Production Config Code (Updates Live as You Toggle):'
+                      : 'Code Cấu hình Thực tế Đang Áp dụng (Tự động đổi khi Bật/Tắt Công tắc):'}
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-1">
@@ -1879,7 +2110,10 @@ concurrency:
                       },
                       {
                         id: 'strategy-manifest',
-                        label: `4. Chiến lược (${deployStrategy})`,
+                        label:
+                          lang === 'en'
+                            ? `4. Strategy (${deployStrategy})`
+                            : `4. Chiến lược (${deployStrategy})`,
                         ok: deployStrategy !== 'recreate',
                       },
                     ] as const
@@ -2065,7 +2299,9 @@ spec:
             {/* Detailed Analysis Log */}
             <div className="ide-dark-surface rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-2.5">
               <div className="font-mono text-xs font-bold text-cyan-400 border-b border-slate-800 pb-2">
-                Nhật ký Đồng bộ NGINX Ingress, Kubernetes Kubelet & Tiến trình Node.js:
+                {lang === 'en'
+                  ? 'NGINX Ingress, Kubernetes Kubelet & Node.js Sync Log:'
+                  : 'Nhật ký Đồng bộ NGINX Ingress, Kubernetes Kubelet & Tiến trình Node.js:'}
               </div>
               <div className="space-y-2 font-mono text-xs">
                 {trafficEvents.map((ev, idx) => (

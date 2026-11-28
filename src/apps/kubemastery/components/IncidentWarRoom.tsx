@@ -13,9 +13,11 @@ import {
 } from 'lucide-react';
 import { INCIDENT_SCENARIOS } from '../data/incidentsData';
 import { useKubeStore } from '../store/useKubeStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { cn } from '@/utils/cn';
 
 export const IncidentWarRoom: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
   const {
     selectedIncidentId,
     openIncidentInWarRoom,
@@ -66,16 +68,25 @@ export const IncidentWarRoom: React.FC = () => {
     } else {
       const reasons: string[] = [];
       if (missing.length > 0) {
-        reasons.push(`Cấu hình còn thiếu: ${missing.join(' , ')}`);
+        reasons.push(
+          lang === 'en'
+            ? `Missing required config: ${missing.join(' , ')}`
+            : `Cấu hình còn thiếu: ${missing.join(' , ')}`
+        );
       }
       if (forbiddenFound.length > 0) {
         reasons.push(
-          `Vẫn còn giữ cấu hình gây lỗi: ${forbiddenFound.join(' , ')}`
+          lang === 'en'
+            ? `Faulty config still present: ${forbiddenFound.join(' , ')}`
+            : `Vẫn còn giữ cấu hình gây lỗi: ${forbiddenFound.join(' , ')}`
         );
       }
       setVerifyResult({
         status: 'fail',
-        message: `✗ Bản vá chưa khắc phục triệt để sự cố:\n• ${reasons.join('\n• ')}\n👉 Hãy xem gợi ý ở Bước 4 hoặc bấm nút "Điền Bản Vá Chuẩn" để tham khảo!`,
+        message:
+          lang === 'en'
+            ? `✗ Patch did not fully resolve the incident:\n• ${reasons.join('\n• ')}\n👉 Check the hint in Step 4 or click "Fill Standard Patch" to inspect the solution!`
+            : `✗ Bản vá chưa khắc phục triệt để sự cố:\n• ${reasons.join('\n• ')}\n👉 Hãy xem gợi ý ở Bước 4 hoặc bấm nút "Điền Bản Vá Chuẩn" để tham khảo!`,
       });
     }
   };
@@ -87,20 +98,27 @@ export const IncidentWarRoom: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose-400">
             <Stethoscope className="h-4 w-4 shrink-0" />
-            <span>Phòng Chiến Dịch Chẩn Đoán & Cứu Hộ 8 Sự Cố Kinh Điển</span>
+            <span>
+              {lang === 'en'
+                ? 'Incident War Room: Diagnose & Rescue 8 Classic Outages'
+                : 'Phòng Chiến Dịch Chẩn Đoán & Cứu Hộ 8 Sự Cố Kinh Điển'}
+            </span>
           </div>
           <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-3 py-0.5 font-mono text-xs font-bold text-emerald-300">
-            Đã giải cứu: {solvedIncidentIds.length}/{INCIDENT_SCENARIOS.length}{' '}
-            sự cố
+            {lang === 'en'
+              ? `Resolved: ${solvedIncidentIds.length}/${INCIDENT_SCENARIOS.length} incidents`
+              : `Đã giải cứu: ${solvedIncidentIds.length}/${INCIDENT_SCENARIOS.length} sự cố`}
           </span>
         </div>
         <h1 className="font-mono text-base sm:text-2xl font-extrabold text-white">
-          Thực Hành Quy Trình 4 Bước "Chẩn Đoán" & Vá Lỗi Trực Tiếp Trên Cụm K8s
+          {lang === 'en'
+            ? 'Practice the 4-Step Diagnostic & Live YAML Patching Workflow on K8s'
+            : 'Thực Hành Quy Trình 4 Bước "Chẩn Đoán" & Vá Lỗi Trực Tiếp Trên Cụm K8s'}
         </h1>
         <p className="text-xs sm:text-sm text-slate-300 max-w-4xl leading-relaxed hidden sm:block">
-          Đừng đoán mò khi hệ thống sập! Hãy đi tuần tự từ Bước 1 đến Bước 4
-          trong Terminal chẩn đoán để tìm ra nguyên nhân gốc rễ, sau đó sửa trực
-          tiếp file cấu hình để cứu hệ thống.
+          {lang === 'en'
+            ? 'Never guess blindly during an outage! Follow Steps 1 through 4 in the diagnostic terminal to pinpoint the root cause, then patch the configuration file directly to restore service.'
+            : 'Đừng đoán mò khi hệ thống sập! Hãy đi tuần tự từ Bước 1 đến Bước 4 trong Terminal chẩn đoán để tìm ra nguyên nhân gốc rễ, sau đó sửa trực tiếp file cấu hình để cứu hệ thống.'}
         </p>
       </div>
 
@@ -108,7 +126,9 @@ export const IncidentWarRoom: React.FC = () => {
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-[11px] text-slate-400 lg:hidden px-0.5">
           <span className="font-semibold text-slate-300">
-            Vuốt ngang để chọn Tình huống sự cố ({scenario.number}/8):
+            {lang === 'en'
+              ? `Swipe to select incident (${scenario.number}/8):`
+              : `Vuốt ngang để chọn Tình huống sự cố (${scenario.number}/8):`}
           </span>
           <span className="font-mono text-rose-300">{scenario.statusBadge}</span>
         </div>
@@ -140,10 +160,12 @@ export const IncidentWarRoom: React.FC = () => {
                           : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
                       )}
                     >
-                      {solved ? '✓ Đã cứu hộ' : inc.statusBadge}
+                      {solved
+                        ? (lang === 'en' ? '✓ Resolved' : '✓ Đã cứu hộ')
+                        : inc.statusBadge}
                     </span>
                     <span className="font-mono text-[10px] text-slate-400">
-                      Ca #{inc.number}
+                      {lang === 'en' ? `Case #${inc.number}` : `Ca #${inc.number}`}
                     </span>
                   </div>
                   <div className="text-xs font-bold text-white line-clamp-2">
@@ -172,17 +194,17 @@ export const IncidentWarRoom: React.FC = () => {
             {isSolved && (
               <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-0.5 font-mono text-[11px] font-bold text-emerald-300">
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>Đã khắc phục</span>
+                <span>{lang === 'en' ? 'Resolved' : 'Đã khắc phục'}</span>
               </span>
             )}
           </div>
         </div>
 
         <p className="text-xs sm:text-sm text-amber-200 font-medium">
-          🚨 <strong>Báo động PagerDuty:</strong> {scenario.alertMessage}
+          🚨 <strong>{lang === 'en' ? 'PagerDuty Alert:' : 'Báo động PagerDuty:'}</strong> {scenario.alertMessage}
         </p>
         <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-          <strong>Bản chất vấn đề:</strong> {scenario.essenceOfProblem}
+          <strong>{lang === 'en' ? 'Root Issue:' : 'Bản chất vấn đề:'}</strong> {scenario.essenceOfProblem}
         </p>
       </div>
 
@@ -198,7 +220,7 @@ export const IncidentWarRoom: React.FC = () => {
           )}
         >
           <Terminal className="h-3.5 w-3.5 shrink-0" />
-          <span>1. Chẩn Đoán (4 Bước)</span>
+          <span>{lang === 'en' ? '1. Diagnose (4 Steps)' : '1. Chẩn Đoán (4 Bước)'}</span>
         </button>
         <button
           onClick={() => setMobilePanel('patch')}
@@ -210,7 +232,7 @@ export const IncidentWarRoom: React.FC = () => {
           )}
         >
           <Wrench className="h-3.5 w-3.5 shrink-0" />
-          <span>2. Sửa YAML & Vá Lỗi</span>
+          <span>{lang === 'en' ? '2. Edit YAML & Patch' : '2. Sửa YAML & Vá Lỗi'}</span>
         </button>
       </div>
 
@@ -227,7 +249,9 @@ export const IncidentWarRoom: React.FC = () => {
             <div className="flex items-center gap-2">
               <Terminal className="h-4 w-4 text-sky-400 shrink-0" />
               <h3 className="text-sm sm:text-base font-extrabold text-white">
-                Quy trình 4 Bước "Chẩn Đoán" Từ Ngoài Vào Trong
+                {lang === 'en'
+                  ? '4-Step Outside-In Diagnostic Workflow'
+                  : 'Quy trình 4 Bước "Chẩn Đoán" Từ Ngoài Vào Trong'}
               </h3>
             </div>
           </div>
@@ -248,13 +272,13 @@ export const IncidentWarRoom: React.FC = () => {
                   )}
                 >
                   <div className="font-mono text-[10px] font-bold uppercase text-sky-400">
-                    Bước {st.stepOrder}/4
+                    {lang === 'en' ? `Step ${st.stepOrder}/4` : `Bước ${st.stepOrder}/4`}
                   </div>
                   <div className="text-[11px] font-bold mt-0.5 line-clamp-1">
-                    {st.stepOrder === 1 && 'Kiểm tra trạng thái'}
-                    {st.stepOrder === 2 && 'Xem sự kiện'}
-                    {st.stepOrder === 3 && 'Đọc nhật ký'}
-                    {st.stepOrder === 4 && 'Khoanh vùng & Vá'}
+                    {st.stepOrder === 1 && (lang === 'en' ? 'Check status' : 'Kiểm tra trạng thái')}
+                    {st.stepOrder === 2 && (lang === 'en' ? 'Inspect events' : 'Xem sự kiện')}
+                    {st.stepOrder === 3 && (lang === 'en' ? 'Read logs' : 'Đọc nhật ký')}
+                    {st.stepOrder === 4 && (lang === 'en' ? 'Isolate & Patch' : 'Khoanh vùng & Vá')}
                   </div>
                 </button>
               );
@@ -279,7 +303,11 @@ export const IncidentWarRoom: React.FC = () => {
           <div className="rounded-xl border border-emerald-500/35 bg-emerald-500/10 p-3.5 text-xs text-slate-200 space-y-1">
             <div className="font-bold text-emerald-300 flex items-center gap-1.5">
               <Sparkles className="h-4 w-4 shrink-0" />
-              <span>Manh mối phát hiện ở Bước {currentStepData.stepOrder}:</span>
+              <span>
+                {lang === 'en'
+                  ? `Clue discovered at Step ${currentStepData.stepOrder}:`
+                  : `Manh mối phát hiện ở Bước ${currentStepData.stepOrder}:`}
+              </span>
             </div>
             <p className="leading-relaxed">{currentStepData.clueExplanation}</p>
           </div>
@@ -289,14 +317,20 @@ export const IncidentWarRoom: React.FC = () => {
             onClick={() => setMobilePanel('patch')}
             className="w-full lg:hidden inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-4 text-xs font-extrabold text-emerald-300"
           >
-            <span>Chuyển sang Tab Sửa File {scenario.configFileName}</span>
+            <span>
+              {lang === 'en'
+                ? `Switch to Edit ${scenario.configFileName}`
+                : `Chuyển sang Tab Sửa File ${scenario.configFileName}`}
+            </span>
             <ArrowRight className="h-4 w-4" />
           </button>
 
           {/* Root Causes & Solutions Reference */}
           <div className="space-y-2 pt-2 border-t border-slate-800">
             <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Nguyên nhân gốc rễ & Giải pháp xử lý triệt để:
+              {lang === 'en'
+                ? 'Root Causes & Permanent Fixes:'
+                : 'Nguyên nhân gốc rễ & Giải pháp xử lý triệt để:'}
             </div>
             {scenario.rootCausesAndSolutions.map((rc, idx) => (
               <div
@@ -325,14 +359,15 @@ export const IncidentWarRoom: React.FC = () => {
               <FileCode2 className="h-4 w-4 text-emerald-400 shrink-0" />
               <div>
                 <h3 className="text-sm sm:text-base font-extrabold text-white">
-                  Sửa File Cấu Hình:{' '}
+                  {lang === 'en' ? 'Edit Config File:' : 'Sửa File Cấu Hình:'}{' '}
                   <code className="text-amber-300">
                     {scenario.configFileName}
                   </code>
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Sửa các dòng bị lỗi trong khung bên dưới rồi bấm "Triển khai
-                  Bản vá"
+                  {lang === 'en'
+                    ? 'Fix the faulty lines below, then click "Apply Patch"'
+                    : 'Sửa các dòng bị lỗi trong khung bên dưới rồi bấm "Triển khai Bản vá"'}
                 </p>
               </div>
             </div>
@@ -354,7 +389,7 @@ export const IncidentWarRoom: React.FC = () => {
                 className="inline-flex h-8 items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/15 px-2.5 text-xs font-semibold text-amber-300 hover:bg-amber-500/25 cursor-pointer"
               >
                 <Eye className="h-3.5 w-3.5" />
-                <span>Điền Bản Vá Chuẩn</span>
+                <span>{lang === 'en' ? 'Fill Standard Patch' : 'Điền Bản Vá Chuẩn'}</span>
               </button>
             </div>
           </div>
@@ -377,7 +412,9 @@ export const IncidentWarRoom: React.FC = () => {
           >
             <Wrench className="h-4 w-4 shrink-0" />
             <span className="truncate">
-              Triển khai Bản vá (kubectl apply -f {scenario.configFileName})
+              {lang === 'en'
+                ? `Apply Patch (kubectl apply -f ${scenario.configFileName})`
+                : `Triển khai Bản vá (kubectl apply -f ${scenario.configFileName})`}
             </span>
           </button>
 

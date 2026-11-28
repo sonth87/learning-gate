@@ -30,21 +30,26 @@ import { SKILL_LEVELS } from '@/constants/levels';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useUserDataStore } from '@/stores/useUserDataStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { CategoryBadge, LevelBadge } from '@/components/common/LevelBadge';
 import { renderHighlightedPython } from '@/utils/pythonHighlighter';
 import { cn } from '@/utils/cn';
 
-const CATEGORY_FILTERS: { id: GlossaryCategory | 'all'; label: string }[] = [
-  { id: 'all', label: 'Tất cả danh mục' },
-  { id: 'keyword', label: 'Từ khóa (Keywords)' },
-  { id: 'declaration', label: 'Khai báo & Cú pháp' },
-  { id: 'builtin_func', label: 'Hàm Tích hợp (Built-ins)' },
-  { id: 'stdlib', label: 'Thư viện Chuẩn (Standard Library)' },
-  { id: 'method', label: 'Phương thức (Methods)' },
-  { id: 'builtin_type', label: 'Kiểu Dữ liệu (Types)' },
-  { id: 'dunder', label: 'Dunder / Magic Methods' },
-  { id: 'concept', label: 'Khái niệm & Cơ chế' },
-  { id: 'ecosystem', label: 'Công cụ & Hệ sinh thái' },
+const CATEGORY_FILTERS: {
+  id: GlossaryCategory | 'all';
+  label: string;
+  labelEn: string;
+}[] = [
+  { id: 'all', label: 'Tất cả danh mục', labelEn: 'All Categories' },
+  { id: 'keyword', label: 'Từ khóa (Keywords)', labelEn: 'Keywords' },
+  { id: 'declaration', label: 'Khai báo & Cú pháp', labelEn: 'Declarations & Syntax' },
+  { id: 'builtin_func', label: 'Hàm Tích hợp (Built-ins)', labelEn: 'Built-in Functions' },
+  { id: 'stdlib', label: 'Thư viện Chuẩn (Standard Library)', labelEn: 'Standard Library' },
+  { id: 'method', label: 'Phương thức (Methods)', labelEn: 'Methods' },
+  { id: 'builtin_type', label: 'Kiểu Dữ liệu (Types)', labelEn: 'Built-in Types' },
+  { id: 'dunder', label: 'Dunder / Magic Methods', labelEn: 'Dunder / Magic Methods' },
+  { id: 'concept', label: 'Khái niệm & Cơ chế', labelEn: 'Concepts & Mechanics' },
+  { id: 'ecosystem', label: 'Công cụ & Hệ sinh thái', labelEn: 'Tools & Ecosystem' },
 ];
 
 const GlossaryDetailCard: React.FC<{
@@ -70,6 +75,8 @@ const GlossaryDetailCard: React.FC<{
   onPrev,
   onNext,
 }) => {
+  const lang = useWorkbenchStore((s) => s.language);
+  const isEn = lang === 'en';
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -89,7 +96,7 @@ const GlossaryDetailCard: React.FC<{
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
               <CategoryBadge category={term.category} />
-              <LevelBadge level={term.level} showVi />
+              <LevelBadge level={term.level} showVi={!isEn} />
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -104,7 +111,7 @@ const GlossaryDetailCard: React.FC<{
                       type="button"
                       onClick={onPrev}
                       className="rounded-lg border border-slate-700 bg-slate-800 p-1.5 text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer"
-                      title="Mục trước"
+                      title={isEn ? 'Previous item' : 'Mục trước'}
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </button>
@@ -112,7 +119,7 @@ const GlossaryDetailCard: React.FC<{
                       type="button"
                       onClick={onNext}
                       className="rounded-lg border border-slate-700 bg-slate-800 p-1.5 text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer"
-                      title="Mục tiếp theo"
+                      title={isEn ? 'Next item' : 'Mục tiếp theo'}
                     >
                       <ChevronRight className="h-4 w-4" />
                     </button>
@@ -128,11 +135,17 @@ const GlossaryDetailCard: React.FC<{
                     ? 'border-amber-500/50 bg-amber-500/20 text-amber-300'
                     : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200'
                 )}
-                title="Đánh dấu thuật ngữ"
+                title={isEn ? 'Bookmark term' : 'Đánh dấu thuật ngữ'}
               >
                 <Bookmark className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">
-                  {isBookmarked ? 'Đã lưu' : 'Lưu'}
+                  {isBookmarked
+                    ? isEn
+                      ? 'Saved'
+                      : 'Đã lưu'
+                    : isEn
+                    ? 'Save'
+                    : 'Lưu'}
                 </span>
               </button>
 
@@ -140,10 +153,12 @@ const GlossaryDetailCard: React.FC<{
                 type="button"
                 onClick={onOpenNotes}
                 className="inline-flex items-center gap-1 rounded-xl border border-slate-800 bg-slate-900 px-2.5 py-1.5 text-xs font-bold text-slate-300 hover:border-slate-700 hover:text-white transition-colors cursor-pointer"
-                title="Ghi chú cá nhân"
+                title={isEn ? 'Personal notes' : 'Ghi chú cá nhân'}
               >
                 <MessageSquarePlus className="h-3.5 w-3.5 text-sky-400" />
-                <span className="hidden sm:inline">Ghi chú</span>
+                <span className="hidden sm:inline">
+                  {isEn ? 'Notes' : 'Ghi chú'}
+                </span>
               </button>
             </div>
           </div>
@@ -170,7 +185,9 @@ const GlossaryDetailCard: React.FC<{
           {/* Detailed Explanation */}
           <div className="rounded-2xl border border-slate-800/90 bg-slate-950/60 p-4 space-y-1.5">
             <div className="text-xs font-extrabold uppercase tracking-wider text-emerald-400">
-              📖 Bản chất & Giải thích Chi tiết
+              {isEn
+                ? '📖 Core Concept & Detailed Explanation'
+                : '📖 Bản chất & Giải thích Chi tiết'}
             </div>
             <p className="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line">
               {term.detailedExplanation}
@@ -187,7 +204,11 @@ const GlossaryDetailCard: React.FC<{
             <div className="rounded-2xl border border-amber-500/30 bg-amber-950/15 p-4 space-y-1.5">
               <div className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-300">
                 <Lightbulb className="h-4 w-4 shrink-0 text-amber-400" />
-                <span>Hình tượng hóa (Mental Model)</span>
+                <span>
+                  {isEn
+                    ? 'Mental Model & Analogy'
+                    : 'Hình tượng hóa (Mental Model)'}
+                </span>
               </div>
               <p className="text-xs sm:text-sm text-amber-100/95 leading-relaxed">
                 {term.analogy}
@@ -198,7 +219,11 @@ const GlossaryDetailCard: React.FC<{
               <div className="rounded-2xl border border-rose-500/30 bg-rose-950/15 p-4 space-y-1.5">
                 <div className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-rose-300">
                   <AlertTriangle className="h-4 w-4 shrink-0 text-rose-400" />
-                  <span>Bẫy & Lỗi phổ biến cần tránh</span>
+                  <span>
+                    {isEn
+                      ? 'Common Pitfalls & Gotchas'
+                      : 'Bẫy & Lỗi phổ biến cần tránh'}
+                  </span>
                 </div>
                 <p className="text-xs sm:text-sm text-rose-100/95 leading-relaxed">
                   {term.commonGotcha}
@@ -215,7 +240,11 @@ const GlossaryDetailCard: React.FC<{
                 <span className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
                 <Code2 className="h-3.5 w-3.5 text-emerald-400 ml-1" />
-                <span>Ví dụ Cú pháp & Cách dùng Python</span>
+                <span>
+                  {isEn
+                    ? 'Python Syntax & Usage Example'
+                    : 'Ví dụ Cú pháp & Cách dùng Python'}
+                </span>
               </div>
               <button
                 type="button"
@@ -225,7 +254,9 @@ const GlossaryDetailCard: React.FC<{
                 {copied ? (
                   <>
                     <Check className="h-3.5 w-3.5 text-emerald-400" />
-                    <span className="text-emerald-300">Đã copy</span>
+                    <span className="text-emerald-300">
+                      {isEn ? 'Copied' : 'Đã copy'}
+                    </span>
                   </>
                 ) : (
                   <>
@@ -245,7 +276,9 @@ const GlossaryDetailCard: React.FC<{
             <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-cyan-500/35 bg-cyan-950/20 px-4 py-3 text-xs text-cyan-200">
               <ArrowRightLeft className="h-4 w-4 shrink-0 text-cyan-400" />
               <span className="font-bold text-cyan-300">
-                Tương đương bên JS/TS / Node.js:
+                {isEn
+                  ? 'JS/TS / Node.js Equivalent:'
+                  : 'Tương đương bên JS/TS / Node.js:'}
               </span>
               <code className="font-mono bg-slate-950 border border-cyan-500/30 px-2 py-0.5 rounded-lg text-cyan-200">
                 {term.jsEquivalent}
@@ -259,7 +292,7 @@ const GlossaryDetailCard: React.FC<{
       {term.relatedTerms.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-800/80 bg-slate-950/60 px-5 py-3">
           <span className="text-[11px] font-semibold text-slate-400">
-            Thuật ngữ liên quan:
+            {isEn ? 'Related terms:' : 'Thuật ngữ liên quan:'}
           </span>
           {term.relatedTerms.map((rId) => {
             const rel = GLOSSARY_BY_ID[rId];
@@ -282,6 +315,8 @@ const GlossaryDetailCard: React.FC<{
 };
 
 export const GlossaryExplorer: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
+  const isEn = lang === 'en';
   const [activeSection, setActiveSection] = useState<
     'quick-syntax' | 'libraries' | 'glossary'
   >('quick-syntax');
@@ -378,10 +413,50 @@ export const GlossaryExplorer: React.FC = () => {
             </div>
             <div className="space-y-0.5 sm:space-y-1 min-w-0">
               <h1 className="text-xs sm:text-xl font-extrabold text-white tracking-tight">
-                Cú pháp & Khai báo Nhanh, Thư viện & Từ điển Python
+                {isEn
+                  ? 'Quick Syntax & Declarations, Libraries & Python Glossary'
+                  : 'Cú pháp & Khai báo Nhanh, Thư viện & Từ điển Python'}
               </h1>
               <p className="hidden sm:block text-xs text-slate-400">
-                Xem nhanh <strong>{QUICK_SYNTAX_DECLARATIONS.length} mẫu Khai báo & Cú pháp Quick & Easy (python.org)</strong>, tra cứu <strong>{PYTHON_LIBRARIES_CATALOG.length} nhóm Thư viện Chuẩn & Thực chiến</strong> cùng <strong>{ALL_GLOSSARY_TERMS.length} Từ khóa, Built-ins & Dunder</strong>.
+                {isEn ? (
+                  <>
+                    Quickly browse{' '}
+                    <strong>
+                      {QUICK_SYNTAX_DECLARATIONS.length} Quick &amp; Easy Syntax
+                      &amp; Declarations (python.org)
+                    </strong>
+                    , explore{' '}
+                    <strong>
+                      {PYTHON_LIBRARIES_CATALOG.length} Standard &amp;
+                      Third-Party Library Groups
+                    </strong>
+                    , and{' '}
+                    <strong>
+                      {ALL_GLOSSARY_TERMS.length} Keywords, Built-ins &amp;
+                      Dunder Terms
+                    </strong>
+                    .
+                  </>
+                ) : (
+                  <>
+                    Xem nhanh{' '}
+                    <strong>
+                      {QUICK_SYNTAX_DECLARATIONS.length} mẫu Khai báo &amp; Cú
+                      pháp Quick &amp; Easy (python.org)
+                    </strong>
+                    , tra cứu{' '}
+                    <strong>
+                      {PYTHON_LIBRARIES_CATALOG.length} nhóm Thư viện Chuẩn
+                      &amp; Thực chiến
+                    </strong>{' '}
+                    cùng{' '}
+                    <strong>
+                      {ALL_GLOSSARY_TERMS.length} Từ khóa, Built-ins &amp;
+                      Dunder
+                    </strong>
+                    .
+                  </>
+                )}
               </p>
             </div>
           </div>
@@ -399,9 +474,15 @@ export const GlossaryExplorer: React.FC = () => {
               )}
             >
               <Zap className="h-3.5 w-3.5 shrink-0" />
-              <span className="sm:hidden truncate">Cú pháp ({QUICK_SYNTAX_DECLARATIONS.length})</span>
+              <span className="sm:hidden truncate">
+                {isEn
+                  ? `Syntax (${QUICK_SYNTAX_DECLARATIONS.length})`
+                  : `Cú pháp (${QUICK_SYNTAX_DECLARATIONS.length})`}
+              </span>
               <span className="hidden sm:inline">
-                Khai báo & Cú pháp Nhanh ({QUICK_SYNTAX_DECLARATIONS.length})
+                {isEn
+                  ? `Quick Syntax & Declarations (${QUICK_SYNTAX_DECLARATIONS.length})`
+                  : `Khai báo & Cú pháp Nhanh (${QUICK_SYNTAX_DECLARATIONS.length})`}
               </span>
             </button>
             <button
@@ -415,9 +496,15 @@ export const GlossaryExplorer: React.FC = () => {
               )}
             >
               <Package className="h-3.5 w-3.5 shrink-0" />
-              <span className="sm:hidden truncate">Thư viện ({PYTHON_LIBRARIES_CATALOG.length})</span>
+              <span className="sm:hidden truncate">
+                {isEn
+                  ? `Libraries (${PYTHON_LIBRARIES_CATALOG.length})`
+                  : `Thư viện (${PYTHON_LIBRARIES_CATALOG.length})`}
+              </span>
               <span className="hidden sm:inline">
-                Thư viện Chuẩn & Thực chiến ({PYTHON_LIBRARIES_CATALOG.length})
+                {isEn
+                  ? `Standard & Practical Libraries (${PYTHON_LIBRARIES_CATALOG.length})`
+                  : `Thư viện Chuẩn & Thực chiến (${PYTHON_LIBRARIES_CATALOG.length})`}
               </span>
             </button>
             <button
@@ -431,9 +518,15 @@ export const GlossaryExplorer: React.FC = () => {
               )}
             >
               <BookMarked className="h-3.5 w-3.5 shrink-0" />
-              <span className="sm:hidden truncate">Từ điển ({ALL_GLOSSARY_TERMS.length})</span>
+              <span className="sm:hidden truncate">
+                {isEn
+                  ? `Glossary (${ALL_GLOSSARY_TERMS.length})`
+                  : `Từ điển (${ALL_GLOSSARY_TERMS.length})`}
+              </span>
               <span className="hidden sm:inline">
-                Từ điển Từ khóa & Built-ins ({ALL_GLOSSARY_TERMS.length})
+                {isEn
+                  ? `Keywords & Built-ins Glossary (${ALL_GLOSSARY_TERMS.length})`
+                  : `Từ điển Từ khóa & Built-ins (${ALL_GLOSSARY_TERMS.length})`}
               </span>
             </button>
           </div>
@@ -461,7 +554,7 @@ export const GlossaryExplorer: React.FC = () => {
                         (activeIndex - 1 + filtered.length) % filtered.length;
                       setSelectedTermId(filtered[prevIdx].id);
                     }}
-                    aria-label="Mục trước"
+                    aria-label={isEn ? 'Previous item' : 'Mục trước'}
                     className="rounded-lg p-1 text-slate-300 hover:bg-slate-800"
                   >
                     <ChevronLeft className="h-4 w-4" />
@@ -475,7 +568,7 @@ export const GlossaryExplorer: React.FC = () => {
                       const nextIdx = (activeIndex + 1) % filtered.length;
                       setSelectedTermId(filtered[nextIdx].id);
                     }}
-                    aria-label="Mục tiếp theo"
+                    aria-label={isEn ? 'Next item' : 'Mục tiếp theo'}
                     className="rounded-lg p-1 text-slate-300 hover:bg-slate-800"
                   >
                     <ChevronRight className="h-4 w-4" />
@@ -483,7 +576,11 @@ export const GlossaryExplorer: React.FC = () => {
                 </div>
               )}
               <span className="font-mono text-xs sm:text-sm font-extrabold text-amber-300 truncate">
-                {activeTerm ? activeTerm.term : 'Từ điển Python'}
+                {activeTerm
+                  ? activeTerm.term
+                  : isEn
+                  ? 'Python Glossary'
+                  : 'Từ điển Python'}
               </span>
             </div>
 
@@ -503,7 +600,11 @@ export const GlossaryExplorer: React.FC = () => {
               <Filter className="h-3.5 w-3.5" />
               <span>
                 {isMobileListOpen
-                  ? 'Đóng Danh mục'
+                  ? isEn
+                    ? 'Close Directory'
+                    : 'Đóng Danh mục'
+                  : isEn
+                  ? `Search & Filter (${filtered.length})`
                   : `Tra cứu & Lọc (${filtered.length})`}
               </span>
             </button>
@@ -522,7 +623,11 @@ export const GlossaryExplorer: React.FC = () => {
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-slate-300">
                   <Filter className="h-3.5 w-3.5 text-amber-400" />
-                  <span>Tra cứu Từ điển ({filtered.length})</span>
+                  <span>
+                    {isEn
+                      ? `Search Glossary (${filtered.length})`
+                      : `Tra cứu Từ điển (${filtered.length})`}
+                  </span>
                 </span>
 
                 <div className="inline-flex rounded-lg border border-slate-800 bg-slate-950 p-0.5">
@@ -535,10 +640,14 @@ export const GlossaryExplorer: React.FC = () => {
                         ? 'bg-amber-400 text-[#020617]'
                         : 'text-slate-400 hover:text-slate-200'
                     )}
-                    title="Chế độ Tra cứu 2 Cột (Master-Detail)"
+                    title={
+                      isEn
+                        ? '2-Column Lookup Mode (Master-Detail)'
+                        : 'Chế độ Tra cứu 2 Cột (Master-Detail)'
+                    }
                   >
                     <Columns className="h-3 w-3" />
-                    <span>Chi tiết</span>
+                    <span>{isEn ? 'Detail' : 'Chi tiết'}</span>
                   </button>
                   <button
                     type="button"
@@ -549,10 +658,14 @@ export const GlossaryExplorer: React.FC = () => {
                         ? 'bg-amber-400 text-[#020617]'
                         : 'text-slate-400 hover:text-slate-200'
                     )}
-                    title="Chế độ Lưới Thẻ Đầy đủ"
+                    title={
+                      isEn
+                        ? 'Full Card Grid Mode'
+                        : 'Chế độ Lưới Thẻ Đầy đủ'
+                    }
                   >
                     <LayoutGrid className="h-3 w-3" />
-                    <span>Lưới thẻ</span>
+                    <span>{isEn ? 'Card grid' : 'Lưới thẻ'}</span>
                   </button>
                 </div>
               </div>
@@ -563,7 +676,11 @@ export const GlossaryExplorer: React.FC = () => {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Tìm: yield, __init__, enumerate, async, uv..."
+                  placeholder={
+                    isEn
+                      ? 'Search: yield, __init__, enumerate, async, uv...'
+                      : 'Tìm: yield, __init__, enumerate, async, uv...'
+                  }
                   className="w-full rounded-xl border border-slate-700/80 bg-slate-950 pl-9 pr-8 py-2 text-xs text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
                 />
                 {search && (
@@ -582,19 +699,19 @@ export const GlossaryExplorer: React.FC = () => {
             <div className="space-y-3">
               <div>
                 <label className="block text-[11px] font-bold text-slate-400 mb-1">
-                  Phân loại Thuật ngữ:
+                  {isEn ? 'Term Category:' : 'Phân loại Thuật ngữ:'}
                 </label>
                 <select
                   value={category}
                   onChange={(e) =>
                     setCategory(e.target.value as GlossaryCategory | 'all')
                   }
-                  aria-label="Lọc theo Phân loại"
+                  aria-label={isEn ? 'Filter by Category' : 'Lọc theo Phân loại'}
                   className="w-full rounded-xl border border-slate-700/80 bg-slate-950 px-3 py-2 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
                 >
                   {CATEGORY_FILTERS.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.label} ({categoryCounts[c.id] || 0})
+                      {isEn ? c.labelEn : c.label} ({categoryCounts[c.id] || 0})
                     </option>
                   ))}
                 </select>
@@ -603,7 +720,7 @@ export const GlossaryExplorer: React.FC = () => {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-[11px] font-bold text-slate-400">
-                    Cấp độ Kỹ năng:
+                    {isEn ? 'Skill Level:' : 'Cấp độ Kỹ năng:'}
                   </label>
                   <button
                     type="button"
@@ -616,7 +733,11 @@ export const GlossaryExplorer: React.FC = () => {
                     )}
                   >
                     <ArrowRightLeft className="h-3 w-3" />
-                    <span>So sánh JS/TS: {showJsTsComparison ? 'BẬT' : 'TẮT'}</span>
+                    <span>
+                      {isEn
+                        ? `JS/TS Compare: ${showJsTsComparison ? 'ON' : 'OFF'}`
+                        : `So sánh JS/TS: ${showJsTsComparison ? 'BẬT' : 'TẮT'}`}
+                    </span>
                   </button>
                 </div>
 
@@ -631,7 +752,9 @@ export const GlossaryExplorer: React.FC = () => {
                         : 'border-slate-800 bg-slate-950/80 text-slate-300 hover:border-slate-700'
                     )}
                   >
-                    Tất cả ({levelCounts.all})
+                    {isEn
+                      ? `All (${levelCounts.all})`
+                      : `Tất cả (${levelCounts.all})`}
                   </button>
                   {SKILL_LEVELS.map((l) => (
                     <button
@@ -656,7 +779,9 @@ export const GlossaryExplorer: React.FC = () => {
             <div className="border-t border-slate-800/80 pt-3 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-bold text-slate-300">
-                  Danh mục Thuật ngữ ({filtered.length})
+                  {isEn
+                    ? `Term Directory (${filtered.length})`
+                    : `Danh mục Thuật ngữ (${filtered.length})`}
                 </span>
                 {filtered.length > 0 && layoutMode === 'studio' && (
                   <span className="font-mono text-[11px] text-amber-300">
@@ -718,7 +843,9 @@ export const GlossaryExplorer: React.FC = () => {
               <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-12 text-center space-y-3">
                 <Search className="mx-auto h-8 w-8 text-slate-400" />
                 <p className="text-sm font-bold text-slate-200">
-                  Không tìm thấy thuật ngữ nào khớp với bộ lọc hiện tại.
+                  {isEn
+                    ? 'No glossary terms match the current filters.'
+                    : 'Không tìm thấy thuật ngữ nào khớp với bộ lọc hiện tại.'}
                 </p>
                 <button
                   type="button"
@@ -729,7 +856,9 @@ export const GlossaryExplorer: React.FC = () => {
                   }}
                   className="rounded-xl bg-amber-400 px-4 py-2 text-xs font-extrabold text-[#020617] cursor-pointer"
                 >
-                  Xem toàn bộ {ALL_GLOSSARY_TERMS.length} mục
+                  {isEn
+                    ? `View all ${ALL_GLOSSARY_TERMS.length} items`
+                    : `Xem toàn bộ ${ALL_GLOSSARY_TERMS.length} mục`}
                 </button>
               </div>
             ) : layoutMode === 'grid' ? (
@@ -756,7 +885,7 @@ export const GlossaryExplorer: React.FC = () => {
                         openNotesDrawer(
                           'glossary',
                           term.id,
-                          `Thuật ngữ: ${term.term}`
+                          isEn ? `Term: ${term.term}` : `Thuật ngữ: ${term.term}`
                         )
                       }
                       onSelectRelatedTerm={handleSelectRelatedTerm}
@@ -788,7 +917,9 @@ export const GlossaryExplorer: React.FC = () => {
                     openNotesDrawer(
                       'glossary',
                       activeTerm.id,
-                      `Thuật ngữ: ${activeTerm.term}`
+                      isEn
+                        ? `Term: ${activeTerm.term}`
+                        : `Thuật ngữ: ${activeTerm.term}`
                     )
                   }
                   onSelectRelatedTerm={handleSelectRelatedTerm}

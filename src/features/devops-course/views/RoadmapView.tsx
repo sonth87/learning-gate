@@ -23,6 +23,8 @@ import {
 } from '../logic';
 import { COURSE_NAV_STORES, COURSE_PROGRESS_STORES } from '../store';
 import { useCourseMeta } from '../context';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { PageHeader, Pill, Spinner } from '@/features/workpath/components/ui';
 import { CourseBar } from '../components/CourseUi';
 import { cn } from '@/utils/cn';
@@ -73,6 +75,8 @@ function getDomainChip(moduleId: string) {
 
 export const RoadmapView: React.FC = () => {
   const { courseId, accent } = useCourseMeta();
+  const lang = useWorkbenchStore((s) => s.language);
+  const enOverlay = useCourseEnOverlay(courseId);
   const { data: cur } = useCourseCurriculum(courseId);
   const s = COURSE_PROGRESS_STORES[courseId]((x) => x.state);
   const toggleSkipModule = COURSE_PROGRESS_STORES[courseId]((x) => x.toggleSkipModule);
@@ -98,8 +102,12 @@ export const RoadmapView: React.FC = () => {
   return (
     <div className="mx-auto max-w-6xl p-4 sm:p-6">
       <PageHeader
-        title="Lộ trình cẩm nang trực quan"
-        sub={`${ordered.length} module lý thuyết trực quan (sơ đồ luồng, phân tầng, bảng tra cứu, bẫy & mẹo thực chiến) · ${ordered.reduce((n, m) => n + m.exercises.length, 0)} bài thực hành chấm AST/mô phỏng thật.`}
+        title={lang === 'en' ? 'Visual Study Guide Roadmap' : 'Lộ trình cẩm nang trực quan'}
+        sub={
+          lang === 'en'
+            ? `${ordered.length} visual theory modules (flowcharts, layered diagrams, cheat sheets, real-world traps & tips) · ${ordered.reduce((n, m) => n + m.exercises.length, 0)} hands-on exercises graded via AST/live simulation.`
+            : `${ordered.length} module lý thuyết trực quan (sơ đồ luồng, phân tầng, bảng tra cứu, bẫy & mẹo thực chiến) · ${ordered.reduce((n, m) => n + m.exercises.length, 0)} bài thực hành chấm AST/mô phỏng thật.`
+        }
       />
       <div className="space-y-6">
         {levels.map((lv) => {
@@ -107,6 +115,8 @@ export const RoadmapView: React.FC = () => {
           const exCount = mods.reduce((n, m) => n + m.exercises.length, 0);
           const uncompletedMods = mods.filter((m) => !courseModuleDone(s, m, cur.passQuiz));
           const skippedModsInLevel = mods.filter((m) => isModuleSkipped(s, m.id));
+          const levelName =
+            (lang === 'en' ? enOverlay?.levels?.[String(lv)] : undefined) ?? cur.levels[String(lv)];
           return (
             <section key={lv} aria-labelledby={`lv-${lv}`}>
               <div
@@ -116,12 +126,13 @@ export const RoadmapView: React.FC = () => {
                 )}
               >
                 <h2 id={`lv-${lv}`} className="text-base font-bold text-white">
-                  Cấp {lv} · {cur.levels[String(lv)]}
+                  {lang === 'en' ? `Level ${lv} · ${levelName}` : `Cấp ${lv} · ${levelName}`}
                 </h2>
-                {lv === current && <Pill tone="ok">bạn đang ở đây</Pill>}
+                {lv === current && <Pill tone="ok">{lang === 'en' ? 'you are here' : 'bạn đang ở đây'}</Pill>}
                 <div className="ml-auto flex flex-wrap items-center gap-2.5">
                   <span className="font-mono text-xs font-normal text-slate-400">
-                    {mods.length} module · {exCount} bài thực hành
+                    {mods.length} {lang === 'en' ? 'modules' : 'module'} · {exCount}{' '}
+                    {lang === 'en' ? 'exercises' : 'bài thực hành'}
                   </span>
                   {uncompletedMods.length > 0 ? (
                     <button
@@ -132,11 +143,15 @@ export const RoadmapView: React.FC = () => {
                           true
                         )
                       }
-                      title={`Đánh dấu bỏ qua toàn bộ ${uncompletedMods.length} module chưa học ở Cấp ${lv}`}
+                      title={
+                        lang === 'en'
+                          ? `Mark all ${uncompletedMods.length} uncompleted modules in Level ${lv} as skipped`
+                          : `Đánh dấu bỏ qua toàn bộ ${uncompletedMods.length} module chưa học ở Cấp ${lv}`
+                      }
                       className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-950/80 px-2.5 py-1 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white cursor-pointer"
                     >
                       <SkipForward className="h-3 w-3" />
-                      <span>Bỏ qua cấp {lv}</span>
+                      <span>{lang === 'en' ? `Skip level ${lv}` : `Bỏ qua cấp ${lv}`}</span>
                     </button>
                   ) : skippedModsInLevel.length > 0 ? (
                     <button
@@ -147,11 +162,15 @@ export const RoadmapView: React.FC = () => {
                           false
                         )
                       }
-                      title={`Khôi phục ${skippedModsInLevel.length} module đã bỏ qua ở Cấp ${lv}`}
+                      title={
+                        lang === 'en'
+                          ? `Restore ${skippedModsInLevel.length} skipped modules in Level ${lv}`
+                          : `Khôi phục ${skippedModsInLevel.length} module đã bỏ qua ở Cấp ${lv}`
+                      }
                       className="inline-flex items-center gap-1 rounded-lg border border-sky-500/40 bg-sky-500/10 px-2.5 py-1 text-xs font-medium text-sky-300 transition-colors hover:bg-sky-500/20 cursor-pointer"
                     >
                       <Undo2 className="h-3 w-3" />
-                      <span>Khôi phục cấp {lv}</span>
+                      <span>{lang === 'en' ? `Restore level ${lv}` : `Khôi phục cấp ${lv}`}</span>
                     </button>
                   ) : null}
                 </div>
@@ -163,6 +182,9 @@ export const RoadmapView: React.FC = () => {
                   const skipped = isModuleSkipped(s, m.id);
                   const passed = m.exercises.filter((e) => exStatus(s, e.id) === 'passed').length;
                   const chip = getDomainChip(m.id);
+                  const modOv = lang === 'en' ? enOverlay?.modules?.[m.id] : undefined;
+                  const modTitle = modOv?.titleEn ?? m.title;
+                  const modSummary = modOv?.summaryEn ?? m.summary;
                   return (
                     <div
                       key={m.id}
@@ -190,35 +212,48 @@ export const RoadmapView: React.FC = () => {
                             </span>
                           </div>
                           {skipped ? (
-                            <Pill tone="info">đã bỏ qua</Pill>
+                            <Pill tone="info">{lang === 'en' ? 'skipped' : 'đã bỏ qua'}</Pill>
                           ) : complete ? (
-                            <CheckCircle2 className="h-4 w-4 text-emerald-400" aria-label="Đã hoàn thành" />
+                            <CheckCircle2
+                              className="h-4 w-4 text-emerald-400"
+                              aria-label={lang === 'en' ? 'Completed' : 'Đã hoàn thành'}
+                            />
                           ) : d > 0 ? (
-                            <Pill tone="warn">đang học</Pill>
+                            <Pill tone="warn">{lang === 'en' ? 'in progress' : 'đang học'}</Pill>
                           ) : (
                             <ChevronRight className="h-4 w-4 text-slate-600 group-hover:text-slate-300" aria-hidden="true" />
                           )}
                         </div>
-                        <div className="mt-1.5 font-semibold text-slate-100 leading-snug">{m.title}</div>
-                        <p className="mt-1 line-clamp-2 text-xs text-slate-400 leading-relaxed">{m.summary}</p>
+                        <div className="mt-1.5 font-semibold text-slate-100 leading-snug">{modTitle}</div>
+                        <p className="mt-1 line-clamp-2 text-xs text-slate-400 leading-relaxed">{modSummary}</p>
                       </button>
 
                       <div className="mt-3">
                         <CourseBar value={t ? d / t : 0} accent={accent} />
                         <div className="mt-1.5 flex items-center justify-between gap-2 font-mono text-[11px] text-slate-500">
                           <span>
-                            {passed}/{m.exercises.length} thực hành · quiz{' '}
+                            {passed}/{m.exercises.length} {lang === 'en' ? 'exercises' : 'thực hành'} · quiz{' '}
                             {quizBest(s, m.id) ? `${Math.round(quizBest(s, m.id) * 100)}%` : '—'}
                           </span>
                           {(!complete || skipped) && (
                             <button
                               type="button"
                               onClick={() => toggleSkipModule(m.id)}
-                              title={skipped ? 'Hoàn tác bỏ qua module này' : 'Đã biết — Bỏ qua module này'}
+                              title={
+                                skipped
+                                  ? lang === 'en'
+                                    ? 'Undo skip for this module'
+                                    : 'Hoàn tác bỏ qua module này'
+                                  : lang === 'en'
+                                    ? 'Already know this — Skip module'
+                                    : 'Đã biết — Bỏ qua module này'
+                              }
                               className="inline-flex items-center gap-1 rounded border border-slate-700/80 bg-slate-950/70 px-1.5 py-0.5 font-sans text-[10px] font-medium text-slate-400 hover:border-slate-500 hover:text-white cursor-pointer"
                             >
                               {skipped ? <Undo2 className="h-2.5 w-2.5" /> : <SkipForward className="h-2.5 w-2.5" />}
-                              <span>{skipped ? 'Hoàn tác' : 'Bỏ qua'}</span>
+                              <span>
+                                {skipped ? (lang === 'en' ? 'Undo' : 'Hoàn tác') : lang === 'en' ? 'Skip' : 'Bỏ qua'}
+                              </span>
                             </button>
                           )}
                         </div>

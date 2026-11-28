@@ -23,6 +23,7 @@ import {
   type RedisEntry,
   type RedisRuntime,
 } from '@/features/devops-course/engine/redisCliEngine';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { useRedisStore } from '../store/useRedisStore';
 import type { RedisEvictionPolicy, RedisSimMode } from '../types/redis.types';
 import { cn } from '@/utils/cn';
@@ -41,46 +42,74 @@ interface SimSlotItem {
   kind: 'cache' | 'session' | 'hot';
 }
 
-const EVICTION_POLICIES: { id: RedisEvictionPolicy; label: string; desc: string }[] = [
+const EVICTION_POLICIES: {
+  id: RedisEvictionPolicy;
+  label: { vi: string; en: string };
+  desc: { vi: string; en: string };
+}[] = [
   {
     id: 'allkeys-lfu',
-    label: 'allkeys-lfu (Khuyên dùng Cache)',
-    desc: 'Thu hồi key có tần suất truy cập (LFU freq) thấp nhất trên toàn bộ keyspace — bảo vệ hot key cực tốt.',
+    label: { vi: 'allkeys-lfu (Khuyên dùng Cache)', en: 'allkeys-lfu (Recommended for Cache)' },
+    desc: {
+      vi: 'Thu hồi key có tần suất truy cập (LFU freq) thấp nhất trên toàn bộ keyspace — bảo vệ hot key cực tốt.',
+      en: 'Evicts the least frequently used (lowest LFU freq) key across the entire keyspace — great for protecting hot keys.',
+    },
   },
   {
     id: 'allkeys-lru',
-    label: 'allkeys-lru',
-    desc: 'Thu hồi key lâu nhất chưa được chạm tới (idle cao nhất) trên toàn bộ keyspace.',
+    label: { vi: 'allkeys-lru', en: 'allkeys-lru' },
+    desc: {
+      vi: 'Thu hồi key lâu nhất chưa được chạm tới (idle cao nhất) trên toàn bộ keyspace.',
+      en: 'Evicts the least recently used (highest idle time) key across the entire keyspace.',
+    },
   },
   {
     id: 'noeviction',
-    label: 'noeviction (Mặc định · Queue/Lock)',
-    desc: 'Không bao giờ xóa key! Khi chạm trần maxmemory, mọi lệnh ghi mới bị trả lỗi OOM.',
+    label: { vi: 'noeviction (Mặc định · Queue/Lock)', en: 'noeviction (Default · Queue/Lock)' },
+    desc: {
+      vi: 'Không bao giờ xóa key! Khi chạm trần maxmemory, mọi lệnh ghi mới bị trả lỗi OOM.',
+      en: 'Never evicts keys! Once maxmemory is reached, all new write commands return an OOM error.',
+    },
   },
   {
     id: 'volatile-lfu',
-    label: 'volatile-lfu',
-    desc: 'Chỉ thu hồi trong nhóm key CÓ gắn TTL dựa theo tần suất LFU thấp nhất.',
+    label: { vi: 'volatile-lfu', en: 'volatile-lfu' },
+    desc: {
+      vi: 'Chỉ thu hồi trong nhóm key CÓ gắn TTL dựa theo tần suất LFU thấp nhất.',
+      en: 'Evicts only keys WITH a TTL set, targeting the lowest LFU frequency.',
+    },
   },
   {
     id: 'volatile-lru',
-    label: 'volatile-lru',
-    desc: 'Chỉ thu hồi trong nhóm key CÓ gắn TTL dựa theo thời gian nhàn rỗi LRU lâu nhất.',
+    label: { vi: 'volatile-lru', en: 'volatile-lru' },
+    desc: {
+      vi: 'Chỉ thu hồi trong nhóm key CÓ gắn TTL dựa theo thời gian nhàn rỗi LRU lâu nhất.',
+      en: 'Evicts only keys WITH a TTL set, targeting the longest LRU idle time.',
+    },
   },
   {
     id: 'volatile-ttl',
-    label: 'volatile-ttl',
-    desc: 'Chỉ thu hồi trong nhóm key CÓ gắn TTL, ưu tiên xóa key sắp hết hạn sớm nhất (TTL nhỏ nhất).',
+    label: { vi: 'volatile-ttl', en: 'volatile-ttl' },
+    desc: {
+      vi: 'Chỉ thu hồi trong nhóm key CÓ gắn TTL, ưu tiên xóa key sắp hết hạn sớm nhất (TTL nhỏ nhất).',
+      en: 'Evicts only keys WITH a TTL set, prioritizing keys closest to expiration (smallest TTL).',
+    },
   },
   {
     id: 'allkeys-random',
-    label: 'allkeys-random',
-    desc: 'Xóa ngẫu nhiên bất kỳ key nào khi đầy RAM.',
+    label: { vi: 'allkeys-random', en: 'allkeys-random' },
+    desc: {
+      vi: 'Xóa ngẫu nhiên bất kỳ key nào khi đầy RAM.',
+      en: 'Randomly evicts any key when RAM is full.',
+    },
   },
   {
     id: 'volatile-random',
-    label: 'volatile-random',
-    desc: 'Xóa ngẫu nhiên một key trong nhóm có gắn TTL.',
+    label: { vi: 'volatile-random', en: 'volatile-random' },
+    desc: {
+      vi: 'Xóa ngẫu nhiên một key trong nhóm có gắn TTL.',
+      en: 'Randomly evicts a key among those with a TTL set.',
+    },
   },
 ];
 
@@ -113,6 +142,7 @@ function pickVictim(items: SimSlotItem[], policy: RedisEvictionPolicy, tick: num
 }
 
 const MemoryEvictionSandbox: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
   const [maxMemMb, setMaxMemMb] = useState(96);
   const [policy, setPolicy] = useState<RedisEvictionPolicy>('allkeys-lfu');
   const [items, setItems] = useState<SimSlotItem[]>(INITIAL_MEM_SLOTS);
@@ -122,7 +152,9 @@ const MemoryEvictionSandbox: React.FC = () => {
   const [evictedCount, setEvictedCount] = useState(0);
   const [oomCount, setOomCount] = useState(0);
   const [lastEvent, setLastEvent] = useState<string>(
-    'Sẵn sàng: Thử ghi thêm key khi RAM chạm trần để quan sát sự khác biệt giữa noeviction, volatile-lru và allkeys-lfu!'
+    lang === 'vi'
+      ? 'Sẵn sàng: Thử ghi thêm key khi RAM chạm trần để quan sát sự khác biệt giữa noeviction, volatile-lru và allkeys-lfu!'
+      : 'Ready: Try writing more keys when RAM hits the ceiling to observe the difference between noeviction, volatile-lru, and allkeys-lfu!'
   );
 
   const usedMb = items.reduce((acc, i) => acc + i.sizeMb, 0);
@@ -140,7 +172,9 @@ const MemoryEvictionSandbox: React.FC = () => {
       if (!victim) {
         setOomCount((c) => c + 1);
         setLastEvent(
-          `LỖI OOM! (policy=${policy}): Không thể thu hồi bộ nhớ cho "${newItem.key}" — Redis trả lỗi "OOM command not allowed when used memory > maxmemory"!`
+          lang === 'vi'
+            ? `LỖI OOM! (policy=${policy}): Không thể thu hồi bộ nhớ cho "${newItem.key}" — Redis trả lỗi "OOM command not allowed when used memory > maxmemory"!`
+            : `OOM ERROR! (policy=${policy}): Cannot evict memory for "${newItem.key}" — Redis returned "OOM command not allowed when used memory > maxmemory"!`
         );
         return;
       }
@@ -152,9 +186,17 @@ const MemoryEvictionSandbox: React.FC = () => {
     setItems(working);
     if (evictedNames.length > 0) {
       setEvictedCount((c) => c + evictedNames.length);
-      setLastEvent(`Đã ghi "${newItem.key}" · Evict (${policy}): ${evictedNames.join(', ')}`);
+      setLastEvent(
+        lang === 'vi'
+          ? `Đã ghi "${newItem.key}" · Evict (${policy}): ${evictedNames.join(', ')}`
+          : `Written "${newItem.key}" · Evicted (${policy}): ${evictedNames.join(', ')}`
+      );
     } else {
-      setLastEvent(`Đã ghi "${newItem.key}" vào RAM (${usedMb + newItem.sizeMb}/${maxMemMb} MB).`);
+      setLastEvent(
+        lang === 'vi'
+          ? `Đã ghi "${newItem.key}" vào RAM (${usedMb + newItem.sizeMb}/${maxMemMb} MB).`
+          : `Written "${newItem.key}" to RAM (${usedMb + newItem.sizeMb}/${maxMemMb} MB).`
+      );
     }
   };
 
@@ -176,8 +218,12 @@ const MemoryEvictionSandbox: React.FC = () => {
     setMisses((m) => m + localMiss);
     setLastEvent(
       localHits > 0
-        ? `Traffic đọc Hot Keys: +${localHits} Cache HIT! Bộ đếm tần suất LFU của hot keys vừa tăng vọt.`
-        : 'Cảnh báo: Các Hot Keys đã bị evict mất trước đó -> Cache MISS đập xuống Database!'
+        ? lang === 'vi'
+          ? `Traffic đọc Hot Keys: +${localHits} Cache HIT! Bộ đếm tần suất LFU của hot keys vừa tăng vọt.`
+          : `Hot Keys read traffic: +${localHits} Cache HIT! LFU frequency counters of hot keys just surged.`
+        : lang === 'vi'
+        ? 'Cảnh báo: Các Hot Keys đã bị evict mất trước đó -> Cache MISS đập xuống Database!'
+        : 'Warning: Hot Keys were previously evicted -> Cache MISS hitting the Database!'
     );
   };
 
@@ -188,7 +234,11 @@ const MemoryEvictionSandbox: React.FC = () => {
     setMisses(4);
     setEvictedCount(0);
     setOomCount(0);
-    setLastEvent('Đã khôi phục trạng thái bộ nhớ mặc định.');
+    setLastEvent(
+      lang === 'vi'
+        ? 'Đã khôi phục trạng thái bộ nhớ mặc định.'
+        : 'Restored default memory state.'
+    );
   };
 
   const activePolicyMeta = EVICTION_POLICIES.find((p) => p.id === policy)!;
@@ -200,7 +250,7 @@ const MemoryEvictionSandbox: React.FC = () => {
         <div className="lg:col-span-7 rounded-2xl border border-slate-800 bg-slate-900/85 p-4 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <label className="text-xs font-bold uppercase tracking-wider text-rose-300">
-              Chính sách thu hồi (maxmemory-policy)
+              {lang === 'vi' ? 'Chính sách thu hồi (maxmemory-policy)' : 'Eviction Policy (maxmemory-policy)'}
             </label>
             <button
               type="button"
@@ -208,7 +258,7 @@ const MemoryEvictionSandbox: React.FC = () => {
               className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-300 hover:text-white cursor-pointer"
             >
               <RotateCcw className="h-3 w-3" />
-              <span>Đặt lại</span>
+              <span>{lang === 'vi' ? 'Đặt lại' : 'Reset'}</span>
             </button>
           </div>
 
@@ -219,17 +269,17 @@ const MemoryEvictionSandbox: React.FC = () => {
           >
             {EVICTION_POLICIES.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.label}
+                {p.label[lang]}
               </option>
             ))}
           </select>
-          <p className="text-xs text-slate-400">{activePolicyMeta.desc}</p>
+          <p className="text-xs text-slate-400">{activePolicyMeta.desc[lang]}</p>
 
           <div className="pt-1">
             <div className="flex items-center justify-between text-xs font-mono text-slate-300 mb-1">
-              <span>Giới hạn maxmemory: {maxMemMb} MB</span>
+              <span>{lang === 'vi' ? `Giới hạn maxmemory: ${maxMemMb} MB` : `maxmemory limit: ${maxMemMb} MB`}</span>
               <span>
-                Đang dùng: {usedMb} MB ({usedPct}%)
+                {lang === 'vi' ? `Đang dùng: ${usedMb} MB (${usedPct}%)` : `Used: ${usedMb} MB (${usedPct}%)`}
               </span>
             </div>
             <input
@@ -254,7 +304,9 @@ const MemoryEvictionSandbox: React.FC = () => {
             </div>
           </div>
           <div className="rounded-2xl border border-slate-800 bg-slate-900/85 p-3.5">
-            <div className="text-[11px] text-slate-400">Evicted / Lỗi OOM</div>
+            <div className="text-[11px] text-slate-400">
+              {lang === 'vi' ? 'Evicted / Lỗi OOM' : 'Evicted / OOM Errors'}
+            </div>
             <div className="mt-1 font-mono text-xl font-extrabold text-amber-300">
               {evictedCount} / <span className="text-rose-400">{oomCount}</span>
             </div>
@@ -285,7 +337,11 @@ const MemoryEvictionSandbox: React.FC = () => {
           className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-rose-500 cursor-pointer"
         >
           <HardDrive className="h-3.5 w-3.5" />
-          <span>+ Ghi Key Lạnh KHÔNG TTL (16MB, freq=1)</span>
+          <span>
+            {lang === 'vi'
+              ? '+ Ghi Key Lạnh KHÔNG TTL (16MB, freq=1)'
+              : '+ Write Cold Key NO TTL (16MB, freq=1)'}
+          </span>
         </button>
 
         <button
@@ -304,7 +360,9 @@ const MemoryEvictionSandbox: React.FC = () => {
           className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3.5 py-2 text-xs font-bold text-amber-200 hover:bg-amber-500/25 cursor-pointer"
         >
           <Zap className="h-3.5 w-3.5" />
-          <span>+ Ghi Session CÓ TTL 120s (16MB)</span>
+          <span>
+            {lang === 'vi' ? '+ Ghi Session CÓ TTL 120s (16MB)' : '+ Write Session WITH 120s TTL (16MB)'}
+          </span>
         </button>
 
         <button
@@ -313,7 +371,7 @@ const MemoryEvictionSandbox: React.FC = () => {
           className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3.5 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-500/25 cursor-pointer"
         >
           <Flame className="h-3.5 w-3.5" />
-          <span>Đọc Hot Keys (+LFU freq)</span>
+          <span>{lang === 'vi' ? 'Đọc Hot Keys (+LFU freq)' : 'Read Hot Keys (+LFU freq)'}</span>
         </button>
       </div>
 
@@ -321,7 +379,7 @@ const MemoryEvictionSandbox: React.FC = () => {
       <div className="rounded-2xl border border-slate-800 bg-slate-900/85 p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-xs sm:text-sm font-extrabold text-white">
-            Bản đồ Khung nhớ RAM ({items.length} keys · {usedMb}/{maxMemMb} MB)
+            {lang === 'vi' ? 'Bản đồ Khung nhớ RAM' : 'RAM Memory Map'} ({items.length} keys · {usedMb}/{maxMemMb} MB)
           </h3>
           <div className="h-2 w-36 rounded-full bg-slate-800 overflow-hidden">
             <div
@@ -402,6 +460,7 @@ const DEFAULT_SHARDS: ClusterShard[] = [
 ];
 
 const ClusterHashRingSandbox: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
   const [keyA, setKeyA] = useState('wallet:u100:balance');
   const [keyB, setKeyB] = useState('wallet:u100:history');
   const [shards, setShards] = useState<ClusterShard[]>(DEFAULT_SHARDS);
@@ -439,10 +498,26 @@ const ClusterHashRingSandbox: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 className="text-sm sm:text-base font-extrabold text-white">
-              Máy tính CRC16(key) mod 16384 & Kiểm tra Lỗi CROSSSLOT
+              {lang === 'vi'
+                ? 'Máy tính CRC16(key) mod 16384 & Kiểm tra Lỗi CROSSSLOT'
+                : 'CRC16(key) mod 16384 Calculator & CROSSSLOT Error Checker'}
             </h3>
             <p className="text-xs text-slate-400">
-              Nhập 2 key bất kỳ để xem Redis Cluster định tuyến về Shard nào và liệu lệnh đa key (<code className="font-mono text-rose-300">MGET</code> / <code className="font-mono text-rose-300">EVAL</code>) có hợp lệ hay nổ <code className="font-mono text-amber-300">CROSSSLOT</code>.
+              {lang === 'vi' ? (
+                <>
+                  Nhập 2 key bất kỳ để xem Redis Cluster định tuyến về Shard nào và liệu lệnh đa key (
+                  <code className="font-mono text-rose-300">MGET</code> /{' '}
+                  <code className="font-mono text-rose-300">EVAL</code>) có hợp lệ hay nổ{' '}
+                  <code className="font-mono text-amber-300">CROSSSLOT</code>.
+                </>
+              ) : (
+                <>
+                  Enter any 2 keys to see which Shard Redis Cluster routes them to and whether multi-key commands (
+                  <code className="font-mono text-rose-300">MGET</code> /{' '}
+                  <code className="font-mono text-rose-300">EVAL</code>) are valid or trigger{' '}
+                  <code className="font-mono text-amber-300">CROSSSLOT</code>.
+                </>
+              )}
             </p>
           </div>
           <button
@@ -451,7 +526,9 @@ const ClusterHashRingSandbox: React.FC = () => {
             className="inline-flex items-center gap-1.5 self-start rounded-xl bg-rose-600 px-3 py-2 text-xs font-bold text-white hover:bg-rose-500 cursor-pointer shrink-0"
           >
             <Zap className="h-3.5 w-3.5" />
-            <span>Áp dụng mẫu {'{u100}'} HashTag</span>
+            <span>
+              {lang === 'vi' ? 'Áp dụng mẫu {u100} HashTag' : 'Apply {u100} HashTag Pattern'}
+            </span>
           </button>
         </div>
 
@@ -466,7 +543,8 @@ const ClusterHashRingSandbox: React.FC = () => {
             />
             <div className="flex flex-wrap items-center gap-2 font-mono text-[11px]">
               <span className="text-slate-400">
-                Chuỗi băm: <strong className="text-amber-300">"{infoA.tag}"</strong>
+                {lang === 'vi' ? 'Chuỗi băm:' : 'Hash input:'}{' '}
+                <strong className="text-amber-300">"{infoA.tag}"</strong>
               </span>
               <span className="rounded bg-rose-500/20 px-2 py-0.5 font-bold text-rose-300">
                 Slot #{infoA.slot}
@@ -487,7 +565,8 @@ const ClusterHashRingSandbox: React.FC = () => {
             />
             <div className="flex flex-wrap items-center gap-2 font-mono text-[11px]">
               <span className="text-slate-400">
-                Chuỗi băm: <strong className="text-amber-300">"{infoB.tag}"</strong>
+                {lang === 'vi' ? 'Chuỗi băm:' : 'Hash input:'}{' '}
+                <strong className="text-amber-300">"{infoB.tag}"</strong>
               </span>
               <span className="rounded bg-rose-500/20 px-2 py-0.5 font-bold text-rose-300">
                 Slot #{infoB.slot}
@@ -515,20 +594,38 @@ const ClusterHashRingSandbox: React.FC = () => {
           )}
           <div>
             {sameSlot ? (
-              <span>
-                <strong>HỢP LỆ CHO MGET / MULTI / LUA EVAL!</strong> Cả 2 key cùng rơi vào{' '}
-                <code className="font-mono font-bold">Slot #{infoA.slot}</code> trên{' '}
-                <code className="font-mono font-bold">
-                  {infoA.shard.masterDown ? `${infoA.shard.replicaHost} (Promoted Master)` : infoA.shard.masterHost}
-                </code>
-                .
-              </span>
-            ) : (
+              lang === 'vi' ? (
+                <span>
+                  <strong>HỢP LỆ CHO MGET / MULTI / LUA EVAL!</strong> Cả 2 key cùng rơi vào{' '}
+                  <code className="font-mono font-bold">Slot #{infoA.slot}</code> trên{' '}
+                  <code className="font-mono font-bold">
+                    {infoA.shard.masterDown ? `${infoA.shard.replicaHost} (Promoted Master)` : infoA.shard.masterHost}
+                  </code>
+                  .
+                </span>
+              ) : (
+                <span>
+                  <strong>VALID FOR MGET / MULTI / LUA EVAL!</strong> Both keys map to{' '}
+                  <code className="font-mono font-bold">Slot #{infoA.slot}</code> on{' '}
+                  <code className="font-mono font-bold">
+                    {infoA.shard.masterDown ? `${infoA.shard.replicaHost} (Promoted Master)` : infoA.shard.masterHost}
+                  </code>
+                  .
+                </span>
+              )
+            ) : lang === 'vi' ? (
               <span>
                 <strong>CROSSSLOT Keys in request don't hash to the same slot!</strong>{' '}
                 <code className="font-mono">{keyA}</code> ({infoA.slot}) khác slot với{' '}
                 <code className="font-mono">{keyB}</code> ({infoB.slot}). Bọc định danh chung trong dấu ngoặc nhọn như{' '}
                 <code className="font-mono font-bold">{'{u100}'}</code> để đồng vị trên cùng 1 slot!
+              </span>
+            ) : (
+              <span>
+                <strong>CROSSSLOT Keys in request don't hash to the same slot!</strong>{' '}
+                <code className="font-mono">{keyA}</code> ({infoA.slot}) is in a different slot from{' '}
+                <code className="font-mono">{keyB}</code> ({infoB.slot}). Wrap the shared identifier in curly braces like{' '}
+                <code className="font-mono font-bold">{'{u100}'}</code> to co-locate on the same slot!
               </span>
             )}
           </div>
@@ -590,7 +687,13 @@ const ClusterHashRingSandbox: React.FC = () => {
                 onClick={() => toggleMasterDown(sh.id)}
                 className="w-full rounded-lg border border-slate-700 bg-slate-800 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 cursor-pointer"
               >
-                {sh.masterDown ? 'Khôi phục Master cũ (Rejoin as Replica)' : 'Giả lập Sập Master (Auto-Failover)'}
+                {sh.masterDown
+                  ? lang === 'vi'
+                    ? 'Khôi phục Master cũ (Rejoin as Replica)'
+                    : 'Restore Old Master (Rejoin as Replica)'
+                  : lang === 'vi'
+                  ? 'Giả lập Sập Master (Auto-Failover)'
+                  : 'Simulate Master Failure (Auto-Failover)'}
               </button>
             </div>
           );
@@ -634,10 +737,16 @@ EVAL "if redis.call('GET',KEYS[1]) == ARGV[1] then return redis.call('DEL',KEYS[
   },
 ];
 
-function summarizeEntry(entry: RedisEntry, nowMs: number): { type: string; preview: string; ttlLabel: string } {
+function summarizeEntry(
+  entry: RedisEntry,
+  nowMs: number,
+  lang: 'vi' | 'en'
+): { type: string; preview: string; ttlLabel: string } {
   const ttlLabel =
     entry.expiresAtMs === undefined
-      ? '-1 (bền vững)'
+      ? lang === 'vi'
+        ? '-1 (bền vững)'
+        : '-1 (persistent)'
       : `${Math.max(0, Math.ceil((entry.expiresAtMs - nowMs) / 1000))}s`;
   const d = entry.data;
   if (d.type === 'string') return { type: 'string', preview: JSON.stringify(d.val), ttlLabel };
@@ -656,6 +765,7 @@ function summarizeEntry(entry: RedisEntry, nowMs: number): { type: string; previ
 }
 
 const LiveRedisReplLab: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
   const rtRef = useRef<RedisRuntime>(createRedisRuntime());
   const [input, setInput] = useState('SET greeting "Xin chao Redis 8!" EX 600\nGET greeting\nTTL greeting');
   const [history, setHistory] = useState<{ cmd: string; out: string; isErr: boolean }[]>([]);
@@ -709,7 +819,7 @@ const LiveRedisReplLab: React.FC = () => {
               className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-500 cursor-pointer"
             >
               <Play className="h-3.5 w-3.5" />
-              <span>Thực thi (Run)</span>
+              <span>{lang === 'vi' ? 'Thực thi (Run)' : 'Run'}</span>
             </button>
           </div>
         </div>
@@ -732,14 +842,20 @@ const LiveRedisReplLab: React.FC = () => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           spellCheck={false}
-          placeholder="Nhập một hoặc nhiều lệnh Redis (SET, HSET, HEXPIRE, ZADD, XADD, EVAL, CLUSTER KEYSLOT, ADVANCE_TIME 5000...)"
+          placeholder={
+            lang === 'vi'
+              ? 'Nhập một hoặc nhiều lệnh Redis (SET, HSET, HEXPIRE, ZADD, XADD, EVAL, CLUSTER KEYSLOT, ADVANCE_TIME 5000...)'
+              : 'Enter one or more Redis commands (SET, HSET, HEXPIRE, ZADD, XADD, EVAL, CLUSTER KEYSLOT, ADVANCE_TIME 5000...)'
+          }
           className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 font-mono text-xs sm:text-sm text-slate-100 focus:border-rose-500 focus:outline-none"
         />
 
         <div className="max-h-72 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950 p-3 font-mono text-xs space-y-2">
           {history.length === 0 ? (
             <div className="text-slate-500">
-              Chưa có lệnh nào được chạy. Chọn một mẫu phía trên hoặc bấm "Thực thi (Run)"!
+              {lang === 'vi'
+                ? 'Chưa có lệnh nào được chạy. Chọn một mẫu phía trên hoặc bấm "Thực thi (Run)"!'
+                : 'No commands run yet. Pick a preset above or click "Run"!'}
             </div>
           ) : (
             history.map((item, idx) => (
@@ -764,7 +880,11 @@ const LiveRedisReplLab: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-300">
             <Database className="h-3.5 w-3.5" />
-            <span>Trạng thái Keyspace Trực tiếp ({entries.length} keys)</span>
+            <span>
+              {lang === 'vi'
+                ? `Trạng thái Keyspace Trực tiếp (${entries.length} keys)`
+                : `Live Keyspace State (${entries.length} keys)`}
+            </span>
           </div>
           <span className="font-mono text-[10px] text-slate-400">
             DBSIZE = {entries.length}
@@ -773,12 +893,14 @@ const LiveRedisReplLab: React.FC = () => {
 
         {entries.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-800 p-6 text-center text-xs text-slate-400">
-            Keyspace đang trống. Chạy lệnh bên trái để quan sát cấu trúc dữ liệu, Hash Slot & TTL trực tiếp!
+            {lang === 'vi'
+              ? 'Keyspace đang trống. Chạy lệnh bên trái để quan sát cấu trúc dữ liệu, Hash Slot & TTL trực tiếp!'
+              : 'Keyspace is empty. Run commands on the left to inspect data structures, Hash Slot & TTL live!'}
           </div>
         ) : (
           <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
             {entries.map(([k, entry]) => {
-              const info = summarizeEntry(entry, rtRef.current.nowMs);
+              const info = summarizeEntry(entry, rtRef.current.nowMs, lang);
               const slot = crc16RedisSlot(k);
               return (
                 <div key={k} className="rounded-xl border border-slate-800 bg-slate-950 p-3 space-y-1">
@@ -816,30 +938,31 @@ const LiveRedisReplLab: React.FC = () => {
 const SIM_MODES: {
   id: RedisSimMode;
   label: string;
-  sub: string;
+  sub: { vi: string; en: string };
   icon: React.FC<{ className?: string }>;
 }[] = [
   {
     id: 'memory',
     label: '1. RAM & 8 Eviction Policies',
-    sub: 'LRU vs TinyLFU vs noeviction OOM',
+    sub: { vi: 'LRU vs TinyLFU vs noeviction OOM', en: 'LRU vs TinyLFU vs noeviction OOM' },
     icon: Cpu,
   },
   {
     id: 'cluster',
     label: '2. 16384 Hash Slots & Failover',
-    sub: 'CRC16 · {HashTag} · CROSSSLOT',
+    sub: { vi: 'CRC16 · {HashTag} · CROSSSLOT', en: 'CRC16 · {HashTag} · CROSSSLOT' },
     icon: Network,
   },
   {
     id: 'repl',
     label: '3. Live redis-cli & Keyspace',
-    sub: 'Redis 8 VM + Thanh tra bộ nhớ',
+    sub: { vi: 'Redis 8 VM + Thanh tra bộ nhớ', en: 'Redis 8 VM + Keyspace Inspector' },
     icon: Terminal,
   },
 ];
 
 export const RedisSimulatorLab: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
   const { simMode, setSimMode } = useRedisStore();
 
   return (
@@ -850,7 +973,9 @@ export const RedisSimulatorLab: React.FC = () => {
           <span>REDIS INTERACTIVE SANDBOX</span>
         </div>
         <h1 className="mt-1.5 text-lg sm:text-2xl font-extrabold text-white tracking-tight">
-          Phòng Thí nghiệm Bộ nhớ Eviction, Cụm 16384 Hash Slots & Live REPL
+          {lang === 'vi'
+            ? 'Phòng Thí nghiệm Bộ nhớ Eviction, Cụm 16384 Hash Slots & Live REPL'
+            : 'Eviction Memory Lab, 16384 Hash Slots Cluster & Live REPL'}
         </h1>
       </div>
 
@@ -880,7 +1005,7 @@ export const RedisSimulatorLab: React.FC = () => {
               </div>
               <div className="min-w-0">
                 <div className="text-xs sm:text-sm font-extrabold text-white truncate">{m.label}</div>
-                <div className="text-[11px] text-slate-400 truncate">{m.sub}</div>
+                <div className="text-[11px] text-slate-400 truncate">{m.sub[lang]}</div>
               </div>
             </button>
           );

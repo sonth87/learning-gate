@@ -38,6 +38,7 @@ import {
   type ModuleStatusSnapshot,
 } from '@/components/scale-workbench/ScaleWorkbenchLayout';
 import { buildAllPythonScaleLessons } from '@/apps/pymastery/data/pythonLessonBuilder';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
 import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { cn } from '@/utils/cn';
 
@@ -166,6 +167,7 @@ export const WpApp: React.FC = () => {
   const setExpandedLevel = useWorkbenchStore((s) => s.setExpandedLevel);
 
   const { data: cur } = useCurriculum();
+  const enOverlay = useCourseEnOverlay('python');
 
   useEffect(() => {
     hydrate();
@@ -188,8 +190,8 @@ export const WpApp: React.FC = () => {
   }, [view]);
 
   const scaleLessons = useMemo(
-    () => (cur ? buildAllPythonScaleLessons(cur) : []),
-    [cur]
+    () => (cur ? buildAllPythonScaleLessons(cur, enOverlay) : []),
+    [cur, enOverlay]
   );
 
   const getModuleStatus = useCallback(

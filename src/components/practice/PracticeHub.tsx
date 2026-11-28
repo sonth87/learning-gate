@@ -26,6 +26,7 @@ import { SKILL_LEVELS } from '@/constants/levels';
 import { CURRICULUM_STAGES } from '@/constants/stages';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useUserDataStore } from '@/stores/useUserDataStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { LevelBadge } from '@/components/common/LevelBadge';
 import { ExerciseGuidePanel } from './ExerciseGuidePanel';
 import { CodeWorkspace } from './CodeWorkspace';
@@ -34,55 +35,70 @@ import { cn } from '@/utils/cn';
 const CATEGORY_META: {
   id: PracticeCategory | 'all';
   label: string;
+  labelEn: string;
   shortLabel: string;
+  shortLabelEn: string;
   badgeColor: string;
   icon: React.ReactNode;
 }[] = [
   {
     id: 'all',
     label: 'Tất cả chuyên mục',
+    labelEn: 'All Categories',
     shortLabel: 'Tất cả',
+    shortLabelEn: 'All',
     badgeColor: 'bg-slate-800 text-slate-300 border-slate-700',
     icon: <Layers className="h-3.5 w-3.5" aria-hidden="true" />,
   },
   {
     id: 'code-gym',
     label: 'Code Gym & Pythonic',
+    labelEn: 'Code Gym & Pythonic',
     shortLabel: 'Code Gym',
+    shortLabelEn: 'Code Gym',
     badgeColor: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
     icon: <Dumbbell className="h-3.5 w-3.5" aria-hidden="true" />,
   },
   {
     id: 'js-to-py',
     label: 'Chuyển đổi JS/TS → Python',
+    labelEn: 'JS/TS → Python Migration',
     shortLabel: 'JS/TS → Py',
+    shortLabelEn: 'JS/TS → Py',
     badgeColor: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
     icon: <ArrowRightLeft className="h-3.5 w-3.5" aria-hidden="true" />,
   },
   {
     id: 'debug-rescue',
     label: 'Săn Bug & Cứu hộ Code',
+    labelEn: 'Bug Hunt & Code Rescue',
     shortLabel: 'Săn Bug',
+    shortLabelEn: 'Bug Hunt',
     badgeColor: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
     icon: <Bug className="h-3.5 w-3.5" aria-hidden="true" />,
   },
   {
     id: 'brain-teaser',
     label: 'Giải đố Cơ chế',
+    labelEn: 'Mechanics Brain Teasers',
     shortLabel: 'Giải đố',
+    shortLabelEn: 'Teasers',
     badgeColor: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
     icon: <Puzzle className="h-3.5 w-3.5" aria-hidden="true" />,
   },
   {
     id: 'architecture',
     label: 'Backend, Async & Data',
+    labelEn: 'Backend, Async & Data',
     shortLabel: 'Kiến trúc/Async',
+    shortLabelEn: 'Arch/Async',
     badgeColor: 'bg-violet-500/15 text-violet-300 border-violet-500/30',
     icon: <Cpu className="h-3.5 w-3.5" aria-hidden="true" />,
   },
 ];
 
 export const PracticeHub: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
   const {
     selectedExerciseId,
     selectExercise,
@@ -213,8 +229,8 @@ export const PracticeHub: React.FC = () => {
               <button
                 onClick={handlePrevExercise}
                 className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
-                title="Bài tập trước"
-                aria-label="Bài tập trước"
+                title={lang === 'en' ? 'Previous exercise' : 'Bài tập trước'}
+                aria-label={lang === 'en' ? 'Previous exercise' : 'Bài tập trước'}
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -225,8 +241,8 @@ export const PracticeHub: React.FC = () => {
               <button
                 onClick={handleNextExercise}
                 className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
-                title="Bài tập tiếp theo"
-                aria-label="Bài tập tiếp theo"
+                title={lang === 'en' ? 'Next exercise' : 'Bài tập tiếp theo'}
+                aria-label={lang === 'en' ? 'Next exercise' : 'Bài tập tiếp theo'}
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -241,7 +257,11 @@ export const PracticeHub: React.FC = () => {
                   ? 'border-emerald-500/60 bg-emerald-500/10 text-white'
                   : 'border-slate-800 bg-slate-950/80 text-slate-100 hover:border-slate-700 hover:bg-slate-900'
               )}
-              title="Bấm để mở danh sách 70 bài tập & bộ lọc"
+              title={
+                lang === 'en'
+                  ? `Click to open ${ALL_EXERCISES.length} exercises & filters`
+                  : 'Bấm để mở danh sách 70 bài tập & bộ lọc'
+              }
             >
               {isCurrentSolved ? (
                 <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
@@ -262,7 +282,7 @@ export const PracticeHub: React.FC = () => {
                   )}
                 >
                   {currentCatMeta.icon}
-                  <span>{currentCatMeta.shortLabel}</span>
+                  <span>{lang === 'en' ? currentCatMeta.shortLabelEn : currentCatMeta.shortLabel}</span>
                 </span>
               </div>
 
@@ -281,7 +301,7 @@ export const PracticeHub: React.FC = () => {
             <span className="hidden xl:inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-1.5 font-mono text-xs font-semibold text-emerald-300">
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
               <span>
-                Đã giải {solvedCount}/{ALL_EXERCISES.length}
+                {lang === 'en' ? 'Solved' : 'Đã giải'} {solvedCount}/{ALL_EXERCISES.length}
               </span>
             </span>
 
@@ -296,7 +316,7 @@ export const PracticeHub: React.FC = () => {
               )}
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
-              <span>Chọn bài & Lọc</span>
+              <span>{lang === 'en' ? 'Exercises & Filters' : 'Chọn bài & Lọc'}</span>
               {activeFilterCount > 0 && (
                 <span className="rounded-full bg-emerald-500 px-1.5 py-0.2 font-mono text-[10px] font-bold text-slate-950">
                   {activeFilterCount}
@@ -308,10 +328,14 @@ export const PracticeHub: React.FC = () => {
             <button
               onClick={handleRandomChallenge}
               className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/35 bg-amber-500/15 px-2.5 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-500/25 transition-colors cursor-pointer"
-              title="Chọn ngẫu nhiên 1 bài tập chưa giải"
+              title={
+                lang === 'en'
+                  ? 'Pick a random unsolved exercise'
+                  : 'Chọn ngẫu nhiên 1 bài tập chưa giải'
+              }
             >
               <Shuffle className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Ngẫu nhiên</span>
+              <span className="hidden sm:inline">{lang === 'en' ? 'Random' : 'Ngẫu nhiên'}</span>
             </button>
 
             {/* Notes Button */}
@@ -324,10 +348,14 @@ export const PracticeHub: React.FC = () => {
                 )
               }
               className="inline-flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-950/90 px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer"
-              title="Mở ghi chú cá nhân cho bài tập này"
+              title={
+                lang === 'en'
+                  ? 'Open personal notes for this exercise'
+                  : 'Mở ghi chú cá nhân cho bài tập này'
+              }
             >
               <MessageSquarePlus className="h-3.5 w-3.5 text-amber-400" />
-              <span className="hidden sm:inline">Ghi chú</span>
+              <span className="hidden sm:inline">{lang === 'en' ? 'Notes' : 'Ghi chú'}</span>
             </button>
           </div>
         </div>
@@ -359,7 +387,7 @@ export const PracticeHub: React.FC = () => {
                       )}
                     >
                       {cat.icon}
-                      <span>{cat.shortLabel}</span>
+                      <span>{lang === 'en' ? cat.shortLabelEn : cat.shortLabel}</span>
                       <span className="rounded bg-slate-900 px-1 font-mono text-[10px] text-slate-400">
                         {count}
                       </span>
@@ -376,7 +404,11 @@ export const PracticeHub: React.FC = () => {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Tìm tên bài, từ khóa..."
+                    placeholder={
+                      lang === 'en'
+                        ? 'Search title, keywords...'
+                        : 'Tìm tên bài, từ khóa...'
+                    }
                     className="w-full rounded-lg border border-slate-800 bg-slate-950 pl-8 pr-7 py-1 text-xs text-white placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
                   />
                   {searchQuery && (
@@ -394,13 +426,16 @@ export const PracticeHub: React.FC = () => {
                   onChange={(e) =>
                     setSelectedStage(e.target.value as StageId | 'all')
                   }
-                  aria-label="Lọc theo Giai đoạn"
+                  aria-label={lang === 'en' ? 'Filter by Stage' : 'Lọc theo Giai đoạn'}
                   className="rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-emerald-500/50"
                 >
-                  <option value="all">Mọi Giai đoạn (1–7)</option>
+                  <option value="all">
+                    {lang === 'en' ? 'All Stages (1–7)' : 'Mọi Giai đoạn (1–7)'}
+                  </option>
                   {CURRICULUM_STAGES.map((st) => (
                     <option key={st.id} value={st.id}>
-                      GĐ {st.number}: {st.title.replace(/^Giai đoạn \d+:\s*/, '')}
+                      {lang === 'en' ? `Stage ${st.number}` : `GĐ ${st.number}`}:{' '}
+                      {st.title.replace(/^Giai đoạn \d+:\s*/, '')}
                     </option>
                   ))}
                 </select>
@@ -410,13 +445,15 @@ export const PracticeHub: React.FC = () => {
                   onChange={(e) =>
                     setFilterLevel(e.target.value as SkillLevel | 'all')
                   }
-                  aria-label="Lọc theo Cấp độ"
+                  aria-label={lang === 'en' ? 'Filter by Level' : 'Lọc theo Cấp độ'}
                   className="rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-emerald-500/50"
                 >
-                  <option value="all">Mọi Cấp độ</option>
+                  <option value="all">
+                    {lang === 'en' ? 'All Levels' : 'Mọi Cấp độ'}
+                  </option>
                   {SKILL_LEVELS.map((lvl) => (
                     <option key={lvl.id} value={lvl.id}>
-                      {lvl.label} — {lvl.viLabel}
+                      {lang === 'en' ? lvl.label : `${lvl.label} — ${lvl.viLabel}`}
                     </option>
                   ))}
                 </select>
@@ -428,12 +465,18 @@ export const PracticeHub: React.FC = () => {
                       e.target.value as 'all' | 'unsolved' | 'solved'
                     )
                   }
-                  aria-label="Lọc theo Trạng thái"
+                  aria-label={lang === 'en' ? 'Filter by Status' : 'Lọc theo Trạng thái'}
                   className="rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-emerald-500/50"
                 >
-                  <option value="all">Mọi trạng thái</option>
-                  <option value="unsolved">Chưa giải</option>
-                  <option value="solved">Đã vượt qua ✓</option>
+                  <option value="all">
+                    {lang === 'en' ? 'All Statuses' : 'Mọi trạng thái'}
+                  </option>
+                  <option value="unsolved">
+                    {lang === 'en' ? 'Unsolved' : 'Chưa giải'}
+                  </option>
+                  <option value="solved">
+                    {lang === 'en' ? 'Solved ✓' : 'Đã vượt qua ✓'}
+                  </option>
                 </select>
 
                 {activeFilterCount > 0 && (
@@ -442,7 +485,7 @@ export const PracticeHub: React.FC = () => {
                     className="inline-flex items-center gap-1 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-xs font-medium text-rose-300 hover:bg-rose-500/20 cursor-pointer"
                   >
                     <RotateCcw className="h-3 w-3" />
-                    <span>Xóa lọc</span>
+                    <span>{lang === 'en' ? 'Clear' : 'Xóa lọc'}</span>
                   </button>
                 )}
               </div>
@@ -451,12 +494,14 @@ export const PracticeHub: React.FC = () => {
             {/* Scannable Multi-Column Problem Grid */}
             {filteredExercises.length === 0 ? (
               <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-center text-xs text-slate-400">
-                Không có bài tập nào khớp với bộ lọc hiện tại.{' '}
+                {lang === 'en'
+                  ? 'No exercises match the current filters.'
+                  : 'Không có bài tập nào khớp với bộ lọc hiện tại.'}{' '}
                 <button
                   onClick={resetAllFilters}
                   className="text-emerald-400 underline font-semibold ml-1 cursor-pointer"
                 >
-                  Đặt lại bộ lọc
+                  {lang === 'en' ? 'Reset filters' : 'Đặt lại bộ lọc'}
                 </button>
               </div>
             ) : (
@@ -509,7 +554,7 @@ export const PracticeHub: React.FC = () => {
                             catMeta.badgeColor
                           )}
                         >
-                          {catMeta.shortLabel}
+                          {lang === 'en' ? catMeta.shortLabelEn : catMeta.shortLabel}
                         </span>
                         <LevelBadge level={ex.level} />
                       </div>
@@ -533,7 +578,7 @@ export const PracticeHub: React.FC = () => {
               : 'text-slate-300 hover:text-white'
           )}
         >
-          Xem cả 2
+          {lang === 'en' ? 'Split View' : 'Xem cả 2'}
         </button>
         <button
           onClick={() => setMobilePane('guide')}
@@ -544,7 +589,7 @@ export const PracticeHub: React.FC = () => {
               : 'text-slate-300 hover:text-white'
           )}
         >
-          Đề bài & Gợi ý
+          {lang === 'en' ? 'Guide & Hints' : 'Đề bài & Gợi ý'}
         </button>
         <button
           onClick={() => setMobilePane('editor')}
@@ -555,7 +600,7 @@ export const PracticeHub: React.FC = () => {
               : 'text-slate-300 hover:text-white'
           )}
         >
-          Code & Chấm bài
+          {lang === 'en' ? 'Code & Tests' : 'Code & Chấm bài'}
         </button>
       </div>
 

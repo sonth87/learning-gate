@@ -17,6 +17,7 @@ import { usePmpDecisionTree, usePmpLinks } from '../data';
 import { usePmpAppStore, usePmpNav, usePmpProgress } from '../store';
 import { buildMindmapUrl } from '../links';
 import type { DecisionBranchMeta, DecisionLeafNode, DecisionNode } from '../types';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { Spinner } from '@/features/workpath/components/ui';
 import { PmpTrademarkFooter } from '../components/PmpShared';
 import { cn } from '@/utils/cn';
@@ -40,6 +41,7 @@ export const PmpDecisionTreeView: React.FC = () => {
   const s = usePmpProgress((x) => x.state);
   const markVisited = usePmpProgress((x) => x.markEvidenceVisited);
   const recordCaseDrill = usePmpProgress((x) => x.recordCaseDrill);
+  const lang = useWorkbenchStore((st) => st.language);
 
   const [mode, setMode] = useState<'compass' | 'drill'>('compass');
   const [branchId, setBranchId] = useState<string | null>(null);
@@ -133,7 +135,7 @@ export const PmpDecisionTreeView: React.FC = () => {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <div className="font-mono text-[10px] font-extrabold uppercase tracking-wider text-emerald-400">
-            PHẢN XẠ CHUẨN PMI · KẾT LUẬN HÀNH ĐỘNG
+            {lang === 'en' ? 'PMI STANDARD REFLEX · ACTION CONCLUSION' : 'PHẢN XẠ CHUẨN PMI · KẾT LUẬN HÀNH ĐỘNG'}
           </div>
           <h3 className="mt-1 text-lg sm:text-xl font-extrabold text-white">{leaf.title}</h3>
         </div>
@@ -146,7 +148,7 @@ export const PmpDecisionTreeView: React.FC = () => {
         <div className="rounded-xl border border-emerald-500/30 bg-slate-950/85 p-4">
           <div className="mb-2 flex items-center gap-1.5 font-mono text-[11px] font-extrabold uppercase tracking-wider text-emerald-300">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
-            <span>Nên làm ĐẦU TIÊN (FIRST / NEXT)</span>
+            <span>{lang === 'en' ? 'Do FIRST (FIRST / NEXT)' : 'Nên làm ĐẦU TIÊN (FIRST / NEXT)'}</span>
           </div>
           <ol className="space-y-2 text-xs sm:text-sm text-slate-100">
             {leaf.firstAction.map((act, idx) => (
@@ -164,7 +166,7 @@ export const PmpDecisionTreeView: React.FC = () => {
           <div className="rounded-xl border border-rose-500/30 bg-slate-950/85 p-4">
             <div className="mb-2 flex items-center gap-1.5 font-mono text-[11px] font-extrabold uppercase tracking-wider text-rose-300">
               <AlertTriangle className="h-4 w-4 shrink-0" />
-              <span>Tuyệt đối tránh (Bẫy đáp án nhiễu)</span>
+              <span>{lang === 'en' ? 'Never Do (Distractor Traps)' : 'Tuyệt đối tránh (Bẫy đáp án nhiễu)'}</span>
             </div>
             <ul className="space-y-1.5 text-xs sm:text-sm text-rose-100">
               {leaf.neverDo.map((bad, idx) => (
@@ -179,7 +181,7 @@ export const PmpDecisionTreeView: React.FC = () => {
           <div className="rounded-xl border border-slate-800 bg-slate-950/85 p-3.5">
             <div className="mb-1.5 flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-amber-300">
               <FileText className="h-3.5 w-3.5" />
-              <span>Tài liệu / Quy trình cần mở hoặc cập nhật</span>
+              <span>{lang === 'en' ? 'Artifacts / Processes to Open or Update' : 'Tài liệu / Quy trình cần mở hoặc cập nhật'}</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {leaf.artifactsToCheck.map((art) => (
@@ -206,7 +208,7 @@ export const PmpDecisionTreeView: React.FC = () => {
           className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 py-2 text-xs font-extrabold text-slate-950 hover:bg-amber-400 cursor-pointer"
         >
           <BookOpen className="h-3.5 w-3.5" />
-          <span>Ôn lại Cẩm nang {leaf.moduleId}</span>
+          <span>{lang === 'en' ? `Review Handbook ${leaf.moduleId}` : `Ôn lại Cẩm nang ${leaf.moduleId}`}</span>
         </button>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -228,7 +230,7 @@ export const PmpDecisionTreeView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => openQuickPreview(lnk)}
-                  title="Xem nhanh trên Desktop"
+                  title={lang === 'en' ? 'Quick preview on Desktop' : 'Xem nhanh trên Desktop'}
                   className="hidden lg:inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-950 p-2 text-slate-300 hover:border-amber-500/50 hover:text-amber-300 cursor-pointer"
                 >
                   <Eye className="h-3.5 w-3.5" />
@@ -248,13 +250,23 @@ export const PmpDecisionTreeView: React.FC = () => {
         <div>
           <div className="inline-flex items-center gap-1.5 rounded-md border border-cyan-500/45 bg-cyan-500/15 px-2.5 py-0.5 font-mono text-[10px] font-extrabold text-cyan-300">
             <GitBranch className="h-3.5 w-3.5" />
-            <span>CÔNG CỤ CHẨN ĐOÁN TÌNH HUỐNG XÁC ĐỊNH</span>
+            <span>{lang === 'en' ? 'DETERMINISTIC SCENARIO DIAGNOSTIC' : 'CÔNG CỤ CHẨN ĐOÁN TÌNH HUỐNG XÁC ĐỊNH'}</span>
           </div>
           <h1 className="mt-2 text-xl sm:text-2xl font-extrabold text-white">
-            Cây Quyết Định Tình Huống PMP
+            {lang === 'en' ? 'PMP Situational Decision Tree' : 'Cây Quyết Định Tình Huống PMP'}
           </h1>
           <p className="mt-1 max-w-3xl text-xs sm:text-sm text-slate-300 leading-relaxed">
-            Không đoán mò theo cảm tính! Chọn đúng loại tín hiệu đề bài, rẽ nhánh 2–3 bước theo phương pháp và vai trò để tìm ra hành động <b>FIRST / NEXT / BEST</b> chuẩn PMI.
+            {lang === 'en' ? (
+              <>
+                No guesswork! Pick the prompt signal, branch 2–3 steps by methodology and role, and arrive at the exact
+                PMI <b>FIRST / NEXT / BEST</b> action.
+              </>
+            ) : (
+              <>
+                Không đoán mò theo cảm tính! Chọn đúng loại tín hiệu đề bài, rẽ nhánh 2–3 bước theo phương pháp và vai
+                trò để tìm ra hành động <b>FIRST / NEXT / BEST</b> chuẩn PMI.
+              </>
+            )}
           </p>
         </div>
 
@@ -268,7 +280,11 @@ export const PmpDecisionTreeView: React.FC = () => {
             )}
           >
             <Compass className="h-3.5 w-3.5" />
-            <span>La bàn tra cứu ({tree.branches.length} nhánh)</span>
+            <span>
+              {lang === 'en'
+                ? `Decision Compass (${tree.branches.length} branches)`
+                : `La bàn tra cứu (${tree.branches.length} nhánh)`}
+            </span>
           </button>
           <button
             type="button"
@@ -280,7 +296,9 @@ export const PmpDecisionTreeView: React.FC = () => {
           >
             <Target className="h-3.5 w-3.5" />
             <span>
-              Thử thách thực chiến ({passedCasesCount}/{tree.challenges.length})
+              {lang === 'en'
+                ? `Case Drills (${passedCasesCount}/${tree.challenges.length})`
+                : `Thử thách thực chiến (${passedCasesCount}/${tree.challenges.length})`}
             </span>
           </button>
         </div>
@@ -305,7 +323,9 @@ export const PmpDecisionTreeView: React.FC = () => {
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-xs font-extrabold text-amber-300">NHÁNH 0{idx + 1}</span>
+                        <span className="font-mono text-xs font-extrabold text-amber-300">
+                          {lang === 'en' ? `BRANCH 0${idx + 1}` : `NHÁNH 0${idx + 1}`}
+                        </span>
                         <ArrowRight className="h-4 w-4 text-slate-400" />
                       </div>
                       <h3 className="mt-1.5 text-sm sm:text-base font-extrabold text-white leading-snug">
@@ -327,7 +347,7 @@ export const PmpDecisionTreeView: React.FC = () => {
                     onClick={resetCompass}
                     className="font-semibold text-amber-400 hover:underline cursor-pointer"
                   >
-                    7 Nhánh gốc
+                    {lang === 'en' ? '7 Root Branches' : '7 Nhánh gốc'}
                   </button>
                   {path.map((step, idx) => (
                     <React.Fragment key={`${step.nodeId}-${idx}`}>
@@ -342,7 +362,9 @@ export const PmpDecisionTreeView: React.FC = () => {
                             : 'text-slate-300 hover:bg-slate-800'
                         )}
                       >
-                        {step.chosenLabel ? `Bước ${idx + 1}: ${step.chosenLabel}` : `Bước ${idx + 1}`}
+                        {step.chosenLabel
+                          ? `${lang === 'en' ? 'Step' : 'Bước'} ${idx + 1}: ${step.chosenLabel}`
+                          : `${lang === 'en' ? 'Step' : 'Bước'} ${idx + 1}`}
                       </button>
                     </React.Fragment>
                   ))}
@@ -354,7 +376,7 @@ export const PmpDecisionTreeView: React.FC = () => {
                   className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1 text-xs font-semibold text-slate-300 hover:text-white cursor-pointer"
                 >
                   <RotateCcw className="h-3 w-3" />
-                  <span>Chọn nhánh khác</span>
+                  <span>{lang === 'en' ? 'Pick another branch' : 'Chọn nhánh khác'}</span>
                 </button>
               </div>
 
@@ -362,7 +384,7 @@ export const PmpDecisionTreeView: React.FC = () => {
                 <div className="rounded-2xl border border-slate-800 bg-slate-900/75 p-4 sm:p-6 space-y-4">
                   <div>
                     <div className="font-mono text-[10px] font-extrabold uppercase tracking-wider text-cyan-400">
-                      CÂU HỎI ĐỊNH VỊ BƯỚC {path.length}
+                      {lang === 'en' ? `DIAGNOSTIC QUESTION · STEP ${path.length}` : `CÂU HỎI ĐỊNH VỊ BƯỚC ${path.length}`}
                     </div>
                     <h2 className="mt-1 text-base sm:text-lg font-extrabold text-white">
                       {currentNode.prompt}
@@ -439,7 +461,7 @@ export const PmpDecisionTreeView: React.FC = () => {
                     onClick={() => switchCase(caseIdx)}
                     className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1 text-xs text-slate-300 hover:text-white cursor-pointer"
                   >
-                    <RotateCcw className="h-3 w-3" /> Đi lại từ đầu ca này
+                    <RotateCcw className="h-3 w-3" /> {lang === 'en' ? 'Restart this case' : 'Đi lại từ đầu ca này'}
                   </button>
                 )}
               </div>
@@ -452,7 +474,9 @@ export const PmpDecisionTreeView: React.FC = () => {
               {!caseBranchId ? (
                 <div className="space-y-2.5">
                   <div className="font-mono text-xs font-bold text-cyan-300">
-                    Bước 1: Tình huống này thuộc nhánh gốc nào trên Cây quyết định?
+                    {lang === 'en'
+                      ? 'Step 1: Which root branch on the Decision Tree does this scenario belong to?'
+                      : 'Bước 1: Tình huống này thuộc nhánh gốc nào trên Cây quyết định?'}
                   </div>
                   <div className="grid gap-2 sm:grid-cols-2">
                     {tree.branches.map((b) => (
@@ -470,7 +494,7 @@ export const PmpDecisionTreeView: React.FC = () => {
               ) : caseCurrentNode?.kind === 'question' ? (
                 <div className="space-y-2.5">
                   <div className="font-mono text-xs font-bold text-cyan-300">
-                    Bước tiếp theo: {caseCurrentNode.prompt}
+                    {lang === 'en' ? 'Next step:' : 'Bước tiếp theo:'} {caseCurrentNode.prompt}
                   </div>
                   <div className="grid gap-2">
                     {caseCurrentNode.options.map((opt, iOpt) => (
@@ -503,12 +527,20 @@ export const PmpDecisionTreeView: React.FC = () => {
                         {caseFeedback.ok ? (
                           <>
                             <Trophy className="h-4 w-4 text-amber-400" />
-                            <span>CHÍNH XÁC! Bạn đã định vị đúng nhánh quyết định chuẩn PMI</span>
+                            <span>
+                              {lang === 'en'
+                                ? 'CORRECT! You identified the right PMI decision branch'
+                                : 'CHÍNH XÁC! Bạn đã định vị đúng nhánh quyết định chuẩn PMI'}
+                            </span>
                           </>
                         ) : (
                           <>
                             <AlertTriangle className="h-4 w-4 text-rose-400" />
-                            <span>CHƯA TRÚNG NHÁNH CHUẨN — Hãy đối chiếu lại đường đi bên dưới!</span>
+                            <span>
+                              {lang === 'en'
+                                ? 'NOT QUITE — Compare with the standard path below!'
+                                : 'CHƯA TRÚNG NHÁNH CHUẨN — Hãy đối chiếu lại đường đi bên dưới!'}
+                            </span>
                           </>
                         )}
                       </span>
@@ -519,11 +551,12 @@ export const PmpDecisionTreeView: React.FC = () => {
                       )}
                     </div>
                     <p className="mt-2 text-xs sm:text-sm leading-relaxed">
-                      <b>Bài học rút ra:</b> {activeCase.takeaway}
+                      <b>{lang === 'en' ? 'Key takeaway:' : 'Bài học rút ra:'}</b> {activeCase.takeaway}
                     </p>
                     {!caseFeedback.ok && (
                       <p className="mt-1.5 text-xs text-amber-200">
-                        <b>Đường rẽ chuẩn:</b> {activeCase.expectedPathLabels.join(' → ')}
+                        <b>{lang === 'en' ? 'Standard path:' : 'Đường rẽ chuẩn:'}</b>{' '}
+                        {activeCase.expectedPathLabels.join(' → ')}
                       </p>
                     )}
                   </div>
@@ -539,7 +572,11 @@ export const PmpDecisionTreeView: React.FC = () => {
                         onClick={() => switchCase(caseIdx + 1)}
                         className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs sm:text-sm font-extrabold text-slate-950 hover:bg-amber-400 cursor-pointer"
                       >
-                        <span>Sang ca thử thách kế tiếp ({tree.challenges[caseIdx + 1].code})</span>
+                        <span>
+                          {lang === 'en'
+                            ? `Next challenge case (${tree.challenges[caseIdx + 1].code})`
+                            : `Sang ca thử thách kế tiếp (${tree.challenges[caseIdx + 1].code})`}
+                        </span>
                         <ArrowRight className="h-4 w-4" />
                       </button>
                     </div>

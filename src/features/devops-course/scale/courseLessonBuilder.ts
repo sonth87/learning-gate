@@ -18,6 +18,7 @@ import type {
 } from '@/components/scale-workbench/types';
 import type { DevOpsCourseId, DevOpsCurriculum, DevOpsModule, RunResult } from '../types';
 import type { PmpCurriculum, PmpModule } from '@/features/pmp-course/types';
+import type { CourseEnOverlay } from '@/data/i18n/types';
 import { dryRunCli } from '../engine/cliSimEngine';
 import { dryRunDockerfile } from '../engine/dockerfileGrader';
 import { dryRunRedisCli } from '../engine/redisCliEngine';
@@ -870,7 +871,8 @@ export function buildDevOpsScaleLessons(
   courseId: DevOpsCourseId,
   curriculum: DevOpsCurriculum,
   levelTitles: Record<number, BilingualText>,
-  blueprints: Record<string, ModuleCuratedBlueprint>
+  blueprints: Record<string, ModuleCuratedBlueprint>,
+  enOverlay?: CourseEnOverlay | null
 ): ScaleModuleLesson[] {
   const sorted = [...curriculum.modules].sort(
     (a, b) => a.level - b.level || a.order - b.order
@@ -894,6 +896,7 @@ export function buildDevOpsScaleLessons(
     idxCounter.set(mod.level, orderInLevel);
     const totalInLevel = countByLevel.get(mod.level) ?? 1;
 
+    const modEn = enOverlay?.modules?.[mod.id];
     const bp = blueprints[mod.id];
     const primaryMode: StageRenderMode = bp?.primaryMode ?? 'isometric';
     const rawSections = splitMarkdownSections(mod.lesson);
@@ -905,7 +908,12 @@ export function buildDevOpsScaleLessons(
 
     const steps: ScaleLessonStep[] = rawSections.map((sec, idx) => {
       const category = inferStepCategory(sec.heading, idx, totalSteps);
-      const shortLabel = makeShortStepperLabel(sec.heading, idx, totalSteps);
+      const shortLabelBase = makeShortStepperLabel(sec.heading, idx, totalSteps);
+      const stepEn = modEn?.steps?.[idx];
+      const shortLabel: BilingualText = {
+        vi: shortLabelBase.vi,
+        en: stepEn?.shortEn ?? shortLabelBase.en,
+      };
       const extracted = extractFirstCodeBlock(sec.body);
       const curated = bp?.buildStep(idx, totalSteps) ?? {
         telemetry: [],
@@ -935,19 +943,8 @@ export function buildDevOpsScaleLessons(
         .replace(/\s+/g, ' ')
         .trim();
 
-      const { stepTitleEn, summaryEn } = buildEnglishNarrative(
-        bp?.titleEn ?? mod.title,
-        bp?.subtitleEn ?? mod.summary,
-        bp?.objectives ?? [],
-        shortLabel.en,
-        category,
-        stepMode,
-        extracted ?? curated.defaultCode,
-        idx,
-        totalSteps,
-        sec.body,
-        curated.telemetry
-      );
+      const stepTitleEn = stepEn?.headingEn ?? cleanHeadingVi;
+      const summaryEn = stepEn?.bodyEn ?? sec.body;
 
       const codeTrace = buildCodeTraceFromSection(
         `${mod.id} · ${badgePair.vi}`,
@@ -994,8 +991,8 @@ export function buildDevOpsScaleLessons(
       levelTitle,
       orderInLevel,
       totalInLevel,
-      title: { vi: mod.title, en: bp?.titleEn ?? mod.title },
-      subtitle: { vi: mod.summary, en: bp?.subtitleEn ?? mod.summary },
+      title: { vi: mod.title, en: modEn?.titleEn ?? bp?.titleEn ?? mod.title },
+      subtitle: { vi: mod.summary, en: modEn?.summaryEn ?? bp?.subtitleEn ?? mod.summary },
       durationMin: bp?.durationMin ?? 14,
       difficulty: bp?.difficulty ?? (mod.level <= 1 ? 'Beginner' : mod.level <= 3 ? 'Intermediate' : 'Advanced'),
       primaryMode,
@@ -1012,7 +1009,8 @@ export function buildDevOpsScaleLessons(
 export function buildPmpScaleLessons(
   curriculum: PmpCurriculum,
   levelTitles: Record<number, BilingualText>,
-  blueprints: Record<string, ModuleCuratedBlueprint>
+  blueprints: Record<string, ModuleCuratedBlueprint>,
+  enOverlay?: CourseEnOverlay | null
 ): ScaleModuleLesson[] {
   const sorted = [...curriculum.modules].sort(
     (a, b) => a.level - b.level || a.order - b.order
@@ -1029,6 +1027,7 @@ export function buildPmpScaleLessons(
     idxCounter.set(mod.level, orderInLevel);
     const totalInLevel = countByLevel.get(mod.level) ?? 1;
 
+    const modEn = enOverlay?.modules?.[mod.id];
     const bp = blueprints[mod.id];
     const primaryMode: StageRenderMode = bp?.primaryMode ?? 'isometric';
     const rawSections = splitMarkdownSections(mod.lesson);
@@ -1050,7 +1049,12 @@ export function buildPmpScaleLessons(
 
     const steps: ScaleLessonStep[] = rawSections.map((sec, idx) => {
       const category = inferStepCategory(sec.heading, idx, totalSteps);
-      const shortLabel = makeShortStepperLabel(sec.heading, idx, totalSteps);
+      const shortLabelBase = makeShortStepperLabel(sec.heading, idx, totalSteps);
+      const stepEn = modEn?.steps?.[idx];
+      const shortLabel: BilingualText = {
+        vi: shortLabelBase.vi,
+        en: stepEn?.shortEn ?? shortLabelBase.en,
+      };
       const extracted = extractFirstCodeBlock(sec.body);
       const curated = bp?.buildStep(idx, totalSteps) ?? {
         telemetry: [],
@@ -1073,19 +1077,8 @@ export function buildPmpScaleLessons(
         .replace(/\s+/g, ' ')
         .trim();
 
-      const { stepTitleEn, summaryEn } = buildEnglishNarrative(
-        bp?.titleEn ?? mod.title,
-        bp?.subtitleEn ?? mod.summary,
-        bp?.objectives ?? [],
-        shortLabel.en,
-        category,
-        stepMode,
-        extracted ?? curated.defaultCode ?? defaultPmpBrief,
-        idx,
-        totalSteps,
-        sec.body,
-        curated.telemetry
-      );
+      const stepTitleEn = stepEn?.headingEn ?? cleanHeadingVi;
+      const summaryEn = stepEn?.bodyEn ?? sec.body;
 
       const codeTrace = buildCodeTraceFromSection(
         `${mod.id} · Khung Tư Duy PMI (PMBOK 8 & ECO 2026)`,
@@ -1132,8 +1125,8 @@ export function buildPmpScaleLessons(
       levelTitle,
       orderInLevel,
       totalInLevel,
-      title: { vi: mod.title, en: bp?.titleEn ?? mod.title },
-      subtitle: { vi: mod.summary, en: bp?.subtitleEn ?? mod.summary },
+      title: { vi: mod.title, en: modEn?.titleEn ?? bp?.titleEn ?? mod.title },
+      subtitle: { vi: mod.summary, en: modEn?.summaryEn ?? bp?.subtitleEn ?? mod.summary },
       durationMin: bp?.durationMin ?? 15,
       difficulty: bp?.difficulty ?? (mod.level <= 1 ? 'Beginner' : mod.level <= 3 ? 'Intermediate' : 'Advanced'),
       primaryMode,

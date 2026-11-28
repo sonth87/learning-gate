@@ -42,6 +42,7 @@ import {
   type ModuleStatusSnapshot,
 } from '@/components/scale-workbench/ScaleWorkbenchLayout';
 import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
 import { cn } from '@/utils/cn';
 
 const WORKBENCH_SLOT_BY_COURSE: Record<DevOpsCourseId, string> = {
@@ -165,6 +166,7 @@ export const DevOpsCourseApp: React.FC<DevOpsCourseAppProps> = ({
   const setExpandedLevel = useWorkbenchStore((s) => s.setExpandedLevel);
 
   const { data: cur } = useCourseCurriculum(courseId);
+  const enOverlay = useCourseEnOverlay(courseId);
 
   const meta = useMemo(
     () => ({
@@ -199,13 +201,13 @@ export const DevOpsCourseApp: React.FC<DevOpsCourseAppProps> = ({
   const scaleLessons = useMemo(() => {
     if (!cur) return [];
     if (courseId === 'redis') {
-      return buildDevOpsScaleLessons('redis', cur, REDIS_LEVEL_TITLES, REDIS_BLUEPRINTS);
+      return buildDevOpsScaleLessons('redis', cur, REDIS_LEVEL_TITLES, REDIS_BLUEPRINTS, enOverlay);
     }
     if (courseId === 'kube') {
-      return buildDevOpsScaleLessons('kube', cur, KUBE_LEVEL_TITLES, KUBE_BLUEPRINTS);
+      return buildDevOpsScaleLessons('kube', cur, KUBE_LEVEL_TITLES, KUBE_BLUEPRINTS, enOverlay);
     }
-    return buildDevOpsScaleLessons('cicd', cur, CICD_LEVEL_TITLES, CICD_BLUEPRINTS);
-  }, [cur, courseId]);
+    return buildDevOpsScaleLessons('cicd', cur, CICD_LEVEL_TITLES, CICD_BLUEPRINTS, enOverlay);
+  }, [cur, courseId, enOverlay]);
 
   const getModuleStatus = useCallback(
     (moduleId: string): ModuleStatusSnapshot => {

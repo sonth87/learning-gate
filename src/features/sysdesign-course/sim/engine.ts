@@ -126,6 +126,16 @@ function shardsOf(inputs: SimInputs, n: CNode): number {
   return n.spec.scaling === 'partitioned' ? Math.max(1, Math.round(numParam(inputs, n, 'shards', 1))) : 1;
 }
 
+/**
+ * Tỉ lệ request rơi vào shard nóng. `hotKeySalt` (≥ 1) = số "salt bucket" mà khoá nóng được chia nhỏ
+ * ra (key salting / write sharding): phần nóng được trải đều trên min(salt, shards) shard thay vì dồn một shard.
+ * Mặc định 1 = không salting → hành vi cũ (fHot = h + (1 − h)/shards).
+ */
+function hotShardFraction(inputs: SimInputs, n: CNode, hot: number, shards: number): number {
+  const salt = Math.max(1, Math.round(numParam(inputs, n, 'hotKeySalt', 1)));
+  return hot / Math.min(salt, shards) + (1 - hot) / shards;
+}
+
 function cacheParams(inputs: SimInputs, n: CNode): CacheParams {
   return {
     ttlSec: numParam(inputs, n, 'ttlSec', 300),
@@ -295,7 +305,7 @@ export function stepInPlace(
     const shards = shardsOf(inputs, nd);
     let mu = repUp * muI * ramp * shards;
     if (rt.hotShare > 0 && shards > 1) {
-      const fHot = rt.hotShare + (1 - rt.hotShare) / shards;
+      const fHot = hotShardFraction(inputs, nd, rt.hotShare, shards);
       mu /= shards * fHot;
     }
     w.muTot[i] = mu;
@@ -523,7 +533,7 @@ export function stepInPlace(
       const cv = nd.cv;
       const shards = shardsOf(inputs, nd);
       if (rt.hotShare > 0 && shards > 1) {
-        const fHot = rt.hotShare + (1 - rt.hotShare) / shards;
+        const fHot = hotShardFraction(inputs, nd, rt.hotShare, shards);
         const rhoHot = w.rho[n];
         const rhoCold = rhoHot * ((1 - rt.hotShare) / (shards * fHot));
         own = dMix([

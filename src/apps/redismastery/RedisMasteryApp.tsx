@@ -7,6 +7,7 @@ import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { DevOpsCourseApp } from '@/features/devops-course/DevOpsCourseApp';
 import { useCourseCurriculum } from '@/features/devops-course/data';
 import { buildDevOpsScaleLessons } from '@/features/devops-course/scale/courseLessonBuilder';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
 import { useRedisNav, useRedisProgress } from '@/features/devops-course/store';
 import type { RelatedToolLink } from '@/features/devops-course/types';
 import { ScaleCommandPalette } from '@/components/scale-workbench/ScaleCommandPalette';
@@ -48,12 +49,13 @@ export const RedisMasteryApp: React.FC<RedisMasteryAppProps> = ({ windowId }) =>
   const setExpandedLevel = useWorkbenchStore((s) => s.setExpandedLevel);
 
   const { data: cur } = useCourseCurriculum('redis');
+  const enOverlay = useCourseEnOverlay('redis');
   const scaleLessons = useMemo(
     () =>
       cur
-        ? buildDevOpsScaleLessons('redis', cur, REDIS_LEVEL_TITLES, REDIS_BLUEPRINTS)
+        ? buildDevOpsScaleLessons('redis', cur, REDIS_LEVEL_TITLES, REDIS_BLUEPRINTS, enOverlay)
         : [],
-    [cur]
+    [cur, enOverlay]
   );
 
   const glossaryItems = useMemo(

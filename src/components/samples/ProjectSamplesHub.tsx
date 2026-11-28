@@ -38,6 +38,7 @@ import { SKILL_LEVELS } from '@/constants/levels';
 import { LevelBadge } from '@/components/common/LevelBadge';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useNavigationStore } from '@/stores/useNavigationStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { IDE_THEMES, getIdeThemeConfig } from '@/utils/ideThemes';
 import { renderHighlightedPython } from '@/utils/pythonHighlighter';
 import { RealWorldProjectsCatalog } from './RealWorldProjectsCatalog';
@@ -97,6 +98,8 @@ function formatCommandForStack(
 }
 
 export const ProjectSamplesHub: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
+  const isEn = lang === 'en';
   const {
     ideTheme,
     setIdeTheme,
@@ -257,21 +260,21 @@ export const ProjectSamplesHub: React.FC = () => {
 
       const fallbackOut =
         currentProject.interactiveCommands[0]?.stdout ||
-        'Đã thực thi thành công.';
+        (isEn ? 'Executed successfully.' : 'Đã thực thi thành công.');
 
       if (res.exitCode === 0 && cleanOut) {
         setTerminalOutput(
-          `# [Pyodide Live Run] Đã chạy trực tiếp ${activeFile.path} (${res.ms}ms):\n${cleanOut}`
+          `# [Pyodide Live Run] ${isEn ? 'Executed directly' : 'Đã chạy trực tiếp'} ${activeFile.path} (${res.ms}ms):\n${cleanOut}`
         );
         setActiveHttpMeta(undefined);
       } else if (res.exitCode === 0 && !cleanOut) {
         setTerminalOutput(
-          `# [Pyodide Live Run] File ${activeFile.path} biên dịch hợp lệ (${res.ms}ms) • Kết quả chạy kịch bản dự án:\n${fallbackOut}`
+          `# [Pyodide Live Run] ${isEn ? `File ${activeFile.path} compiled cleanly (${res.ms}ms) • Project scenario output:` : `File ${activeFile.path} biên dịch hợp lệ (${res.ms}ms) • Kết quả chạy kịch bản dự án:`}\n${fallbackOut}`
         );
       } else {
         // External server framework (FastAPI, Django, Celery, Scrapy...) -> show simulated runtime output
         setTerminalOutput(
-          `# [Chạy kịch bản Dự án: ${currentProject.interactiveCommands[0]?.command || activeFile.path}]\n${fallbackOut}`
+          `# [${isEn ? 'Project Scenario Run' : 'Chạy kịch bản Dự án'}: ${currentProject.interactiveCommands[0]?.command || activeFile.path}]\n${fallbackOut}`
         );
       }
       setRunCount((c) => c + 1);
@@ -305,7 +308,7 @@ export const ProjectSamplesHub: React.FC = () => {
           (c) => c.id === activeCommandId
         ) || currentProject.interactiveCommands[0];
       setTerminalOutput(
-        `# Đã thực thi lệnh tùy chỉnh:\n$ ${customCommandInput}\n\n${activeCmd.stdout}`
+        `# ${isEn ? 'Executed custom command:' : 'Đã thực thi lệnh tùy chỉnh:'}\n$ ${customCommandInput}\n\n${activeCmd.stdout}`
       );
       setActiveHttpMeta(activeCmd.httpMeta);
     }
@@ -416,7 +419,7 @@ export const ProjectSamplesHub: React.FC = () => {
               <button
                 onClick={handlePrevProject}
                 className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
-                title="Project trước"
+                title={isEn ? 'Previous project' : 'Project trước'}
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -426,7 +429,7 @@ export const ProjectSamplesHub: React.FC = () => {
               <button
                 onClick={handleNextProject}
                 className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
-                title="Project tiếp theo"
+                title={isEn ? 'Next project' : 'Project tiếp theo'}
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -440,7 +443,11 @@ export const ProjectSamplesHub: React.FC = () => {
                   ? 'border-emerald-500/60 bg-emerald-500/10 text-white'
                   : 'border-slate-800 bg-slate-950/80 text-slate-100 hover:border-slate-700 hover:bg-slate-900'
               )}
-              title={`Bấm để chọn trong ${ALL_SAMPLE_PROJECTS.length} Dự án Mẫu từ Đơn giản đến Production`}
+              title={
+                isEn
+                  ? `Click to choose from ${ALL_SAMPLE_PROJECTS.length} Sample Projects from Simple to Production`
+                  : `Bấm để chọn trong ${ALL_SAMPLE_PROJECTS.length} Dự án Mẫu từ Đơn giản đến Production`
+              }
             >
               <FolderOpen className="h-4 w-4 text-amber-400 shrink-0" />
               <span className="font-mono text-xs text-emerald-400 font-bold shrink-0 hidden sm:inline">
@@ -468,12 +475,20 @@ export const ProjectSamplesHub: React.FC = () => {
               type="button"
               onClick={() => setSetupGuideOpen(true, currentProject)}
               className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition-colors cursor-pointer"
-              title="Xem hướng dẫn cài đặt Python, uv / pyenv, tạo .venv và chạy dự án mẫu này trên máy thật"
+              title={
+                isEn
+                  ? 'View guide to install Python, uv / pyenv, create .venv, and run this sample project locally'
+                  : 'Xem hướng dẫn cài đặt Python, uv / pyenv, tạo .venv và chạy dự án mẫu này trên máy thật'
+              }
             >
               <Wrench className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-              <span className="sm:hidden">Cẩm nang Chạy trên Máy</span>
+              <span className="sm:hidden">
+                {isEn ? 'Local Run Guide' : 'Cẩm nang Chạy trên Máy'}
+              </span>
               <span className="hidden sm:inline">
-                Cài đặt Python (uv/pyenv) & Chạy trên Máy thật
+                {isEn
+                  ? 'Install Python (uv/pyenv) & Run Locally'
+                  : 'Cài đặt Python (uv/pyenv) & Chạy trên Máy thật'}
               </span>
             </button>
 
@@ -492,7 +507,11 @@ export const ProjectSamplesHub: React.FC = () => {
               )}
             >
               <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
-              <span>Danh sách {ALL_SAMPLE_PROJECTS.length} Project</span>
+              <span>
+                {isEn
+                  ? `All ${ALL_SAMPLE_PROJECTS.length} Projects`
+                  : `Danh sách ${ALL_SAMPLE_PROJECTS.length} Project`}
+              </span>
             </button>
           </div>
         </div>
@@ -502,7 +521,9 @@ export const ProjectSamplesHub: React.FC = () => {
           <div className="mt-3 pt-3 border-t border-slate-800/90 space-y-3 animate-in fade-in duration-150">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs font-semibold text-slate-300">
-                Chọn Dự án Mẫu theo cấp độ phức tạp ({ALL_SAMPLE_PROJECTS.length} dự án từ Hello World đến Enterprise CQRS/Saga):
+                {isEn
+                  ? `Select Sample Project by complexity level (${ALL_SAMPLE_PROJECTS.length} projects from Hello World to Enterprise CQRS/Saga):`
+                  : `Chọn Dự án Mẫu theo cấp độ phức tạp (${ALL_SAMPLE_PROJECTS.length} dự án từ Hello World đến Enterprise CQRS/Saga):`}
               </span>
               <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
                 <button
@@ -514,7 +535,9 @@ export const ProjectSamplesHub: React.FC = () => {
                       : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                   )}
                 >
-                  Tất cả ({ALL_SAMPLE_PROJECTS.length})
+                  {isEn
+                    ? `All (${ALL_SAMPLE_PROJECTS.length})`
+                    : `Tất cả (${ALL_SAMPLE_PROJECTS.length})`}
                 </button>
                 {SKILL_LEVELS.map((lvl) => {
                   const count = ALL_SAMPLE_PROJECTS.filter(
@@ -589,7 +612,7 @@ export const ProjectSamplesHub: React.FC = () => {
               : 'text-slate-300 hover:text-white'
           )}
         >
-          Xem cả 2
+          {isEn ? 'Split View' : 'Xem cả 2'}
         </button>
         <button
           type="button"
@@ -601,7 +624,7 @@ export const ProjectSamplesHub: React.FC = () => {
               : 'text-slate-300 hover:text-white'
           )}
         >
-          Thư mục & Kiến trúc
+          {isEn ? 'Files & Architecture' : 'Thư mục & Kiến trúc'}
         </button>
         <button
           type="button"
@@ -637,7 +660,15 @@ export const ProjectSamplesHub: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsExplorerOpen((v) => !v)}
-              title={isExplorerOpen ? 'Thu gọn thanh Explorer bên trái' : 'Mở thanh Explorer bên trái'}
+              title={
+                isExplorerOpen
+                  ? isEn
+                    ? 'Collapse left Explorer sidebar'
+                    : 'Thu gọn thanh Explorer bên trái'
+                  : isEn
+                  ? 'Expand left Explorer sidebar'
+                  : 'Mở thanh Explorer bên trái'
+              }
               style={{
                 backgroundColor: activeIdeTheme.btnBg,
                 borderColor: activeIdeTheme.barBorder,
@@ -650,7 +681,9 @@ export const ProjectSamplesHub: React.FC = () => {
               ) : (
                 <PanelLeftOpen className="h-3.5 w-3.5" />
               )}
-              <span>{isExplorerOpen ? 'Thu gọn' : 'Explorer'}</span>
+              <span>
+                {isExplorerOpen ? (isEn ? 'Collapse' : 'Thu gọn') : 'Explorer'}
+              </span>
             </button>
 
             <div
@@ -694,14 +727,18 @@ export const ProjectSamplesHub: React.FC = () => {
               onClick={handleRunLiveCode}
               disabled={isRunningLive}
               className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-2.5 py-1 text-xs font-bold text-slate-950 hover:bg-emerald-400 transition-colors cursor-pointer shadow-2xs disabled:opacity-60"
-              title="Chạy trực tiếp code Python của file/dự án này và hiển thị kết quả dưới Console"
+              title={
+                isEn
+                  ? 'Run this Python file/project directly and view output in Console below'
+                  : 'Chạy trực tiếp code Python của file/dự án này và hiển thị kết quả dưới Console'
+              }
             >
               {isRunningLive ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
                 <Play className="h-3.5 w-3.5 fill-current" />
               )}
-              <span>Chạy code</span>
+              <span>{isEn ? 'Run code' : 'Chạy code'}</span>
             </button>
 
             <button
@@ -713,11 +750,21 @@ export const ProjectSamplesHub: React.FC = () => {
                 color: activeIdeTheme.barText,
               }}
               className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold shrink-0 transition-opacity hover:opacity-85 cursor-pointer shadow-2xs"
-              title="Ẩn/hiện khung Console & Terminal bên dưới"
+              title={
+                isEn
+                  ? 'Toggle Console & Terminal panel below'
+                  : 'Ẩn/hiện khung Console & Terminal bên dưới'
+              }
             >
               <Terminal className="h-3.5 w-3.5 text-emerald-400" />
               <span className="hidden sm:inline">
-                {isConsoleOpen ? 'Ẩn Console' : 'Hiện Console'}
+                {isConsoleOpen
+                  ? isEn
+                    ? 'Hide Console'
+                    : 'Ẩn Console'
+                  : isEn
+                  ? 'Show Console'
+                  : 'Hiện Console'}
               </span>
             </button>
 
@@ -734,7 +781,9 @@ export const ProjectSamplesHub: React.FC = () => {
               {copiedFile ? (
                 <>
                   <Check className="h-3.5 w-3.5 text-emerald-500" />
-                  <span className="text-emerald-500">Đã chép</span>
+                  <span className="text-emerald-500">
+                    {isEn ? 'Copied' : 'Đã chép'}
+                  </span>
                 </>
               ) : (
                 <>
@@ -802,7 +851,7 @@ export const ProjectSamplesHub: React.FC = () => {
                     <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
                   )}
                   <Sparkles className="h-3 w-3" />
-                  Structure & Kiến trúc
+                  {isEn ? 'Structure & Architecture' : 'Structure & Kiến trúc'}
                 </span>
               </button>
 
@@ -844,7 +893,11 @@ export const ProjectSamplesHub: React.FC = () => {
             <div
               onMouseDown={handleStartResizeExplorer}
               onDoubleClick={() => setExplorerWidth(288)}
-              title="Kéo để thay đổi độ rộng thanh Explorer • Nháy đúp để đặt lại mặc định"
+              title={
+                isEn
+                  ? 'Drag to resize Explorer width • Double-click to reset'
+                  : 'Kéo để thay đổi độ rộng thanh Explorer • Nháy đúp để đặt lại mặc định'
+              }
               className="hidden lg:block w-1.5 shrink-0 cursor-col-resize bg-slate-800/80 hover:bg-emerald-500/70 active:bg-emerald-400 transition-colors"
             />
           )}
@@ -969,7 +1022,7 @@ export const ProjectSamplesHub: React.FC = () => {
                     onClick={() => setIsConsoleOpen(false)}
                     className="font-mono text-[10px] text-slate-400 hover:text-white cursor-pointer"
                   >
-                    Thu gọn Console ✕
+                    {isEn ? 'Collapse Console ✕' : 'Thu gọn Console ✕'}
                   </button>
                 </div>
 
@@ -986,7 +1039,11 @@ export const ProjectSamplesHub: React.FC = () => {
                       type="text"
                       value={customCommandInput}
                       onChange={(e) => setCustomCommandInput(e.target.value)}
-                      aria-label="Lệnh Terminal hoặc cURL"
+                      aria-label={
+                        isEn
+                          ? 'Terminal or cURL command'
+                          : 'Lệnh Terminal hoặc cURL'
+                      }
                       className="w-full bg-transparent text-sky-200 focus:outline-none"
                     />
                   </div>
@@ -995,7 +1052,7 @@ export const ProjectSamplesHub: React.FC = () => {
                     className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-slate-950 hover:bg-emerald-400 transition-colors shrink-0 cursor-pointer"
                   >
                     <Send className="h-3 w-3" />
-                    <span>Thực thi lệnh</span>
+                    <span>{isEn ? 'Run command' : 'Thực thi lệnh'}</span>
                   </button>
                 </form>
 
@@ -1053,7 +1110,9 @@ export const ProjectSamplesHub: React.FC = () => {
               }}
             >
               <div className="flex flex-wrap items-center gap-3">
-                <span>{codeLines.length} dòng</span>
+                <span>
+                  {isEn ? `${codeLines.length} lines` : `${codeLines.length} dòng`}
+                </span>
                 <span className="opacity-40">|</span>
                 <span>UTF-8 • Python 3.12</span>
                 <span className="opacity-40">|</span>
@@ -1061,12 +1120,20 @@ export const ProjectSamplesHub: React.FC = () => {
                   type="button"
                   onClick={() => setIsConsoleOpen((v) => !v)}
                   className="inline-flex items-center gap-1.5 font-bold text-emerald-400 hover:underline cursor-pointer"
-                  title="Bấm để đóng/mở bảng Console & Terminal ngay bên trên thanh này"
+                  title={
+                    isEn
+                      ? 'Click to toggle the Console & Terminal panel above'
+                      : 'Bấm để đóng/mở bảng Console & Terminal ngay bên trên thanh này'
+                  }
                 >
                   <Terminal className="h-3.5 w-3.5" />
                   <span>
                     {isConsoleOpen
-                      ? 'Console: Đang mở (Bấm để ẩn)'
+                      ? isEn
+                        ? 'Console: Open (Click to hide)'
+                        : 'Console: Đang mở (Bấm để ẩn)'
+                      : isEn
+                      ? 'Console: Hidden (Click to show)'
                       : 'Console: Đang ẩn (Bấm để mở)'}
                   </span>
                   {isConsoleOpen ? (
@@ -1082,7 +1149,11 @@ export const ProjectSamplesHub: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsThemeMenuOpen((v) => !v)}
-                  title="Đổi màu nền & giao diện IDE (Tự động lưu)"
+                  title={
+                    isEn
+                      ? 'Change IDE background & theme (Auto-saved)'
+                      : 'Đổi màu nền & giao diện IDE (Tự động lưu)'
+                  }
                   style={{
                     backgroundColor: activeIdeTheme.btnBg,
                     borderColor: activeIdeTheme.barBorder,
@@ -1129,7 +1200,9 @@ export const ProjectSamplesHub: React.FC = () => {
                         }}
                         className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border-b"
                       >
-                        Chọn Màu Giao Diện IDE (Tự lưu)
+                        {isEn
+                          ? 'Select IDE Color Theme (Auto-saved)'
+                          : 'Chọn Màu Giao Diện IDE (Tự lưu)'}
                       </div>
                       {IDE_THEMES.map((t) => {
                         const active = t.id === activeIdeTheme.id;
@@ -1202,15 +1275,35 @@ export const ProjectSamplesHub: React.FC = () => {
           <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
             <Sparkles className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
             <span>
-              Hướng dẫn 3 bước khởi tạo & chạy dự án{' '}
-              <code className="text-emerald-300 font-mono">
-                {currentProject.slug}
-              </code>{' '}
-              trên máy thật (uv / pyenv / Poetry / Pipenv)
+              {isEn ? (
+                <>
+                  3-step guide to initialize &amp; run{' '}
+                  <code className="text-emerald-300 font-mono">
+                    {currentProject.slug}
+                  </code>{' '}
+                  locally (uv / pyenv / Poetry / Pipenv)
+                </>
+              ) : (
+                <>
+                  Hướng dẫn 3 bước khởi tạo &amp; chạy dự án{' '}
+                  <code className="text-emerald-300 font-mono">
+                    {currentProject.slug}
+                  </code>{' '}
+                  trên máy thật (uv / pyenv / Poetry / Pipenv)
+                </>
+              )}
             </span>
           </div>
           <span className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-emerald-400">
-            <span>{isToolingGuideOpen ? 'Thu gọn' : 'Mở xem 3 bước'}</span>
+            <span>
+              {isToolingGuideOpen
+                ? isEn
+                  ? 'Collapse'
+                  : 'Thu gọn'
+                : isEn
+                ? 'Show 3 steps'
+                : 'Mở xem 3 bước'}
+            </span>
             {isToolingGuideOpen ? (
               <ChevronUp className="h-3.5 w-3.5" />
             ) : (
@@ -1224,7 +1317,9 @@ export const ProjectSamplesHub: React.FC = () => {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-slate-200">
-                  Chọn công cụ quản lý môi trường:
+                  {isEn
+                    ? 'Choose environment manager:'
+                    : 'Chọn công cụ quản lý môi trường:'}
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
@@ -1238,7 +1333,7 @@ export const ProjectSamplesHub: React.FC = () => {
                       : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
                   )}
                 >
-                  Cách 1: Dùng `uv`
+                  {isEn ? 'Option 1: Use `uv`' : 'Cách 1: Dùng `uv`'}
                 </button>
                 <button
                   type="button"
@@ -1250,7 +1345,9 @@ export const ProjectSamplesHub: React.FC = () => {
                       : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
                   )}
                 >
-                  Cách 2A: `pyenv + venv + pip`
+                  {isEn
+                    ? 'Option 2A: `pyenv + venv + pip`'
+                    : 'Cách 2A: `pyenv + venv + pip`'}
                 </button>
                 <button
                   type="button"
@@ -1262,7 +1359,7 @@ export const ProjectSamplesHub: React.FC = () => {
                       : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
                   )}
                 >
-                  Cách 2B: `pyenv + Poetry`
+                  {isEn ? 'Option 2B: `pyenv + Poetry`' : 'Cách 2B: `pyenv + Poetry`'}
                 </button>
                 <button
                   type="button"
@@ -1274,7 +1371,7 @@ export const ProjectSamplesHub: React.FC = () => {
                       : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
                   )}
                 >
-                  Cách 2C: `pyenv + Pipenv`
+                  {isEn ? 'Option 2C: `pyenv + Pipenv`' : 'Cách 2C: `pyenv + Pipenv`'}
                 </button>
               </div>
             </div>
@@ -1282,7 +1379,9 @@ export const ProjectSamplesHub: React.FC = () => {
             <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800/80">
               <div className="flex items-center gap-2 text-xs text-slate-300">
                 <span className="font-semibold text-amber-300">
-                  🎯 Đầu vào (Entrypoint) của dự án này:
+                  {isEn
+                    ? '🎯 Project Entrypoint:'
+                    : '🎯 Đầu vào (Entrypoint) của dự án này:'}
                 </span>
                 <button
                   type="button"
@@ -1308,8 +1407,9 @@ export const ProjectSamplesHub: React.FC = () => {
               >
                 <ArrowRightLeft className="h-3 w-3" />
                 <span>
-                  So sánh Node.js / JS-TS:{' '}
-                  {showJsTsComparison ? 'Đang BẬT' : 'Đang TẮT'}
+                  {isEn
+                    ? `Node.js / JS-TS Comparison: ${showJsTsComparison ? 'ON' : 'OFF'}`
+                    : `So sánh Node.js / JS-TS: ${showJsTsComparison ? 'Đang BẬT' : 'Đang TẮT'}`}
                 </span>
               </button>
             </div>
@@ -1318,7 +1418,9 @@ export const ProjectSamplesHub: React.FC = () => {
               {/* STEP 1 CARD */}
               <div className="rounded-xl border border-slate-800/90 bg-slate-900/90 p-3 space-y-2">
                 <span className="rounded bg-emerald-500/20 px-2 py-0.5 font-mono text-[10px] font-extrabold text-emerald-300">
-                  Bước 1 • Khởi tạo Dự án & Version
+                  {isEn
+                    ? 'Step 1 • Init Project & Python Version'
+                    : 'Bước 1 • Khởi tạo Dự án & Version'}
                 </span>
                 <pre className="rounded-lg bg-slate-950 p-2 font-mono text-[11px] text-emerald-300 overflow-x-auto">
                   {toolingStack === 'uv' &&
@@ -1335,7 +1437,9 @@ export const ProjectSamplesHub: React.FC = () => {
               {/* STEP 2 CARD */}
               <div className="rounded-xl border border-slate-800/90 bg-slate-900/90 p-3 space-y-2">
                 <span className="rounded bg-sky-500/20 px-2 py-0.5 font-mono text-[10px] font-extrabold text-sky-300">
-                  Bước 2 • Thêm & Đồng bộ Thư viện
+                  {isEn
+                    ? 'Step 2 • Add & Sync Dependencies'
+                    : 'Bước 2 • Thêm & Đồng bộ Thư viện'}
                 </span>
                 <pre className="rounded-lg bg-slate-950 p-2 font-mono text-[11px] text-sky-300 overflow-x-auto">
                   {toolingStack === 'uv' &&
@@ -1352,7 +1456,9 @@ export const ProjectSamplesHub: React.FC = () => {
               {/* STEP 3 CARD */}
               <div className="rounded-xl border border-slate-800/90 bg-slate-900/90 p-3 space-y-2">
                 <span className="rounded bg-amber-500/20 px-2 py-0.5 font-mono text-[10px] font-extrabold text-amber-300">
-                  Bước 3 • Chạy Đầu vào & Kiểm thử
+                  {isEn
+                    ? 'Step 3 • Run Entrypoint & Tests'
+                    : 'Bước 3 • Chạy Đầu vào & Kiểm thử'}
                 </span>
                 <pre className="rounded-lg bg-slate-950 p-2 font-mono text-[11px] text-amber-300 overflow-x-auto">
                   {`${formatCommandForStack(

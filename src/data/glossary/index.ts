@@ -27,11 +27,23 @@ export const GLOSSARY_BY_ID: Record<string, GlossaryTerm> =
 
 export const GLOSSARY_BY_SURFACE_TOKEN: Record<string, GlossaryTerm> = {};
 
+// Pass 1: Register all primary terms first so exact terms (e.g. `dict`, `list`, `assert`)
+// are never hijacked by another entry's aliases (e.g. `typing` having `Dict`, `List`).
 for (const item of ALL_GLOSSARY_TERMS) {
-  GLOSSARY_BY_SURFACE_TOKEN[item.term.toLowerCase()] = item;
+  const key = item.term.toLowerCase();
+  if (!GLOSSARY_BY_SURFACE_TOKEN[key]) {
+    GLOSSARY_BY_SURFACE_TOKEN[key] = item;
+  }
+}
+
+// Pass 2: Register aliases only if not already claimed by a primary term or an earlier alias.
+for (const item of ALL_GLOSSARY_TERMS) {
   if (item.aliases) {
     for (const alias of item.aliases) {
-      GLOSSARY_BY_SURFACE_TOKEN[alias.toLowerCase()] = item;
+      const key = alias.toLowerCase();
+      if (!GLOSSARY_BY_SURFACE_TOKEN[key]) {
+        GLOSSARY_BY_SURFACE_TOKEN[key] = item;
+      }
     }
   }
 }

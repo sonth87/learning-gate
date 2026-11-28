@@ -21,22 +21,24 @@ import {
   sortedPmpModules,
 } from '../logic';
 import { usePmpNav, usePmpProgress } from '../store';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { CourseBar } from '@/features/devops-course/components/CourseUi';
 import { PageHeader, Pill, Spinner } from '@/features/workpath/components/ui';
 import { PmpTrademarkFooter, ProvenancePill } from '../components/PmpShared';
 import { cn } from '@/utils/cn';
 
-function getLevelChip(level: number) {
+function getLevelChip(level: number, lang: 'vi' | 'en') {
   switch (level) {
     case 0:
       return {
-        label: 'Định hướng',
+        label: lang === 'en' ? 'Orientation' : 'Định hướng',
         cls: 'border-amber-500/40 bg-amber-500/15 text-amber-300',
         icon: <Compass className="h-3 w-3" aria-hidden="true" />,
       };
     case 1:
       return {
-        label: 'Nguyên tắc PMBOK 8',
+        label: lang === 'en' ? 'PMBOK 8 Principles' : 'Nguyên tắc PMBOK 8',
         cls: 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300',
         icon: <Sparkles className="h-3 w-3" aria-hidden="true" />,
       };
@@ -54,7 +56,7 @@ function getLevelChip(level: number) {
       };
     default:
       return {
-        label: 'Giải đề & Thi',
+        label: lang === 'en' ? 'Exam Surgery' : 'Giải đề & Thi',
         cls: 'border-violet-500/40 bg-violet-500/15 text-violet-300',
         icon: <Target className="h-3 w-3" aria-hidden="true" />,
       };
@@ -67,6 +69,8 @@ export const PmpRoadmapView: React.FC = () => {
   const toggleSkipModule = usePmpProgress((x) => x.toggleSkipModule);
   const skipModulesBatch = usePmpProgress((x) => x.skipModulesBatch);
   const go = usePmpNav((x) => x.go);
+  const lang = useWorkbenchStore((st) => st.language);
+  const enOverlay = useCourseEnOverlay('pmp');
 
   if (!cur) return <Spinner />;
   const ordered = sortedPmpModules(cur);
@@ -76,8 +80,12 @@ export const PmpRoadmapView: React.FC = () => {
   return (
     <div className="mx-auto max-w-6xl p-4 sm:p-6">
       <PageHeader
-        title="Lộ trình 6 Cấp độ Hình thành Tư duy PMP"
-        sub={`${ordered.length} module sắp xếp theo (level, order) · Bám sát PMBOK® Guide 8th Edition (2025) & ECO 07/2026, bắc cầu trực tiếp sang dẫn chứng và 4.318 câu hỏi bên PMP Mindmap.`}
+        title={lang === 'en' ? '6-Level PMP Mindset Roadmap' : 'Lộ trình 6 Cấp độ Hình thành Tư duy PMP'}
+        sub={
+          lang === 'en'
+            ? `${ordered.length} modules ordered by (level, order) · Aligned with PMBOK® Guide 8th Edition (2025) & ECO 07/2026, bridging directly to evidence and 4,318 questions on PMP Mindmap.`
+            : `${ordered.length} module sắp xếp theo (level, order) · Bám sát PMBOK® Guide 8th Edition (2025) & ECO 07/2026, bắc cầu trực tiếp sang dẫn chứng và 4.318 câu hỏi bên PMP Mindmap.`
+        }
       />
 
       <div className="space-y-6">
@@ -87,6 +95,7 @@ export const PmpRoadmapView: React.FC = () => {
           const linkCount = mods.reduce((n, m) => n + m.evidenceLinkIds.length, 0);
           const uncompletedMods = mods.filter((m) => !pmpModuleDone(s, m, cur.passQuiz));
           const skippedModsInLevel = mods.filter((m) => isModuleSkipped(s, m.id));
+          const levelTitle = (lang === 'en' ? enOverlay?.levels?.[String(lv)] : undefined) ?? cur.levels[String(lv)];
 
           return (
             <section key={lv} aria-labelledby={`pmp-lv-${lv}`}>
@@ -97,12 +106,14 @@ export const PmpRoadmapView: React.FC = () => {
                 )}
               >
                 <h2 id={`pmp-lv-${lv}`} className="text-base font-bold text-white">
-                  Cấp {lv} · {cur.levels[String(lv)]}
+                  {lang === 'en' ? `Level ${lv}` : `Cấp ${lv}`} · {levelTitle}
                 </h2>
-                {lv === current && <Pill tone="ok">bạn đang ở đây</Pill>}
+                {lv === current && <Pill tone="ok">{lang === 'en' ? 'you are here' : 'bạn đang ở đây'}</Pill>}
                 <div className="ml-auto flex flex-wrap items-center gap-2.5">
                   <span className="font-mono text-xs font-normal text-slate-400">
-                    {mods.length} module · {quizCount} câu quiz · {linkCount} deep link
+                    {lang === 'en'
+                      ? `${mods.length} modules · ${quizCount} quiz questions · ${linkCount} deep links`
+                      : `${mods.length} module · ${quizCount} câu quiz · ${linkCount} deep link`}
                   </span>
                   {uncompletedMods.length > 0 ? (
                     <button
@@ -113,11 +124,15 @@ export const PmpRoadmapView: React.FC = () => {
                           true
                         )
                       }
-                      title={`Đánh dấu bỏ qua toàn bộ ${uncompletedMods.length} module chưa hoàn thành ở Cấp ${lv}`}
+                      title={
+                        lang === 'en'
+                          ? `Mark all ${uncompletedMods.length} remaining modules in Level ${lv} as skipped`
+                          : `Đánh dấu bỏ qua toàn bộ ${uncompletedMods.length} module chưa hoàn thành ở Cấp ${lv}`
+                      }
                       className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-950/80 px-2.5 py-1 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white cursor-pointer"
                     >
                       <SkipForward className="h-3 w-3" />
-                      <span>Bỏ qua cấp {lv}</span>
+                      <span>{lang === 'en' ? `Skip level ${lv}` : `Bỏ qua cấp ${lv}`}</span>
                     </button>
                   ) : skippedModsInLevel.length > 0 ? (
                     <button
@@ -128,11 +143,15 @@ export const PmpRoadmapView: React.FC = () => {
                           false
                         )
                       }
-                      title={`Khôi phục ${skippedModsInLevel.length} module đã bỏ qua ở Cấp ${lv}`}
+                      title={
+                        lang === 'en'
+                          ? `Restore ${skippedModsInLevel.length} skipped modules in Level ${lv}`
+                          : `Khôi phục ${skippedModsInLevel.length} module đã bỏ qua ở Cấp ${lv}`
+                      }
                       className="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-300 transition-colors hover:bg-amber-500/20 cursor-pointer"
                     >
                       <Undo2 className="h-3 w-3" />
-                      <span>Khôi phục cấp {lv}</span>
+                      <span>{lang === 'en' ? `Restore level ${lv}` : `Khôi phục cấp ${lv}`}</span>
                     </button>
                   ) : null}
                 </div>
@@ -144,7 +163,10 @@ export const PmpRoadmapView: React.FC = () => {
                   const complete = pmpModuleDone(s, m, cur.passQuiz);
                   const skipped = isModuleSkipped(s, m.id);
                   const [evDone, evTotal] = pmpModuleEvidenceProgress(s, m);
-                  const chip = getLevelChip(m.level);
+                  const chip = getLevelChip(m.level, lang);
+                  const modEn = lang === 'en' ? enOverlay?.modules?.[m.id] : undefined;
+                  const modTitle = modEn?.titleEn ?? m.title;
+                  const modSummary = modEn?.summaryEn ?? m.summary;
 
                   return (
                     <div
@@ -175,18 +197,21 @@ export const PmpRoadmapView: React.FC = () => {
                             </span>
                           </div>
                           {skipped ? (
-                            <Pill tone="info">đã bỏ qua</Pill>
+                            <Pill tone="info">{lang === 'en' ? 'skipped' : 'đã bỏ qua'}</Pill>
                           ) : complete ? (
-                            <CheckCircle2 className="h-4 w-4 text-emerald-400" aria-label="Đã hoàn thành" />
+                            <CheckCircle2
+                              className="h-4 w-4 text-emerald-400"
+                              aria-label={lang === 'en' ? 'Completed' : 'Đã hoàn thành'}
+                            />
                           ) : d > 0 ? (
-                            <Pill tone="warn">đang học</Pill>
+                            <Pill tone="warn">{lang === 'en' ? 'in progress' : 'đang học'}</Pill>
                           ) : (
                             <ChevronRight className="h-4 w-4 text-slate-600 group-hover:text-slate-300" aria-hidden="true" />
                           )}
                         </div>
 
-                        <div className="mt-1.5 font-semibold text-slate-100 leading-snug">{m.title}</div>
-                        <p className="mt-1 line-clamp-2 text-xs text-slate-400 leading-relaxed">{m.summary}</p>
+                        <div className="mt-1.5 font-semibold text-slate-100 leading-snug">{modTitle}</div>
+                        <p className="mt-1 line-clamp-2 text-xs text-slate-400 leading-relaxed">{modSummary}</p>
 
                         {m.provenance.length > 0 && (
                           <div className="mt-2 flex flex-wrap gap-1">
@@ -201,17 +226,26 @@ export const PmpRoadmapView: React.FC = () => {
                         <CourseBar value={t ? d / t : 0} accent="amber" />
                         <div className="mt-1.5 flex items-center justify-between gap-2 font-mono text-[11px] text-slate-500">
                           <span>
-                            quiz {quizBest(s, m.id) ? `${Math.round(quizBest(s, m.id) * 100)}%` : '—'} · dẫn chứng {evDone}/{evTotal}
+                            quiz {quizBest(s, m.id) ? `${Math.round(quizBest(s, m.id) * 100)}%` : '—'} ·{' '}
+                            {lang === 'en' ? 'evidence' : 'dẫn chứng'} {evDone}/{evTotal}
                           </span>
                           {(!complete || skipped) && (
                             <button
                               type="button"
                               onClick={() => toggleSkipModule(m.id)}
-                              title={skipped ? 'Hoàn tác bỏ qua module này' : 'Đã biết — Bỏ qua module này'}
+                              title={
+                                skipped
+                                  ? lang === 'en'
+                                    ? 'Undo skip for this module'
+                                    : 'Hoàn tác bỏ qua module này'
+                                  : lang === 'en'
+                                    ? 'Already know this — Skip module'
+                                    : 'Đã biết — Bỏ qua module này'
+                              }
                               className="inline-flex items-center gap-1 rounded border border-slate-700/80 bg-slate-950/70 px-1.5 py-0.5 font-sans text-[10px] font-medium text-slate-400 hover:border-slate-500 hover:text-white cursor-pointer"
                             >
                               {skipped ? <Undo2 className="h-2.5 w-2.5" /> : <SkipForward className="h-2.5 w-2.5" />}
-                              <span>{skipped ? 'Hoàn tác' : 'Bỏ qua'}</span>
+                              <span>{skipped ? (lang === 'en' ? 'Undo' : 'Hoàn tác') : lang === 'en' ? 'Skip' : 'Bỏ qua'}</span>
                             </button>
                           )}
                         </div>

@@ -13,9 +13,11 @@ import {
   GLOSSARY_ANALOGY_ITEMS,
   THREE_DIMENSION_ANALOGY_MATRIX,
 } from '../data/glossaryAndCheatsheetData';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { cn } from '@/utils/cn';
 
 export const GlossaryAndCheatsheetHub: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
@@ -55,13 +57,15 @@ export const GlossaryAndCheatsheetHub: React.FC = () => {
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-400">
           <BookMarked className="h-4 w-4 shrink-0" />
           <span>
-            Từ Điển Thuật Ngữ Liên Tưởng Hóa & Bảng Lệnh Gối Đầu Giường (Phần 3 &
-            Phần 6 PDF)
+            {lang === 'en'
+              ? 'Analogy-Driven Glossary & Essential Command Cheatsheet (PDF Parts 3 & 6)'
+              : 'Từ Điển Thuật Ngữ Liên Tưởng Hóa & Bảng Lệnh Gối Đầu Giường (Phần 3 & Phần 6 PDF)'}
           </span>
         </div>
         <h1 className="font-mono text-base sm:text-2xl font-extrabold text-white">
-          Tra Cứu Nhanh Thuật Ngữ Qua Lăng Kính Thực Tế & Cheatsheet Thực
-          Chiến
+          {lang === 'en'
+            ? 'Quick Term Lookup Through Real-World Analogies & Production Cheatsheet'
+            : 'Tra Cứu Nhanh Thuật Ngữ Qua Lăng Kính Thực Tế & Cheatsheet Thực Chiến'}
         </h1>
       </div>
 
@@ -71,12 +75,14 @@ export const GlossaryAndCheatsheetHub: React.FC = () => {
           <Film className="h-5 w-5 text-sky-400 shrink-0 mt-0.5 sm:mt-0" />
           <div>
             <h2 className="text-sm sm:text-lg font-extrabold text-white">
-              Ma Trận Liên Tưởng Đa Chiều: OCI, Image, Docker/Containerd,
-              Container & Kubernetes
+              {lang === 'en'
+                ? '3-Dimension Analogy Matrix: OCI, Image, Docker/Containerd, Container & Kubernetes'
+                : 'Ma Trận Liên Tưởng Đa Chiều: OCI, Image, Docker/Containerd, Container & Kubernetes'}
             </h2>
             <p className="text-xs text-slate-400">
-              So sánh trực quan qua 3 hình ảnh quen thuộc: File Giải nén (.zip),
-              File Đa phương tiện (.mp4) và Chuỗi Rạp Chiếu Phim (Trang 2 PDF)
+              {lang === 'en'
+                ? 'Visual comparison via 3 familiar mental models: Archive (.zip), Media (.mp4), and Cinema Chain (PDF Page 2)'
+                : 'So sánh trực quan qua 3 hình ảnh quen thuộc: File Giải nén (.zip), File Đa phương tiện (.mp4) và Chuỗi Rạp Chiếu Phim (Trang 2 PDF)'}
             </p>
           </div>
         </div>
@@ -94,19 +100,19 @@ export const GlossaryAndCheatsheetHub: React.FC = () => {
               <div className="space-y-1.5">
                 <div>
                   <span className="font-mono text-[10px] font-bold uppercase text-sky-300">
-                    📦 File Giải nén (.zip):{' '}
+                    {lang === 'en' ? '📦 Archive (.zip): ' : '📦 File Giải nén (.zip): '}
                   </span>
                   <span className="text-slate-200">{row.zipAnalogy}</span>
                 </div>
                 <div>
                   <span className="font-mono text-[10px] font-bold uppercase text-emerald-300">
-                    🎬 Đa phương tiện (.mp4):{' '}
+                    {lang === 'en' ? '🎬 Media (.mp4): ' : '🎬 Đa phương tiện (.mp4): '}
                   </span>
                   <span className="text-slate-200">{row.mediaAnalogy}</span>
                 </div>
                 <div>
                   <span className="font-mono text-[10px] font-bold uppercase text-amber-300">
-                    🍿 Chuỗi Rạp Chiếu Phim:{' '}
+                    {lang === 'en' ? '🍿 Cinema Chain: ' : '🍿 Chuỗi Rạp Chiếu Phim: '}
                   </span>
                   <span className="text-amber-200 font-medium">
                     {row.cinemaAnalogy}
@@ -122,13 +128,17 @@ export const GlossaryAndCheatsheetHub: React.FC = () => {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-950 text-slate-300 uppercase font-mono text-[11px]">
               <tr>
-                <th className="p-3.5">Khái niệm Kỹ thuật</th>
-                <th className="p-3.5 text-sky-300">Liên tưởng File Giải nén</th>
+                <th className="p-3.5">
+                  {lang === 'en' ? 'Technical Concept' : 'Khái niệm Kỹ thuật'}
+                </th>
+                <th className="p-3.5 text-sky-300">
+                  {lang === 'en' ? 'Archive (.zip) Analogy' : 'Liên tưởng File Giải nén'}
+                </th>
                 <th className="p-3.5 text-emerald-300">
-                  Liên tưởng Đa phương tiện
+                  {lang === 'en' ? 'Media (.mp4) Analogy' : 'Liên tưởng Đa phương tiện'}
                 </th>
                 <th className="p-3.5 text-amber-300">
-                  Liên tưởng Chuỗi Rạp Chiếu Phim
+                  {lang === 'en' ? 'Cinema Chain Analogy' : 'Liên tưởng Chuỗi Rạp Chiếu Phim'}
                 </th>
               </tr>
             </thead>
@@ -156,8 +166,9 @@ export const GlossaryAndCheatsheetHub: React.FC = () => {
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-amber-400 shrink-0" />
             <h2 className="text-sm sm:text-lg font-extrabold text-white">
-              Từ Điển Thuật Ngữ & Liên Hệ Thực Tế (
-              {filteredGlossary.length} thuật ngữ)
+              {lang === 'en'
+                ? `Analogy Glossary & Real-World Context (${filteredGlossary.length} terms)`
+                : `Từ Điển Thuật Ngữ & Liên Hệ Thực Tế (${filteredGlossary.length} thuật ngữ)`}
             </h2>
           </div>
 
@@ -167,7 +178,11 @@ export const GlossaryAndCheatsheetHub: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm Pod, Ingress, PVC, cgroups, Kubelet..."
+              placeholder={
+                lang === 'en'
+                  ? 'Search Pod, Ingress, PVC, cgroups, Kubelet...'
+                  : 'Tìm Pod, Ingress, PVC, cgroups, Kubelet...'
+              }
               className="w-full rounded-xl border border-slate-800 bg-slate-900 pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
             />
           </div>
@@ -186,7 +201,7 @@ export const GlossaryAndCheatsheetHub: React.FC = () => {
                   : 'border border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'
               )}
             >
-              {cat === 'ALL' ? 'Tất cả nhóm' : cat}
+              {cat === 'ALL' ? (lang === 'en' ? 'All groups' : 'Tất cả nhóm') : cat}
             </button>
           ))}
         </div>
@@ -207,12 +222,14 @@ export const GlossaryAndCheatsheetHub: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  <strong className="text-sky-300">Định nghĩa Kỹ thuật: </strong>
+                  <strong className="text-sky-300">
+                    {lang === 'en' ? 'Technical Definition: ' : 'Định nghĩa Kỹ thuật: '}
+                  </strong>
                   {item.technicalDefinition}
                 </p>
                 <p className="text-xs text-emerald-200 leading-relaxed">
                   <strong className="text-emerald-400">
-                    Liên tưởng Thực tế:{' '}
+                    {lang === 'en' ? 'Real-World Analogy: ' : 'Liên tưởng Thực tế: '}
                   </strong>
                   {item.vividAnalogy}
                 </p>
@@ -225,7 +242,7 @@ export const GlossaryAndCheatsheetHub: React.FC = () => {
                 <button
                   onClick={() => handleCopy(item.exampleCommandOrYaml)}
                   className="shrink-0 text-slate-400 hover:text-white cursor-pointer"
-                  title="Copy lệnh"
+                  title={lang === 'en' ? 'Copy command' : 'Copy lệnh'}
                 >
                   {copiedCmd === item.exampleCommandOrYaml ? (
                     <Check className="h-3.5 w-3.5 text-emerald-400" />
@@ -245,12 +262,14 @@ export const GlossaryAndCheatsheetHub: React.FC = () => {
           <Terminal className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5 sm:mt-0" />
           <div>
             <h2 className="text-sm sm:text-lg font-extrabold text-white">
-              Bảng Tổng Hợp Lệnh Thực Chiến "Gối Đầu Giường" (Cheatsheet Trang
-              20–21 PDF)
+              {lang === 'en'
+                ? 'Production Command Cheatsheet (PDF Pages 20–21)'
+                : 'Bảng Tổng Hợp Lệnh Thực Chiến "Gối Đầu Giường" (Cheatsheet Trang 20–21 PDF)'}
             </h2>
             <p className="text-xs text-slate-400">
-              Hệ thống các câu lệnh quan trọng nhất được phân loại theo đúng mục
-              đích tra cứu hàng ngày của kỹ sư vận hành Docker & K8s
+              {lang === 'en'
+                ? 'Essential commands organized by daily operational workflows for Docker & Kubernetes engineers'
+                : 'Hệ thống các câu lệnh quan trọng nhất được phân loại theo đúng mục đích tra cứu hàng ngày của kỹ sư vận hành Docker & K8s'}
             </p>
           </div>
         </div>
@@ -276,6 +295,7 @@ export const GlossaryAndCheatsheetHub: React.FC = () => {
                       <button
                         onClick={() => handleCopy(c.cmd)}
                         className="shrink-0 text-slate-400 hover:text-white mt-0.5 sm:mt-0 cursor-pointer"
+                        title={lang === 'en' ? 'Copy command' : 'Copy lệnh'}
                       >
                         {copiedCmd === c.cmd ? (
                           <Check className="h-3.5 w-3.5 text-emerald-400" />
@@ -286,7 +306,7 @@ export const GlossaryAndCheatsheetHub: React.FC = () => {
                     </div>
                     <p className="text-xs text-slate-200">{c.explanation}</p>
                     <div className="text-[11px] text-amber-300/90">
-                      🎯 Khi nào dùng: {c.whenToUse}
+                      {lang === 'en' ? `🎯 When to use: ${c.whenToUse}` : `🎯 Khi nào dùng: ${c.whenToUse}`}
                     </div>
                   </div>
                 ))}

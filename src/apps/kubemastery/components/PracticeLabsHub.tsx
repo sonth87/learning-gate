@@ -21,22 +21,23 @@ import {
 } from 'lucide-react';
 import { PRACTICE_EXERCISES } from '../data/practiceLabsData';
 import { useKubeStore } from '../store/useKubeStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { cn } from '@/utils/cn';
 
 type GuidanceTier = 'overview' | 'step-by-step' | 'cli-verify' | 'full-source';
 
-const CATEGORY_FILTERS: {
-  id: 'all' | 'dockerfile' | 'compose' | 'k8s-core' | 'k8s-enterprise';
-  label: string;
-}[] = [
-  { id: 'all', label: 'Tất cả (10 Lab)' },
-  { id: 'dockerfile', label: 'Dockerfile (2)' },
-  { id: 'compose', label: 'Docker Compose (1)' },
-  { id: 'k8s-core', label: 'K8s Core Objects (3)' },
-  { id: 'k8s-enterprise', label: 'K8s Enterprise & GitOps (4)' },
-];
-
 export const PracticeLabsHub: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
+  const CATEGORY_FILTERS: {
+    id: 'all' | 'dockerfile' | 'compose' | 'k8s-core' | 'k8s-enterprise';
+    label: string;
+  }[] = [
+    { id: 'all', label: lang === 'en' ? 'All (10 Labs)' : 'Tất cả (10 Lab)' },
+    { id: 'dockerfile', label: 'Dockerfile (2)' },
+    { id: 'compose', label: 'Docker Compose (1)' },
+    { id: 'k8s-core', label: 'K8s Core Objects (3)' },
+    { id: 'k8s-enterprise', label: 'K8s Enterprise & GitOps (4)' },
+  ];
   const {
     selectedPracticeId,
     openPracticeLab,
@@ -112,26 +113,41 @@ export const PracticeLabsHub: React.FC = () => {
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-400">
             <Code2 className="h-4 w-4 shrink-0" />
             <span>
-              10 Bài Lab Thực Hành Viết Cấu Hình Chuẩn Doanh Nghiệp (4 Cấp Độ
-              Hướng Dẫn → Full Source Code)
+              {lang === 'en'
+                ? '10 Production-Grade Hands-On Configuration Labs (4 Guidance Tiers → Full Source Code)'
+                : '10 Bài Lab Thực Hành Viết Cấu Hình Chuẩn Doanh Nghiệp (4 Cấp Độ Hướng Dẫn → Full Source Code)'}
             </span>
           </div>
           <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-3 py-0.5 font-mono text-xs font-bold text-emerald-300">
-            Đã hoàn thành: {solvedPracticeIds.length}/
-            {PRACTICE_EXERCISES.length} bài Lab
+            {lang === 'en'
+              ? `Completed: ${solvedPracticeIds.length}/${PRACTICE_EXERCISES.length} Labs`
+              : `Đã hoàn thành: ${solvedPracticeIds.length}/${PRACTICE_EXERCISES.length} bài Lab`}
           </span>
         </div>
         <h1 className="font-mono text-base sm:text-2xl font-extrabold text-white">
-          Thực Hành Từ Dockerfile, Docker Compose Đến Kubernetes Production,
-          RBAC, NetworkPolicy & GitOps
+          {lang === 'en'
+            ? 'Practice From Dockerfile & Docker Compose to Kubernetes Production, RBAC, NetworkPolicy & GitOps'
+            : 'Thực Hành Từ Dockerfile, Docker Compose Đến Kubernetes Production, RBAC, NetworkPolicy & GitOps'}
         </h1>
         <p className="text-xs sm:text-sm text-slate-300 max-w-4xl leading-relaxed hidden sm:block">
-          Mỗi bài Lab đi kèm hệ thống <strong>Hướng dẫn 4 cấp độ</strong>: từ Tư
-          duy kiến trúc → Cầm tay chỉ việc từng bước → Lệnh kiểm thử CLI →{' '}
-          <strong className="text-amber-300">
-            Cấp cao nhất: Full Source Code hoàn chỉnh & Giải thích từng dòng
-          </strong>
-          .
+          {lang === 'en' ? (
+            <>
+              Each Lab includes a <strong>4-Tier Guidance System</strong>: Architecture Mindset → Step-by-Step Walkthrough → CLI Verification →{' '}
+              <strong className="text-amber-300">
+                Top Tier: Complete Full Source Code & Line-by-Line Explanations
+              </strong>
+              .
+            </>
+          ) : (
+            <>
+              Mỗi bài Lab đi kèm hệ thống <strong>Hướng dẫn 4 cấp độ</strong>: từ Tư
+              duy kiến trúc → Cầm tay chỉ việc từng bước → Lệnh kiểm thử CLI →{' '}
+              <strong className="text-amber-300">
+                Cấp cao nhất: Full Source Code hoàn chỉnh & Giải thích từng dòng
+              </strong>
+              .
+            </>
+          )}
         </p>
       </div>
 
@@ -156,7 +172,9 @@ export const PracticeLabsHub: React.FC = () => {
           </div>
 
           <span className="hidden lg:inline font-mono text-[11px] text-slate-400 shrink-0">
-            Đang chọn: Lab #{currentLabNumber}/{PRACTICE_EXERCISES.length}
+            {lang === 'en'
+              ? `Selected: Lab #${currentLabNumber}/${PRACTICE_EXERCISES.length}`
+              : `Đang chọn: Lab #${currentLabNumber}/${PRACTICE_EXERCISES.length}`}
           </span>
         </div>
 
@@ -211,7 +229,7 @@ export const PracticeLabsHub: React.FC = () => {
           )}
         >
           <ClipboardList className="h-3.5 w-3.5 shrink-0" />
-          <span>1. Hướng dẫn 4 Cấp & Full Code</span>
+          <span>{lang === 'en' ? '1. 4-Tier Guide & Full Code' : '1. Hướng dẫn 4 Cấp & Full Code'}</span>
         </button>
         <button
           onClick={() => setMobileTab('editor')}
@@ -223,7 +241,7 @@ export const PracticeLabsHub: React.FC = () => {
           )}
         >
           <FileCode2 className="h-3.5 w-3.5 shrink-0" />
-          <span>2. Trình Sửa Code & Chấm Điểm</span>
+          <span>{lang === 'en' ? '2. Code Editor & Grader' : '2. Trình Sửa Code & Chấm Điểm'}</span>
         </button>
       </div>
 
@@ -242,11 +260,12 @@ export const PracticeLabsHub: React.FC = () => {
           <div className="space-y-1.5 border-b border-slate-800 pb-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="rounded-md bg-sky-500/15 border border-sky-500/35 px-2 py-0.5 font-mono text-[10px] font-bold text-sky-300 uppercase">
-                Giai đoạn {exercise.stageId.replace('stage-', '')} • Cấp độ:{' '}
-                {exercise.level.toUpperCase()}
+                {lang === 'en'
+                  ? `Stage ${exercise.stageId.replace('stage-', '')} • Level: ${exercise.level.toUpperCase()}`
+                  : `Giai đoạn ${exercise.stageId.replace('stage-', '')} • Cấp độ: ${exercise.level.toUpperCase()}`}
               </span>
               <span className="font-mono text-[11px] text-amber-300">
-                File đích: {exercise.filename}
+                {lang === 'en' ? `Target file: ${exercise.filename}` : `File đích: ${exercise.filename}`}
               </span>
             </div>
             <h2 className="text-sm sm:text-base font-extrabold text-white leading-snug">
@@ -260,7 +279,9 @@ export const PracticeLabsHub: React.FC = () => {
           {/* 4-Level Guidance Selector Bar */}
           <div className="space-y-1.5">
             <div className="font-mono text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              Chọn Cấp độ Hướng dẫn (Từ Tư duy → Từng bước → Full Source Code):
+              {lang === 'en'
+                ? 'Select Guidance Tier (Mindset → Step-by-Step → Full Source Code):'
+                : 'Chọn Cấp độ Hướng dẫn (Từ Tư duy → Từng bước → Full Source Code):'}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
               <button
@@ -274,10 +295,10 @@ export const PracticeLabsHub: React.FC = () => {
               >
                 <div className="flex items-center gap-1 font-mono text-[10px] font-bold text-sky-400">
                   <Compass className="h-3 w-3 shrink-0" />
-                  <span>Cấp 1</span>
+                  <span>{lang === 'en' ? 'Tier 1' : 'Cấp 1'}</span>
                 </div>
                 <div className="text-[11px] font-bold mt-0.5 line-clamp-1">
-                  Tư duy & Yêu cầu
+                  {lang === 'en' ? 'Mindset & Specs' : 'Tư duy & Yêu cầu'}
                 </div>
               </button>
 
@@ -292,10 +313,10 @@ export const PracticeLabsHub: React.FC = () => {
               >
                 <div className="flex items-center gap-1 font-mono text-[10px] font-bold text-emerald-400">
                   <ListChecks className="h-3 w-3 shrink-0" />
-                  <span>Cấp 2</span>
+                  <span>{lang === 'en' ? 'Tier 2' : 'Cấp 2'}</span>
                 </div>
                 <div className="text-[11px] font-bold mt-0.5 line-clamp-1">
-                  Cầm tay chỉ việc
+                  {lang === 'en' ? 'Step-by-Step' : 'Cầm tay chỉ việc'}
                 </div>
               </button>
 
@@ -310,10 +331,10 @@ export const PracticeLabsHub: React.FC = () => {
               >
                 <div className="flex items-center gap-1 font-mono text-[10px] font-bold text-violet-400">
                   <Terminal className="h-3 w-3 shrink-0" />
-                  <span>Cấp 3</span>
+                  <span>{lang === 'en' ? 'Tier 3' : 'Cấp 3'}</span>
                 </div>
                 <div className="text-[11px] font-bold mt-0.5 line-clamp-1">
-                  Lệnh Nghiệm thu
+                  {lang === 'en' ? 'CLI Verification' : 'Lệnh Nghiệm thu'}
                 </div>
               </button>
 
@@ -328,7 +349,7 @@ export const PracticeLabsHub: React.FC = () => {
               >
                 <div className="flex items-center gap-1 font-mono text-[10px] font-bold text-amber-400">
                   <Eye className="h-3 w-3 shrink-0" />
-                  <span>Cấp 4 (Max)</span>
+                  <span>{lang === 'en' ? 'Tier 4 (Max)' : 'Cấp 4 (Max)'}</span>
                 </div>
                 <div className="text-[11px] font-bold mt-0.5 line-clamp-1">
                   Full Source Code
@@ -346,21 +367,27 @@ export const PracticeLabsHub: React.FC = () => {
               <div className="rounded-xl border border-sky-500/35 bg-sky-500/[0.07] p-3.5 space-y-2.5 text-xs">
                 <div className="flex items-center gap-1.5 font-bold text-sky-300">
                   <Lightbulb className="h-4 w-4 shrink-0 text-amber-400" />
-                  <span>Bản chất Kiến trúc & Liên tưởng Thực tế:</span>
+                  <span>
+                    {lang === 'en'
+                      ? 'Architecture Essence & Real-World Analogy:'
+                      : 'Bản chất Kiến trúc & Liên tưởng Thực tế:'}
+                  </span>
                 </div>
                 <p className="text-slate-200 leading-relaxed">
-                  <strong className="text-sky-300">Vì sao quan trọng: </strong>
+                  <strong className="text-sky-300">
+                    {lang === 'en' ? 'Why it matters: ' : 'Vì sao quan trọng: '}
+                  </strong>
                   {exercise.architectureGuide.whyItMatters}
                 </p>
                 <p className="text-emerald-200 leading-relaxed">
                   <strong className="text-emerald-300">
-                    Liên tưởng thực tế:{' '}
+                    {lang === 'en' ? 'Real-world analogy: ' : 'Liên tưởng thực tế: '}
                   </strong>
                   {exercise.architectureGuide.realWorldAnalogy}
                 </p>
                 <div className="rounded-lg border border-rose-500/35 bg-rose-950/30 p-2.5 text-rose-200">
                   <strong className="text-rose-300">
-                    ⚠️ Bẫy kinh điển cần tránh:{' '}
+                    {lang === 'en' ? '⚠️ Classic pitfall to avoid: ' : '⚠️ Bẫy kinh điển cần tránh: '}
                   </strong>
                   {exercise.architectureGuide.commonPitfall}
                 </div>
@@ -369,8 +396,9 @@ export const PracticeLabsHub: React.FC = () => {
               {/* Technical Requirements Checklist */}
               <div className="space-y-2">
                 <div className="font-mono text-xs font-bold uppercase text-emerald-400">
-                  Danh sách Yêu cầu Kỹ thuật Cần Đạt (
-                  {exercise.requirements.length}):
+                  {lang === 'en'
+                    ? `Technical Requirements Checklist (${exercise.requirements.length}):`
+                    : `Danh sách Yêu cầu Kỹ thuật Cần Đạt (${exercise.requirements.length}):`}
                 </div>
                 <ul className="space-y-2">
                   {exercise.requirements.map((req, i) => (
@@ -393,14 +421,22 @@ export const PracticeLabsHub: React.FC = () => {
                   className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/45 bg-emerald-500/15 px-3 py-2 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 cursor-pointer"
                 >
                   <ListChecks className="h-3.5 w-3.5" />
-                  <span>Xem Hướng dẫn Từng bước (Cấp 2) →</span>
+                  <span>
+                    {lang === 'en'
+                      ? 'View Step-by-Step Guide (Tier 2) →'
+                      : 'Xem Hướng dẫn Từng bước (Cấp 2) →'}
+                  </span>
                 </button>
                 <button
                   onClick={() => setGuidanceTier('full-source')}
                   className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/45 bg-amber-500/15 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/25 cursor-pointer"
                 >
                   <Eye className="h-3.5 w-3.5" />
-                  <span>Xem Full Source Code (Cấp 4)</span>
+                  <span>
+                    {lang === 'en'
+                      ? 'View Full Source Code (Tier 4)'
+                      : 'Xem Full Source Code (Cấp 4)'}
+                  </span>
                 </button>
               </div>
             </div>
@@ -413,14 +449,15 @@ export const PracticeLabsHub: React.FC = () => {
             <div className="space-y-3.5">
               <div className="flex items-center justify-between">
                 <span className="font-mono text-xs font-bold text-emerald-300">
-                  Cầm Tay Chỉ Việc Từng Bước ({exercise.stepByStepGuide.length}{' '}
-                  bước):
+                  {lang === 'en'
+                    ? `Step-by-Step Walkthrough (${exercise.stepByStepGuide.length} steps):`
+                    : `Cầm Tay Chỉ Việc Từng Bước (${exercise.stepByStepGuide.length} bước):`}
                 </span>
                 <button
                   onClick={() => setGuidanceTier('full-source')}
                   className="font-mono text-[11px] font-bold text-amber-300 hover:underline cursor-pointer"
                 >
-                  Mở Full Source Code →
+                  {lang === 'en' ? 'Open Full Source Code →' : 'Mở Full Source Code →'}
                 </button>
               </div>
 
@@ -433,7 +470,7 @@ export const PracticeLabsHub: React.FC = () => {
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-bold text-sky-300">
-                        Bước {step.stepNumber}: {step.stepTitle}
+                        {lang === 'en' ? `Step ${step.stepNumber}` : `Bước ${step.stepNumber}`}: {step.stepTitle}
                       </span>
                       <button
                         onClick={() =>
@@ -444,12 +481,14 @@ export const PracticeLabsHub: React.FC = () => {
                         {copiedSnippet === snippetId ? (
                           <>
                             <Check className="h-3 w-3 text-emerald-400" />
-                            <span className="text-emerald-300">Đã copy</span>
+                            <span className="text-emerald-300">
+                              {lang === 'en' ? 'Copied' : 'Đã copy'}
+                            </span>
                           </>
                         ) : (
                           <>
                             <Copy className="h-3 w-3" />
-                            <span>Copy bước này</span>
+                            <span>{lang === 'en' ? 'Copy step' : 'Copy bước này'}</span>
                           </>
                         )}
                       </button>
@@ -469,7 +508,9 @@ export const PracticeLabsHub: React.FC = () => {
               {/* Quick Hints Box */}
               <div className="rounded-xl border border-amber-500/35 bg-amber-500/10 p-3 space-y-1 text-xs text-amber-200">
                 <div className="font-bold text-amber-300">
-                  💡 Tóm tắt nhanh các vị trí cần điền:
+                  {lang === 'en'
+                    ? '💡 Quick summary of fields to fill:'
+                    : '💡 Tóm tắt nhanh các vị trí cần điền:'}
                 </div>
                 {exercise.hints.map((h, i) => (
                   <div key={i}>• {h}</div>
@@ -484,12 +525,24 @@ export const PracticeLabsHub: React.FC = () => {
           {guidanceTier === 'cli-verify' && (
             <div className="space-y-3.5">
               <div className="text-xs text-slate-300 leading-relaxed">
-                Sau khi viết xong file{' '}
-                <code className="font-mono font-bold text-amber-300">
-                  {exercise.filename}
-                </code>
-                , ngoài đời thực kỹ sư DevOps/SRE sẽ gõ các lệnh dưới đây để
-                triển khai và nghiệm thu kết quả:
+                {lang === 'en' ? (
+                  <>
+                    After writing{' '}
+                    <code className="font-mono font-bold text-amber-300">
+                      {exercise.filename}
+                    </code>
+                    , DevOps/SRE engineers run the following commands in production to deploy and verify:
+                  </>
+                ) : (
+                  <>
+                    Sau khi viết xong file{' '}
+                    <code className="font-mono font-bold text-amber-300">
+                      {exercise.filename}
+                    </code>
+                    , ngoài đời thực kỹ sư DevOps/SRE sẽ gõ các lệnh dưới đây để
+                    triển khai và nghiệm thu kết quả:
+                  </>
+                )}
               </div>
 
               {exercise.cliVerificationChecks.map((chk, idx) => {
@@ -512,7 +565,7 @@ export const PracticeLabsHub: React.FC = () => {
                         ) : (
                           <Copy className="h-3 w-3" />
                         )}
-                        <span>Copy lệnh</span>
+                        <span>{lang === 'en' ? 'Copy cmd' : 'Copy lệnh'}</span>
                       </button>
                     </div>
 
@@ -522,7 +575,9 @@ export const PracticeLabsHub: React.FC = () => {
 
                     <div className="space-y-1">
                       <div className="font-mono text-[10px] uppercase text-slate-400">
-                        Kết quả đầu ra chuẩn (Expected Output):
+                        {lang === 'en'
+                          ? 'Expected Output:'
+                          : 'Kết quả đầu ra chuẩn (Expected Output):'}
                       </div>
                       <pre className="overflow-x-auto whitespace-pre-wrap border-l-2 border-emerald-500 pl-2.5 font-mono text-[11px] text-slate-200 leading-relaxed">
                         {chk.expectedOutput}
@@ -542,13 +597,27 @@ export const PracticeLabsHub: React.FC = () => {
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3">
                 <div className="text-xs text-amber-200">
-                  <strong className="text-amber-300">
-                    🏆 Cấp độ Hướng dẫn Cao nhất:{' '}
-                  </strong>
-                  Toàn bộ Full Source Code chuẩn Production của file{' '}
-                  <code className="font-mono font-bold">
-                    {exercise.filename}
-                  </code>
+                  {lang === 'en' ? (
+                    <>
+                      <strong className="text-amber-300">
+                        🏆 Highest Guidance Tier:{' '}
+                      </strong>
+                      Complete production-ready source code for{' '}
+                      <code className="font-mono font-bold">
+                        {exercise.filename}
+                      </code>
+                    </>
+                  ) : (
+                    <>
+                      <strong className="text-amber-300">
+                        🏆 Cấp độ Hướng dẫn Cao nhất:{' '}
+                      </strong>
+                      Toàn bộ Full Source Code chuẩn Production của file{' '}
+                      <code className="font-mono font-bold">
+                        {exercise.filename}
+                      </code>
+                    </>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
@@ -563,7 +632,9 @@ export const PracticeLabsHub: React.FC = () => {
                     {copiedSnippet === `full-${exercise.id}` ? (
                       <>
                         <Check className="h-3.5 w-3.5 text-emerald-400" />
-                        <span className="text-emerald-300">Đã copy</span>
+                        <span className="text-emerald-300">
+                          {lang === 'en' ? 'Copied' : 'Đã copy'}
+                        </span>
                       </>
                     ) : (
                       <>
@@ -577,7 +648,9 @@ export const PracticeLabsHub: React.FC = () => {
                     onClick={handleApplyFullSourceToEditor}
                     className="inline-flex h-8 items-center gap-1 rounded-lg bg-amber-400 px-2.5 text-xs font-extrabold text-slate-950 hover:bg-amber-300 cursor-pointer"
                   >
-                    <span>Đưa vào Trình Soạn Thảo</span>
+                    <span>
+                      {lang === 'en' ? 'Load into Editor' : 'Đưa vào Trình Soạn Thảo'}
+                    </span>
                     <ArrowRight className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -596,7 +669,9 @@ export const PracticeLabsHub: React.FC = () => {
               {/* Detailed Section-by-Section Explanations */}
               <div className="space-y-2">
                 <div className="font-mono text-[11px] font-bold uppercase text-sky-400">
-                  Giải thích Chi tiết Từng Khối Lệnh trong Full Source Code:
+                  {lang === 'en'
+                    ? 'Detailed Line-by-Line Source Code Breakdown:'
+                    : 'Giải thích Chi tiết Từng Khối Lệnh trong Full Source Code:'}
                 </div>
                 <div className="space-y-2">
                   {exercise.solutionAnnotations.map((ann, idx) => (
@@ -630,7 +705,9 @@ export const PracticeLabsHub: React.FC = () => {
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
             <div className="flex items-center gap-2 font-mono text-xs font-bold text-emerald-300">
               <FileCode2 className="h-4 w-4 shrink-0" />
-              <span>Soạn thảo: {exercise.filename}</span>
+              <span>
+                {lang === 'en' ? `Editing: ${exercise.filename}` : `Soạn thảo: ${exercise.filename}`}
+              </span>
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -642,7 +719,7 @@ export const PracticeLabsHub: React.FC = () => {
                 className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-700 bg-slate-950 px-2.5 text-xs text-slate-300 hover:bg-slate-800 cursor-pointer"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                <span>Làm lại</span>
+                <span>{lang === 'en' ? 'Reset' : 'Làm lại'}</span>
               </button>
 
               <button
@@ -650,7 +727,9 @@ export const PracticeLabsHub: React.FC = () => {
                 className="inline-flex h-8 items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/15 px-2.5 text-xs font-semibold text-amber-300 hover:bg-amber-500/25 cursor-pointer"
               >
                 <Eye className="h-3.5 w-3.5" />
-                <span>Điền Full Source Code Chuẩn</span>
+                <span>
+                  {lang === 'en' ? 'Fill Full Solution' : 'Điền Full Source Code Chuẩn'}
+                </span>
               </button>
             </div>
           </div>
@@ -670,7 +749,11 @@ export const PracticeLabsHub: React.FC = () => {
             className="w-full inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 text-xs sm:text-sm font-extrabold text-slate-950 hover:bg-emerald-400 shadow-md transition-all cursor-pointer"
           >
             <Play className="h-4 w-4 fill-current" />
-            <span>Chấm Điểm & Kiểm Tra Cấu Hình (Lab #{currentLabNumber})</span>
+            <span>
+              {lang === 'en'
+                ? `Validate & Grade Configuration (Lab #${currentLabNumber})`
+                : `Chấm Điểm & Kiểm Tra Cấu Hình (Lab #${currentLabNumber})`}
+            </span>
           </button>
 
           {ruleResults.length > 0 && (

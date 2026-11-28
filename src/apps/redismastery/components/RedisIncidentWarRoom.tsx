@@ -11,11 +11,13 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useRedisNav } from '@/features/devops-course/store';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { REDIS_INCIDENT_SCENARIOS } from '../data/redisIncidentsData';
 import { useRedisStore } from '../store/useRedisStore';
 import { cn } from '@/utils/cn';
 
 export const RedisIncidentWarRoom: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
   const { selectedIncidentId, openIncidentInWarRoom, setActiveTab } = useRedisStore();
   const goRedis = useRedisNav((s) => s.go);
 
@@ -43,13 +45,20 @@ export const RedisIncidentWarRoom: React.FC = () => {
         <div>
           <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/40 bg-rose-500/15 px-2.5 py-0.5 text-[11px] font-bold text-rose-300">
             <ShieldAlert className="h-3.5 w-3.5" />
-            <span>REDIS PRODUCTION INCIDENT WAR-ROOM ({Object.keys(resolvedIds).length}/8 ĐÃ CỨU HỘ)</span>
+            <span>
+              REDIS PRODUCTION INCIDENT WAR-ROOM ({Object.keys(resolvedIds).length}/8{' '}
+              {lang === 'vi' ? 'ĐÃ CỨU HỘ' : 'RESOLVED'})
+            </span>
           </div>
           <h1 className="mt-1.5 text-lg sm:text-2xl font-extrabold text-white tracking-tight">
-            8 Tình huống Giải cứu Sự cố Redis Thực chiến lúc 2h Sáng
+            {lang === 'vi'
+              ? '8 Tình huống Giải cứu Sự cố Redis Thực chiến lúc 2h Sáng'
+              : '8 Real-World 2 AM Redis Production Incident Scenarios'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-400">
-            Đọc log giám sát, chẩn đoán nguyên nhân gốc và chọn phương án khắc phục để kéo P99 Latency & tải Database về ngưỡng an toàn.
+            {lang === 'vi'
+              ? 'Đọc log giám sát, chẩn đoán nguyên nhân gốc và chọn phương án khắc phục để kéo P99 Latency & tải Database về ngưỡng an toàn.'
+              : 'Inspect monitoring logs, diagnose the root cause, and pick the right remediation to bring P99 Latency & Database load back to safe thresholds.'}
           </p>
         </div>
 
@@ -61,7 +70,7 @@ export const RedisIncidentWarRoom: React.FC = () => {
           }}
           className="inline-flex items-center gap-1.5 self-start rounded-xl border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-xs font-bold text-rose-300 hover:bg-rose-500/25 cursor-pointer"
         >
-          <span>Ôn lý thuyết {incident.moduleRef}</span>
+          <span>{lang === 'vi' ? `Ôn lý thuyết ${incident.moduleRef}` : `Review theory ${incident.moduleRef}`}</span>
           <ArrowRight className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -140,7 +149,7 @@ export const RedisIncidentWarRoom: React.FC = () => {
                 {currentP99} ms
               </div>
               <div className="text-[10px] text-slate-400">
-                Mục tiêu SLA: &lt; 5.0 ms
+                {lang === 'vi' ? 'Mục tiêu SLA:' : 'SLA Target:'} &lt; 5.0 ms
               </div>
             </div>
 
@@ -154,7 +163,7 @@ export const RedisIncidentWarRoom: React.FC = () => {
             >
               <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-300">
                 <Database className="h-3.5 w-3.5 text-amber-400" />
-                <span>Tải Primary DB</span>
+                <span>{lang === 'vi' ? 'Tải Primary DB' : 'Primary DB Load'}</span>
               </div>
               <div
                 className={cn(
@@ -198,7 +207,15 @@ export const RedisIncidentWarRoom: React.FC = () => {
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-300 hover:text-amber-200 cursor-pointer"
           >
             <HelpCircle className="h-3.5 w-3.5" />
-            <span>{showHint ? 'Ẩn gợi ý chẩn đoán' : 'Xem gợi ý chẩn đoán của SRE Lead'}</span>
+            <span>
+              {showHint
+                ? lang === 'vi'
+                  ? 'Ẩn gợi ý chẩn đoán'
+                  : 'Hide diagnostic hint'
+                : lang === 'vi'
+                ? 'Xem gợi ý chẩn đoán của SRE Lead'
+                : 'View SRE Lead diagnostic hint'}
+            </span>
           </button>
           {showHint && (
             <div className="rounded-xl border border-amber-500/35 bg-amber-500/10 p-3 text-xs text-amber-200 leading-relaxed">
@@ -211,10 +228,14 @@ export const RedisIncidentWarRoom: React.FC = () => {
         <div className="lg:col-span-7 rounded-2xl border border-slate-800 bg-slate-900/85 p-4 sm:p-5 space-y-4">
           <div>
             <h3 className="text-sm sm:text-base font-extrabold text-white">
-              Chọn hành động khắc phục trên Production:
+              {lang === 'vi'
+                ? 'Chọn hành động khắc phục trên Production:'
+                : 'Choose a Production remediation action:'}
             </h3>
             <p className="text-xs text-slate-400">
-              Cẩn trọng: một số phương án xử lý tạm thời thiếu kiểm tra sẽ gây mất dữ liệu, Deadlock hoặc làm lỗi OOM nghiêm trọng hơn!
+              {lang === 'vi'
+                ? 'Cẩn trọng: một số phương án xử lý tạm thời thiếu kiểm tra sẽ gây mất dữ liệu, Deadlock hoặc làm lỗi OOM nghiêm trọng hơn!'
+                : 'Caution: some unverified workarounds can cause data loss, Deadlocks, or worsen OOM errors!'}
             </p>
           </div>
 
@@ -270,13 +291,20 @@ export const RedisIncidentWarRoom: React.FC = () => {
             >
               <div className="font-bold text-xs sm:text-sm">
                 {pickedOption.isCorrect
-                  ? 'Khắc phục thành công — Hệ thống đã ổn định xanh!'
-                  : 'Phương án chưa an toàn — Sự cố vẫn tiếp diễn!'}
+                  ? lang === 'vi'
+                    ? 'Khắc phục thành công — Hệ thống đã ổn định xanh!'
+                    : 'Remediation succeeded — System is back to healthy green!'
+                  : lang === 'vi'
+                  ? 'Phương án chưa an toàn — Sự cố vẫn tiếp diễn!'
+                  : 'Unsafe remediation — Incident is still ongoing!'}
               </div>
               <p className="text-xs sm:text-sm leading-relaxed">{pickedOption.feedback}</p>
               {pickedOption.isCorrect && (
                 <div className="pt-2 border-t border-emerald-500/30 text-xs text-emerald-200">
-                  <strong>Nguyên nhân gốc (Post-Mortem):</strong> {incident.rootCause}
+                  <strong>
+                    {lang === 'vi' ? 'Nguyên nhân gốc (Post-Mortem):' : 'Root Cause (Post-Mortem):'}
+                  </strong>{' '}
+                  {incident.rootCause}
                 </div>
               )}
             </div>

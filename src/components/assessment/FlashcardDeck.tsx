@@ -29,6 +29,7 @@ import { SrsRating } from '@/types/assessment.types';
 import { SkillLevel, StageId } from '@/types/curriculum.types';
 import { useUserDataStore } from '@/stores/useUserDataStore';
 import { useNavigationStore } from '@/stores/useNavigationStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { LevelBadge } from '@/components/common/LevelBadge';
 import { RichTextWithTerms } from '@/components/common/RichTextWithTerms';
 import { renderHighlightedPython } from '@/utils/pythonHighlighter';
@@ -47,7 +48,19 @@ const STAGE_SHORT_NAMES: Record<StageId, string> = {
   'stage-7': 'GĐ 7: Data Engineering, AI/LLM & Profiling',
 };
 
+const STAGE_SHORT_NAMES_EN: Record<StageId, string> = {
+  'stage-1': 'Stage 1: Zero & Core Syntax',
+  'stage-2': 'Stage 2: Data Structures, Functions & OOP',
+  'stage-3': 'Stage 3: Project Architecture, Packaging & Testing',
+  'stage-4': 'Stage 4: CPython Internals & Metaprogramming',
+  'stage-5': 'Stage 5: GIL, Threading & AsyncIO',
+  'stage-6': 'Stage 6: FastAPI, SQLAlchemy & Distributed',
+  'stage-7': 'Stage 7: Data Engineering, AI/LLM & Profiling',
+};
+
 export const FlashcardDeck: React.FC = () => {
+  const lang = useWorkbenchStore((s) => s.language);
+  const stageShortNames = lang === 'en' ? STAGE_SHORT_NAMES_EN : STAGE_SHORT_NAMES;
   const { srsStates, rateFlashcard } = useUserDataStore();
   const { showTermPopover } = useNavigationStore();
 
@@ -274,15 +287,26 @@ export const FlashcardDeck: React.FC = () => {
             <div className="space-y-0.5 sm:space-y-1 min-w-0">
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <h1 className="text-xs sm:text-xl font-extrabold text-white tracking-tight">
-                  Flashcards Studio & Ôn tập Ngắt quãng (SRS)
+                  {lang === 'en'
+                    ? 'Flashcards Studio & Spaced Repetition (SRS)'
+                    : 'Flashcards Studio & Ôn tập Ngắt quãng (SRS)'}
                 </h1>
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/35 px-2 py-0.5 font-mono text-[10px] sm:text-xs font-bold text-emerald-300">
-                  {ALL_FLASHCARDS.length} Thẻ
+                  {ALL_FLASHCARDS.length} {lang === 'en' ? 'Cards' : 'Thẻ'}
                 </span>
               </div>
               <p className="hidden sm:block text-xs text-slate-400">
-                Bao phủ từ Zero (Cài đặt <code className="text-emerald-300">uv</code>,{' '}
-                <code className="text-sky-300">.venv</code>, <code className="text-amber-300">pyproject.toml</code>, Cú pháp, Thư viện Chuẩn) đến CPython Internals, AsyncIO, FastAPI & AI Production.
+                {lang === 'en' ? (
+                  <>
+                    Covering from Zero (Installing <code className="text-emerald-300">uv</code>,{' '}
+                    <code className="text-sky-300">.venv</code>, <code className="text-amber-300">pyproject.toml</code>, Syntax, Standard Library) to CPython Internals, AsyncIO, FastAPI & AI Production.
+                  </>
+                ) : (
+                  <>
+                    Bao phủ từ Zero (Cài đặt <code className="text-emerald-300">uv</code>,{' '}
+                    <code className="text-sky-300">.venv</code>, <code className="text-amber-300">pyproject.toml</code>, Cú pháp, Thư viện Chuẩn) đến CPython Internals, AsyncIO, FastAPI & AI Production.
+                  </>
+                )}
               </p>
             </div>
           </div>
@@ -301,7 +325,9 @@ export const FlashcardDeck: React.FC = () => {
                 )}
               >
                 <CreditCard className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">Lật thẻ (SRS)</span>
+                <span className="truncate">
+                  {lang === 'en' ? 'Study Cards (SRS)' : 'Lật thẻ (SRS)'}
+                </span>
               </button>
               <button
                 type="button"
@@ -314,7 +340,9 @@ export const FlashcardDeck: React.FC = () => {
                 )}
               >
                 <LayoutGrid className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">Đọc lướt ({cards.length})</span>
+                <span className="truncate">
+                  {lang === 'en' ? `Browse Grid (${cards.length})` : `Đọc lướt (${cards.length})`}
+                </span>
               </button>
             </div>
 
@@ -322,11 +350,13 @@ export const FlashcardDeck: React.FC = () => {
               type="button"
               onClick={handleShuffle}
               className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/90 px-2.5 sm:px-3 py-2 text-[11px] sm:text-xs font-bold text-slate-200 hover:border-emerald-500/50 hover:text-emerald-300 transition-colors cursor-pointer shrink-0"
-              title="Trộn ngẫu nhiên thứ tự thẻ"
+              title={lang === 'en' ? 'Shuffle card order randomly' : 'Trộn ngẫu nhiên thứ tự thẻ'}
             >
               <Shuffle className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-              <span className="hidden sm:inline">Trộn ngẫu nhiên</span>
-              <span className="sm:hidden">Trộn</span>
+              <span className="hidden sm:inline">
+                {lang === 'en' ? 'Shuffle' : 'Trộn ngẫu nhiên'}
+              </span>
+              <span className="sm:hidden">{lang === 'en' ? 'Shuffle' : 'Trộn'}</span>
             </button>
           </div>
         </div>
@@ -336,40 +366,40 @@ export const FlashcardDeck: React.FC = () => {
           {[
             {
               id: 'all' as SrsFilterMode,
-              label: 'Tổng số thẻ',
-              shortLabel: 'Tổng thẻ',
+              label: lang === 'en' ? 'Total Cards' : 'Tổng số thẻ',
+              shortLabel: lang === 'en' ? 'All' : 'Tổng thẻ',
               count: srsStats.total,
-              sub: 'Toàn bộ 7 Giai đoạn',
+              sub: lang === 'en' ? 'All 7 Stages' : 'Toàn bộ 7 Giai đoạn',
               activeBorder: 'border-sky-500/60 bg-sky-500/10',
               badgeColor: 'text-sky-300',
               icon: <Layers className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-sky-400 shrink-0" />,
             },
             {
               id: 'due' as SrsFilterMode,
-              label: 'Cần ôn hôm nay',
-              shortLabel: 'Cần ôn',
+              label: lang === 'en' ? 'Due Today' : 'Cần ôn hôm nay',
+              shortLabel: lang === 'en' ? 'Due' : 'Cần ôn',
               count: srsStats.due,
-              sub: 'Đến hạn + Thẻ mới',
+              sub: lang === 'en' ? 'Due + New Cards' : 'Đến hạn + Thẻ mới',
               activeBorder: 'border-amber-500/60 bg-amber-500/10',
               badgeColor: 'text-amber-300',
               icon: <Flame className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-400 shrink-0" />,
             },
             {
               id: 'new' as SrsFilterMode,
-              label: 'Chưa từng lật',
-              shortLabel: 'Thẻ mới',
+              label: lang === 'en' ? 'Unseen Cards' : 'Chưa từng lật',
+              shortLabel: lang === 'en' ? 'New' : 'Thẻ mới',
               count: srsStats.unseen,
-              sub: `Đã học ${srsStats.reviewed} thẻ`,
+              sub: lang === 'en' ? `Studied ${srsStats.reviewed} cards` : `Đã học ${srsStats.reviewed} thẻ`,
               activeBorder: 'border-indigo-500/60 bg-indigo-500/10',
               badgeColor: 'text-indigo-300',
               icon: <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-indigo-400 shrink-0" />,
             },
             {
               id: 'mastered' as SrsFilterMode,
-              label: 'Đã thuộc lòng',
-              shortLabel: 'Đã thuộc',
+              label: lang === 'en' ? 'Mastered' : 'Đã thuộc lòng',
+              shortLabel: lang === 'en' ? 'Mastered' : 'Đã thuộc',
               count: srsStats.mastered,
-              sub: 'Đạt Hộp SRS 3–5',
+              sub: lang === 'en' ? 'SRS Box 3–5' : 'Đạt Hộp SRS 3–5',
               activeBorder: 'border-emerald-500/60 bg-emerald-500/10',
               badgeColor: 'text-emerald-300',
               icon: <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400 shrink-0" />,
@@ -440,8 +470,12 @@ export const FlashcardDeck: React.FC = () => {
           <Filter className="h-3.5 w-3.5" />
           <span>
             {isMobileFilterOpen
-              ? 'Đóng Bộ lọc & Danh sách'
-              : `Bộ lọc & Danh sách (${cards.length} thẻ)`}
+              ? lang === 'en'
+                ? 'Close Filters & List'
+                : 'Đóng Bộ lọc & Danh sách'
+              : lang === 'en'
+                ? `Filters & List (${cards.length} cards)`
+                : `Bộ lọc & Danh sách (${cards.length} thẻ)`}
           </span>
         </button>
       </div>
@@ -460,7 +494,7 @@ export const FlashcardDeck: React.FC = () => {
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-slate-300">
                 <Filter className="h-3.5 w-3.5 text-emerald-400" />
-                <span>Bộ lọc & Tìm kiếm Thẻ</span>
+                <span>{lang === 'en' ? 'Filters & Card Search' : 'Bộ lọc & Tìm kiếm Thẻ'}</span>
               </span>
               {hasActiveFilters && (
                 <button
@@ -468,7 +502,7 @@ export const FlashcardDeck: React.FC = () => {
                   onClick={handleResetFilters}
                   className="text-[11px] font-bold text-rose-400 hover:underline cursor-pointer"
                 >
-                  Đặt lại bộ lọc
+                  {lang === 'en' ? 'Reset filters' : 'Đặt lại bộ lọc'}
                 </button>
               )}
             </div>
@@ -483,7 +517,11 @@ export const FlashcardDeck: React.FC = () => {
                   setCurrentIndex(0);
                   setIsFlipped(false);
                 }}
-                placeholder="Tìm: uv, .venv, pathlib, asyncio, FastAPI..."
+                placeholder={
+                  lang === 'en'
+                    ? 'Search: uv, .venv, pathlib, asyncio, FastAPI...'
+                    : 'Tìm: uv, .venv, pathlib, asyncio, FastAPI...'
+                }
                 className="w-full rounded-xl border border-slate-700/80 bg-slate-950 pl-9 pr-8 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none transition-colors"
               />
               {searchQuery && (
@@ -504,7 +542,7 @@ export const FlashcardDeck: React.FC = () => {
           {/* Skill Level Pills Grid */}
           <div className="space-y-1.5">
             <label className="block text-[11px] font-bold text-slate-400">
-              Cấp độ Kỹ năng:
+              {lang === 'en' ? 'Skill Level:' : 'Cấp độ Kỹ năng:'}
             </label>
             <div className="grid grid-cols-3 gap-1.5">
               <button
@@ -522,7 +560,7 @@ export const FlashcardDeck: React.FC = () => {
                     : 'border-slate-800 bg-slate-950/80 text-slate-300 hover:border-slate-700'
                 )}
               >
-                Tất cả ({levelCounts.all})
+                {lang === 'en' ? `All (${levelCounts.all})` : `Tất cả (${levelCounts.all})`}
               </button>
               {SKILL_LEVELS.map((lvl) => (
                 <button
@@ -551,7 +589,7 @@ export const FlashcardDeck: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
             <div>
               <label className="block text-[11px] font-bold text-slate-400 mb-1">
-                Giai đoạn Lộ trình (1–7):
+                {lang === 'en' ? 'Roadmap Stage (1–7):' : 'Giai đoạn Lộ trình (1–7):'}
               </label>
               <select
                 value={selectedStage}
@@ -561,13 +599,17 @@ export const FlashcardDeck: React.FC = () => {
                   setCurrentIndex(0);
                   setIsFlipped(false);
                 }}
-                aria-label="Lọc theo Giai đoạn"
+                aria-label={lang === 'en' ? 'Filter by Stage' : 'Lọc theo Giai đoạn'}
                 className="w-full rounded-xl border border-slate-700/80 bg-slate-950 px-3 py-2 text-xs text-slate-200 focus:border-emerald-500 focus:outline-none"
               >
-                <option value="all">Tất cả 7 Giai đoạn ({ALL_FLASHCARDS.length} thẻ)</option>
+                <option value="all">
+                  {lang === 'en'
+                    ? `All 7 Stages (${ALL_FLASHCARDS.length} cards)`
+                    : `Tất cả 7 Giai đoạn (${ALL_FLASHCARDS.length} thẻ)`}
+                </option>
                 {CURRICULUM_STAGES.map((st) => (
                   <option key={st.id} value={st.id}>
-                    {STAGE_SHORT_NAMES[st.id] || st.title}
+                    {stageShortNames[st.id] || st.title}
                   </option>
                 ))}
               </select>
@@ -575,7 +617,9 @@ export const FlashcardDeck: React.FC = () => {
 
             <div>
               <label className="block text-[11px] font-bold text-slate-400 mb-1">
-                Chủ đề Chuyên sâu ({categoryOptions.length} nhóm):
+                {lang === 'en'
+                  ? `Topics (${categoryOptions.length} groups):`
+                  : `Chủ đề Chuyên sâu (${categoryOptions.length} nhóm):`}
               </label>
               <select
                 value={selectedCategory}
@@ -584,13 +628,17 @@ export const FlashcardDeck: React.FC = () => {
                   setCurrentIndex(0);
                   setIsFlipped(false);
                 }}
-                aria-label="Lọc theo Chủ đề"
+                aria-label={lang === 'en' ? 'Filter by Topic' : 'Lọc theo Chủ đề'}
                 className="w-full rounded-xl border border-slate-700/80 bg-slate-950 px-3 py-2 text-xs text-slate-200 focus:border-emerald-500 focus:outline-none"
               >
-                <option value="all">Mọi Chủ đề ({cards.length} thẻ)</option>
+                <option value="all">
+                  {lang === 'en'
+                    ? `All Topics (${cards.length} cards)`
+                    : `Mọi Chủ đề (${cards.length} thẻ)`}
+                </option>
                 {categoryOptions.map(([cat, count]) => (
                   <option key={cat} value={cat}>
-                    {cat} ({count} thẻ)
+                    {cat} ({count} {lang === 'en' ? 'cards' : 'thẻ'})
                   </option>
                 ))}
               </select>
@@ -601,11 +649,13 @@ export const FlashcardDeck: React.FC = () => {
           <div className="border-t border-slate-800/80 pt-3 space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-slate-300">
-                Danh sách Thẻ ({cards.length})
+                {lang === 'en' ? `Card List (${cards.length})` : `Danh sách Thẻ (${cards.length})`}
               </span>
               {cards.length > 0 && (
                 <span className="font-mono text-[11px] text-emerald-400">
-                  Đang chọn #{safeIdx + 1}/{cards.length}
+                  {lang === 'en'
+                    ? `Selected #${safeIdx + 1}/${cards.length}`
+                    : `Đang chọn #${safeIdx + 1}/${cards.length}`}
                 </span>
               )}
             </div>
@@ -645,8 +695,12 @@ export const FlashcardDeck: React.FC = () => {
                       )}
                       title={
                         !st
-                          ? 'Chưa học'
-                          : `Hộp SRS #${st.box} (Chu kỳ ${st.intervalDays} ngày)`
+                          ? lang === 'en'
+                            ? 'Unseen'
+                            : 'Chưa học'
+                          : lang === 'en'
+                            ? `SRS Box #${st.box} (${st.intervalDays}d interval)`
+                            : `Hộp SRS #${st.box} (Chu kỳ ${st.intervalDays} ngày)`
                       }
                     />
                     <div className="min-w-0 flex-1 space-y-1">
@@ -683,10 +737,14 @@ export const FlashcardDeck: React.FC = () => {
               </div>
               <div className="space-y-1">
                 <h3 className="text-base font-bold text-white">
-                  Không tìm thấy thẻ Flashcard nào khớp với bộ lọc
+                  {lang === 'en'
+                    ? 'No matching flashcards found'
+                    : 'Không tìm thấy thẻ Flashcard nào khớp với bộ lọc'}
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Hãy thử từ khóa khác hoặc đặt lại bộ lọc để xem toàn bộ {ALL_FLASHCARDS.length} thẻ.
+                  {lang === 'en'
+                    ? `Try another keyword or reset filters to view all ${ALL_FLASHCARDS.length} cards.`
+                    : `Hãy thử từ khóa khác hoặc đặt lại bộ lọc để xem toàn bộ ${ALL_FLASHCARDS.length} thẻ.`}
                 </p>
               </div>
               <button
@@ -694,7 +752,9 @@ export const FlashcardDeck: React.FC = () => {
                 onClick={handleResetFilters}
                 className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-extrabold text-[#020617] hover:bg-emerald-400 transition-colors cursor-pointer"
               >
-                Xem toàn bộ {ALL_FLASHCARDS.length} thẻ
+                {lang === 'en'
+                  ? `View all ${ALL_FLASHCARDS.length} cards`
+                  : `Xem toàn bộ ${ALL_FLASHCARDS.length} thẻ`}
               </button>
             </div>
           ) : deckViewMode === 'grid' ? (
@@ -704,10 +764,14 @@ export const FlashcardDeck: React.FC = () => {
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-800 bg-slate-900/80 px-4 py-3">
                 <div className="text-xs font-bold text-slate-200">
-                  Chế độ Đọc lướt & Tra cứu Nhanh ({cards.length} thẻ)
+                  {lang === 'en'
+                    ? `Browse & Quick Reference Mode (${cards.length} cards)`
+                    : `Chế độ Đọc lướt & Tra cứu Nhanh (${cards.length} thẻ)`}
                 </div>
                 <span className="text-[11px] text-slate-400">
-                  Bấm vào bất kỳ thẻ nào nếu muốn mở lại ở Chế độ Lật thẻ (SRS)
+                  {lang === 'en'
+                    ? 'Click any card to open it in Study (SRS) Mode'
+                    : 'Bấm vào bất kỳ thẻ nào nếu muốn mở lại ở Chế độ Lật thẻ (SRS)'}
                 </span>
               </div>
 
@@ -722,12 +786,12 @@ export const FlashcardDeck: React.FC = () => {
                         <span className="rounded-md bg-slate-800 px-2 py-0.5 font-mono text-xs font-bold text-emerald-300">
                           #{idx + 1}
                         </span>
-                        <LevelBadge level={card.level} showVi />
+                        <LevelBadge level={card.level} showVi={lang === 'vi'} />
                         <span className="rounded-md border border-sky-500/30 bg-sky-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-sky-300">
                           {card.category}
                         </span>
                         <span className="text-[11px] text-slate-400">
-                          {STAGE_SHORT_NAMES[card.stageId]}
+                          {stageShortNames[card.stageId]}
                         </span>
                       </div>
                       <button
@@ -739,7 +803,7 @@ export const FlashcardDeck: React.FC = () => {
                         className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-200 hover:border-emerald-500/50 hover:text-emerald-300 cursor-pointer"
                       >
                         <CreditCard className="h-3 w-3" />
-                        <span>Luyện thẻ này</span>
+                        <span>{lang === 'en' ? 'Study this card' : 'Luyện thẻ này'}</span>
                       </button>
                     </div>
 
@@ -754,7 +818,8 @@ export const FlashcardDeck: React.FC = () => {
                     <div className="rounded-xl border border-amber-500/25 bg-amber-950/15 px-3.5 py-2.5 text-xs text-amber-200/90 leading-relaxed flex items-start gap-2">
                       <Lightbulb className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
                       <span>
-                        <strong>Hình tượng hóa:</strong> {card.backAnalogy}
+                        <strong>{lang === 'en' ? 'Analogy:' : 'Hình tượng hóa:'}</strong>{' '}
+                        {card.backAnalogy}
                       </span>
                     </div>
 
@@ -774,7 +839,9 @@ export const FlashcardDeck: React.FC = () => {
                             {copiedCardId === card.id ? (
                               <>
                                 <Check className="h-3 w-3 text-emerald-400" />
-                                <span className="text-emerald-300">Đã copy</span>
+                                <span className="text-emerald-300">
+                                  {lang === 'en' ? 'Copied' : 'Đã copy'}
+                                </span>
                               </>
                             ) : (
                               <>
@@ -803,18 +870,29 @@ export const FlashcardDeck: React.FC = () => {
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                   <div className="flex items-center gap-2">
                     <span className="rounded-lg bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-0.5 font-mono font-extrabold text-emerald-300">
-                      Thẻ {safeIdx + 1} / {cards.length}
+                      {lang === 'en'
+                        ? `Card ${safeIdx + 1} / ${cards.length}`
+                        : `Thẻ ${safeIdx + 1} / ${cards.length}`}
                     </span>
                     <span className="text-slate-400 hidden sm:inline">•</span>
                     <span className="text-slate-300 font-semibold truncate">
-                      {STAGE_SHORT_NAMES[currentCard.stageId]}
+                      {stageShortNames[currentCard.stageId]}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-3">
                     {/* 5-Box SRS Visual Indicator */}
-                    <div className="flex items-center gap-1.5" title="Cấp độ ghi nhớ SRS (Hộp 1 -> Hộp 5)">
-                      <span className="text-[11px] text-slate-400">Hộp SRS:</span>
+                    <div
+                      className="flex items-center gap-1.5"
+                      title={
+                        lang === 'en'
+                          ? 'SRS memory level (Box 1 -> Box 5)'
+                          : 'Cấp độ ghi nhớ SRS (Hộp 1 -> Hộp 5)'
+                      }
+                    >
+                      <span className="text-[11px] text-slate-400">
+                        {lang === 'en' ? 'SRS Box:' : 'Hộp SRS:'}
+                      </span>
                       <div className="flex items-center gap-1">
                         {[1, 2, 3, 4, 5].map((boxNum) => (
                           <span
@@ -880,7 +958,7 @@ export const FlashcardDeck: React.FC = () => {
                   {/* Card Metadata Bar */}
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/90 bg-slate-950/60 px-5 py-3.5">
                     <div className="flex flex-wrap items-center gap-2">
-                      <LevelBadge level={currentCard.level} showVi />
+                      <LevelBadge level={currentCard.level} showVi={lang === 'vi'} />
                       <span className="inline-flex items-center gap-1.5 rounded-lg border border-sky-500/30 bg-sky-500/10 px-2.5 py-0.5 text-xs font-bold text-sky-300">
                         <BookOpen className="h-3.5 w-3.5" />
                         <span>{currentCard.category}</span>
@@ -896,7 +974,13 @@ export const FlashcardDeck: React.FC = () => {
                             : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
                         )}
                       >
-                        {isFlipped ? 'Mặt sau • Đáp án' : 'Mặt trước • Câu hỏi'}
+                        {isFlipped
+                          ? lang === 'en'
+                            ? 'Back • Answer'
+                            : 'Mặt sau • Đáp án'
+                          : lang === 'en'
+                            ? 'Front • Question'
+                            : 'Mặt trước • Câu hỏi'}
                       </span>
                     </div>
                   </div>
@@ -911,7 +995,11 @@ export const FlashcardDeck: React.FC = () => {
                       >
                         <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-700/80 bg-slate-950/80 px-3.5 py-1 text-xs font-medium text-slate-300">
                           <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
-                          <span>Suy nghĩ câu trả lời rồi bấm vào thẻ (hoặc phím Space) để đối chiếu</span>
+                          <span>
+                            {lang === 'en'
+                              ? 'Think of the answer, then click the card (or press Space) to check'
+                              : 'Suy nghĩ câu trả lời rồi bấm vào thẻ (hoặc phím Space) để đối chiếu'}
+                          </span>
                         </div>
 
                         <h2 className="text-lg sm:text-2xl font-extrabold text-white max-w-2xl leading-relaxed tracking-tight">
@@ -931,7 +1019,9 @@ export const FlashcardDeck: React.FC = () => {
                             className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/35 bg-amber-500/10 px-3.5 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500/20 transition-colors cursor-pointer"
                           >
                             <Eye className="h-3.5 w-3.5" />
-                            <span>Xem Gợi ý mở đường (Phím H)</span>
+                            <span>
+                              {lang === 'en' ? 'Show Hint (Key H)' : 'Xem Gợi ý mở đường (Phím H)'}
+                            </span>
                           </button>
                         )}
 
@@ -939,7 +1029,7 @@ export const FlashcardDeck: React.FC = () => {
                           <div className="w-full max-w-xl rounded-2xl border border-amber-500/35 bg-amber-950/20 px-4 py-3 text-center">
                             <div className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-300 mb-0.5">
                               <Lightbulb className="h-3.5 w-3.5" />
-                              <span>Gợi ý:</span>
+                              <span>{lang === 'en' ? 'Hint:' : 'Gợi ý:'}</span>
                             </div>
                             <p className="text-xs sm:text-sm text-amber-100/95 leading-relaxed">
                               {currentCard.frontHint}
@@ -953,7 +1043,7 @@ export const FlashcardDeck: React.FC = () => {
                       {/* Keep Question Context Visible at the Top of the Back Side */}
                       <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3">
                         <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
-                          Câu hỏi đang trả lời:
+                          {lang === 'en' ? 'Question:' : 'Câu hỏi đang trả lời:'}
                         </div>
                         <div className="text-xs sm:text-sm font-bold text-slate-200 leading-snug">
                           {currentCard.frontQuestion}
@@ -964,7 +1054,11 @@ export const FlashcardDeck: React.FC = () => {
                       <div className="rounded-2xl border border-emerald-500/35 bg-emerald-950/15 p-4 sm:p-5 space-y-2">
                         <div className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-emerald-400">
                           <CheckCircle2 className="h-4 w-4 shrink-0" />
-                          <span>Đáp án & Bản chất Kỹ thuật</span>
+                          <span>
+                            {lang === 'en'
+                              ? 'Answer & Technical Explanation'
+                              : 'Đáp án & Bản chất Kỹ thuật'}
+                          </span>
                         </div>
                         <div className="text-sm text-slate-100 leading-relaxed whitespace-pre-line">
                           <RichTextWithTerms text={currentCard.backAnswer} />
@@ -975,7 +1069,11 @@ export const FlashcardDeck: React.FC = () => {
                       <div className="rounded-2xl border border-amber-500/30 bg-amber-950/15 p-4 space-y-1.5">
                         <div className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-300">
                           <Lightbulb className="h-4 w-4 shrink-0 text-amber-400" />
-                          <span>Hình tượng hóa Thực tế (Mental Model)</span>
+                          <span>
+                            {lang === 'en'
+                              ? 'Real-World Analogy (Mental Model)'
+                              : 'Hình tượng hóa Thực tế (Mental Model)'}
+                          </span>
                         </div>
                         <p className="text-xs sm:text-sm text-amber-100/95 leading-relaxed">
                           {currentCard.backAnalogy}
@@ -991,7 +1089,9 @@ export const FlashcardDeck: React.FC = () => {
                               <span className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />
                               <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
                               <span className="ml-1 font-mono text-[11px] font-semibold text-slate-400">
-                                Minh họa Python Thực chiến
+                                {lang === 'en'
+                                  ? 'Practical Python Example'
+                                  : 'Minh họa Python Thực chiến'}
                               </span>
                             </div>
                             <button
@@ -1007,7 +1107,9 @@ export const FlashcardDeck: React.FC = () => {
                               {copiedCardId === currentCard.id ? (
                                 <>
                                   <Check className="h-3.5 w-3.5 text-emerald-400" />
-                                  <span className="text-emerald-300">Đã copy</span>
+                                  <span className="text-emerald-300">
+                                    {lang === 'en' ? 'Copied' : 'Đã copy'}
+                                  </span>
                                 </>
                               ) : (
                                 <>
@@ -1030,7 +1132,9 @@ export const FlashcardDeck: React.FC = () => {
                         currentCard.relatedTermIds.length > 0 && (
                           <div className="flex flex-wrap items-center gap-1.5 pt-1">
                             <span className="text-[11px] font-semibold text-slate-400">
-                              Tra cứu thuật ngữ liên quan:
+                              {lang === 'en'
+                                ? 'Related glossary terms:'
+                                : 'Tra cứu thuật ngữ liên quan:'}
                             </span>
                             {currentCard.relatedTermIds.map((termId) => {
                               const termObj = GLOSSARY_BY_ID[termId];
@@ -1074,7 +1178,7 @@ export const FlashcardDeck: React.FC = () => {
                           className="inline-flex items-center justify-center gap-1 rounded-xl border border-slate-700 bg-slate-800/90 px-2.5 sm:px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer"
                         >
                           <ChevronLeft className="h-4 w-4 shrink-0" />
-                          <span>Thẻ trước</span>
+                          <span>{lang === 'en' ? 'Previous' : 'Thẻ trước'}</span>
                         </button>
 
                         <button
@@ -1084,7 +1188,13 @@ export const FlashcardDeck: React.FC = () => {
                         >
                           <RotateCw className="h-3.5 w-3.5 shrink-0" />
                           <span>
-                            {isFlipped ? 'Úp lại' : 'Lật Đáp án'}
+                            {isFlipped
+                              ? lang === 'en'
+                                ? 'Flip Back'
+                                : 'Úp lại'
+                              : lang === 'en'
+                                ? 'Show Answer'
+                                : 'Lật Đáp án'}
                             <span className="hidden sm:inline"> (Space)</span>
                           </span>
                         </button>
@@ -1094,7 +1204,7 @@ export const FlashcardDeck: React.FC = () => {
                           onClick={handleNext}
                           className="inline-flex items-center justify-center gap-1 rounded-xl border border-slate-700 bg-slate-800/90 px-2.5 sm:px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer"
                         >
-                          <span>Thẻ tiếp</span>
+                          <span>{lang === 'en' ? 'Next' : 'Thẻ tiếp'}</span>
                           <ChevronRight className="h-4 w-4 shrink-0" />
                         </button>
                       </div>
@@ -1102,9 +1212,13 @@ export const FlashcardDeck: React.FC = () => {
                       <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-slate-400">
                         <Keyboard className="h-3.5 w-3.5 text-slate-500" />
                         <span>
-                          Phím tắt: <kbd className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-300">Space</kbd> lật •{' '}
-                          <kbd className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-300">←/→</kbd> chuyển •{' '}
-                          <kbd className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-300">1–4</kbd> chấm SRS
+                          {lang === 'en' ? 'Shortcuts:' : 'Phím tắt:'}{' '}
+                          <kbd className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-300">Space</kbd>{' '}
+                          {lang === 'en' ? 'flip' : 'lật'} •{' '}
+                          <kbd className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-300">←/→</kbd>{' '}
+                          {lang === 'en' ? 'navigate' : 'chuyển'} •{' '}
+                          <kbd className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-300">1–4</kbd>{' '}
+                          {lang === 'en' ? 'rate SRS' : 'chấm SRS'}
                         </span>
                       </div>
                     </div>
@@ -1114,12 +1228,16 @@ export const FlashcardDeck: React.FC = () => {
                       <div className="pt-2 border-t border-slate-800/80 space-y-2">
                         <div className="flex items-center justify-between text-[11px]">
                           <span className="font-bold text-slate-300">
-                            Đánh giá mức độ nhớ của bạn để thuật toán SRS hẹn lịch ôn lại:
+                            {lang === 'en'
+                              ? 'Rate your recall so the SRS algorithm can schedule your next review:'
+                              : 'Đánh giá mức độ nhớ của bạn để thuật toán SRS hẹn lịch ôn lại:'}
                           </span>
                           <span className="text-slate-400">
-                            Nhấn phím <kbd className="font-mono text-emerald-300">1</kbd>,{' '}
+                            {lang === 'en' ? 'Press' : 'Nhấn phím'}{' '}
+                            <kbd className="font-mono text-emerald-300">1</kbd>,{' '}
                             <kbd className="font-mono text-emerald-300">2</kbd>,{' '}
-                            <kbd className="font-mono text-emerald-300">3</kbd> hoặc{' '}
+                            <kbd className="font-mono text-emerald-300">3</kbd>{' '}
+                            {lang === 'en' ? 'or' : 'hoặc'}{' '}
                             <kbd className="font-mono text-emerald-300">4</kbd>
                           </span>
                         </div>
@@ -1132,14 +1250,14 @@ export const FlashcardDeck: React.FC = () => {
                           >
                             <div className="flex w-full items-center justify-between">
                               <span className="text-xs font-extrabold text-rose-300">
-                                Quên / Chưa rõ
+                                {lang === 'en' ? 'Again / Forgot' : 'Quên / Chưa rõ'}
                               </span>
                               <kbd className="rounded bg-rose-500/25 px-1.5 py-0.5 font-mono text-[10px] font-bold text-rose-200">
                                 1
                               </kbd>
                             </div>
                             <span className="text-[11px] text-rose-200/80 mt-0.5">
-                              Ôn lại sau 10 phút
+                              {lang === 'en' ? 'Review in 10 mins' : 'Ôn lại sau 10 phút'}
                             </span>
                           </button>
 
@@ -1150,14 +1268,14 @@ export const FlashcardDeck: React.FC = () => {
                           >
                             <div className="flex w-full items-center justify-between">
                               <span className="text-xs font-extrabold text-amber-300">
-                                Còn ngập ngừng
+                                {lang === 'en' ? 'Hard' : 'Còn ngập ngừng'}
                               </span>
                               <kbd className="rounded bg-amber-500/25 px-1.5 py-0.5 font-mono text-[10px] font-bold text-amber-200">
                                 2
                               </kbd>
                             </div>
                             <span className="text-[11px] text-amber-200/80 mt-0.5">
-                              Ôn lại sau 1 ngày
+                              {lang === 'en' ? 'Review in 1 day' : 'Ôn lại sau 1 ngày'}
                             </span>
                           </button>
 
@@ -1168,14 +1286,14 @@ export const FlashcardDeck: React.FC = () => {
                           >
                             <div className="flex w-full items-center justify-between">
                               <span className="text-xs font-extrabold text-sky-300">
-                                Nhớ tốt
+                                {lang === 'en' ? 'Good' : 'Nhớ tốt'}
                               </span>
                               <kbd className="rounded bg-sky-500/25 px-1.5 py-0.5 font-mono text-[10px] font-bold text-sky-200">
                                 3
                               </kbd>
                             </div>
                             <span className="text-[11px] text-sky-200/80 mt-0.5">
-                              Chu kỳ 2–4+ ngày
+                              {lang === 'en' ? 'Interval 2–4+ days' : 'Chu kỳ 2–4+ ngày'}
                             </span>
                           </button>
 
@@ -1186,14 +1304,14 @@ export const FlashcardDeck: React.FC = () => {
                           >
                             <div className="flex w-full items-center justify-between">
                               <span className="text-xs font-extrabold text-emerald-300">
-                                Rất dễ / Thuộc làu
+                                {lang === 'en' ? 'Easy' : 'Rất dễ / Thuộc làu'}
                               </span>
                               <kbd className="rounded bg-emerald-500/25 px-1.5 py-0.5 font-mono text-[10px] font-bold text-emerald-200">
                                 4
                               </kbd>
                             </div>
                             <span className="text-[11px] text-emerald-200/80 mt-0.5">
-                              Chu kỳ 5–14+ ngày
+                              {lang === 'en' ? 'Interval 5–14+ days' : 'Chu kỳ 5–14+ ngày'}
                             </span>
                           </button>
                         </div>

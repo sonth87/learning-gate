@@ -9,6 +9,8 @@ import { CodeView, Inline, Markdown } from '../components/Markdown';
 import { PyCodeEditor, type PyCodeEditorHandle } from '../components/PyCodeEditor';
 import { GradeOutput, RunOutput } from '../components/RunOutput';
 import { Btn, Callout, Pill, Spinner, Stars } from '../components/ui';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
 
 type Output = { kind: 'run'; result: RunResult } | { kind: 'grade'; result: GradeResult; passed: number; total: number; ok: boolean; xp: number; first: boolean; attempts: number };
 
@@ -19,6 +21,9 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
   const s = useWpProgress((x) => x.state);
   const { saveCode, recordCheck, revealHint, viewSolution, resetExercise, toggleSkipExercise } = useWpProgress.getState();
   const py = usePyStatus();
+  const lang = useWorkbenchStore((x) => x.language);
+  const enOverlay = useCourseEnOverlay('python');
+  const isEn = lang === 'en';
 
   const ex = useMemo(() => cur?.modules.flatMap((m) => m.exercises).find((e) => e.code === exCode || e.id === exCode), [cur, exCode]);
   const rec = ex ? s.exercises[ex.id] : undefined;
@@ -73,12 +78,17 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
   }, []);
 
   if (!cur) return <Spinner />;
-  if (!ex) return <div className="p-6 text-slate-400">Không tìm thấy bài tập {exCode}.</div>;
+  if (!ex) return <div className="p-6 text-slate-400">{isEn ? `Exercise ${exCode} not found.` : `Không tìm thấy bài tập ${exCode}.`}</div>;
   const status = exStatus(s, ex.id);
   const refItem = ex.ref && cat ? cat.items.find((i) => i.path === ex.ref) : undefined;
   const mod = cur.modules.find((m) => m.id === ex.module)!;
   const idx = mod.exercises.findIndex((e) => e.id === ex.id);
   const nextEx = mod.exercises[idx + 1];
+  const modTitle = isEn ? (enOverlay?.modules?.[mod.id]?.titleEn ?? mod.title) : mod.title;
+  const exOverlay = isEn ? enOverlay?.modules?.[mod.id]?.exercises?.[ex.id] : undefined;
+  const exTitle = exOverlay?.titleEn ?? ex.title;
+  const exPrompt = exOverlay?.promptEn ?? ex.prompt;
+  const exHints = ex.hints.map((h, i) => exOverlay?.hintsEn?.[i] ?? h);
 
   const run = async () => {
     setBusy('run');
@@ -119,30 +129,44 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
     <div className="mx-auto max-w-[1500px] p-4 sm:p-6">
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <Btn onClick={back}>
-          <ArrowLeft className="h-4 w-4" /> Quay lại
+          <ArrowLeft className="h-4 w-4" /> {isEn ? 'Back' : 'Quay lại'}
         </Btn>
         <div className="min-w-0">
           <div className="text-xs text-slate-500">
-            {mod.id} · {mod.title}
+            {mod.id} · {modTitle}
           </div>
           <h1 className="text-xl font-bold text-white sm:text-2xl">
-            <span className="font-mono text-emerald-400">{ex.code}</span> · {ex.title}
+            <span className="font-mono text-emerald-400">{ex.code}</span> · {exTitle}
           </h1>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <Stars n={ex.difficulty} />
           <Pill tone={status === 'passed' ? 'ok' : status === 'skipped' ? 'info' : status === 'started' ? 'warn' : 'neutral'}>
-            {status === 'passed' ? 'đã đạt' : status === 'skipped' ? 'đã bỏ qua' : status === 'started' ? 'đang làm' : 'chưa làm'}
+            {status === 'passed'
+              ? isEn
+                ? 'passed'
+                : 'đã đạt'
+              : status === 'skipped'
+                ? isEn
+                  ? 'skipped'
+                  : 'đã bỏ qua'
+                : status === 'started'
+                  ? isEn
+                    ? 'in progress'
+                    : 'đang làm'
+                  : isEn
+                    ? 'todo'
+                    : 'chưa làm'}
           </Pill>
           {status !== 'passed' && (
             <Btn onClick={() => toggleSkipExercise(ex.id)}>
               {status === 'skipped' ? (
                 <>
-                  <Undo2 className="h-3.5 w-3.5" /> Hoàn tác bỏ qua
+                  <Undo2 className="h-3.5 w-3.5" /> {isEn ? 'Undo skip' : 'Hoàn tác bỏ qua'}
                 </>
               ) : (
                 <>
-                  <SkipForward className="h-3.5 w-3.5" /> Bỏ qua bài này
+                  <SkipForward className="h-3.5 w-3.5" /> {isEn ? 'Skip this exercise' : 'Bỏ qua bài này'}
                 </>
               )}
             </Btn>
@@ -154,11 +178,11 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
         {/* ------- đề bài ------- */}
         <div className="min-w-0 space-y-4">
           <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:p-5">
-            <Markdown source={ex.prompt} />
+            <Markdown source={exPrompt} />
             {ex.tags.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{ex.tags.map((t) => <Pill key={t}>{t}</Pill>)}</div>}
             {refItem && (
               <p className="mt-3 text-sm text-slate-400">
-                📖 Liên quan trong Python-master:{' '}
+                📖 {isEn ? 'Related in Python-master:' : 'Liên quan trong Python-master:'}{' '}
                 <button className="text-sky-400 underline underline-offset-2" onClick={() => go({ name: 'read', n: refItem.n })}>
                   {ex.ref}
                 </button>
@@ -168,16 +192,25 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
 
           {!ex.webGrade && (
             <Callout tone="warn">
-              Bài này dùng thread/asyncio nên <b>không chấm được trong trình duyệt</b>. Hãy làm trong VS Code và chấm bằng WorkPath:{' '}
-              <code className="rounded bg-slate-800 px-1.5 py-0.5">./learn ex check {ex.code}</code>
+              {isEn ? (
+                <>
+                  This exercise uses thread/asyncio so it <b>cannot be graded in the browser</b>. Work on it in VS Code and grade with WorkPath:{' '}
+                  <code className="rounded bg-slate-800 px-1.5 py-0.5">./learn ex check {ex.code}</code>
+                </>
+              ) : (
+                <>
+                  Bài này dùng thread/asyncio nên <b>không chấm được trong trình duyệt</b>. Hãy làm trong VS Code và chấm bằng WorkPath:{' '}
+                  <code className="rounded bg-slate-800 px-1.5 py-0.5">./learn ex check {ex.code}</code>
+                </>
+              )}
             </Callout>
           )}
 
           {hintsShown > 0 && (
             <div className="space-y-2">
-              {ex.hints.slice(0, hintsShown).map((h, i) => (
+              {exHints.slice(0, hintsShown).map((h, i) => (
                 <Callout key={i} tone="warn">
-                  💡 <b>Gợi ý {i + 1}/{ex.hints.length}:</b> <Inline text={h} />
+                  💡 <b>{isEn ? `Hint ${i + 1}/${exHints.length}:` : `Gợi ý ${i + 1}/${exHints.length}:`}</b> <Inline text={h} />
                 </Callout>
               ))}
             </div>
@@ -185,16 +218,28 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
 
           {solution === 'locked' && (
             <Callout tone="warn">
-              Bạn mới chấm {rec?.attempts ?? 0} lần. Hãy thử ít nhất 3 lần — hoặc{' '}
-              <button className="underline" onClick={() => showSolution(true)}>
-                xem luôn (XP khi đạt chỉ còn 10)
-              </button>
-              .
+              {isEn ? (
+                <>
+                  You have only checked {rec?.attempts ?? 0} times. Try at least 3 times — or{' '}
+                  <button className="underline" onClick={() => showSolution(true)}>
+                    view anyway (XP on pass reduced to 10)
+                  </button>
+                  .
+                </>
+              ) : (
+                <>
+                  Bạn mới chấm {rec?.attempts ?? 0} lần. Hãy thử ít nhất 3 lần — hoặc{' '}
+                  <button className="underline" onClick={() => showSolution(true)}>
+                    xem luôn (XP khi đạt chỉ còn 10)
+                  </button>
+                  .
+                </>
+              )}
             </Callout>
           )}
           {solution === 'shown' && (
             <div>
-              <h3 className="mb-1 text-sm font-semibold text-white">Lời giải mẫu</h3>
+              <h3 className="mb-1 text-sm font-semibold text-white">{isEn ? 'Sample solution' : 'Lời giải mẫu'}</h3>
               <CodeView code={ex.solution} numbered />
             </div>
           )}
@@ -205,15 +250,23 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
           {status === 'skipped' && (
             <Callout tone="info" className="flex flex-wrap items-center justify-between gap-2">
               <span>
-                Bạn đã đánh dấu <b>bỏ qua</b> bài này (vẫn có thể làm và bấm Chấm bài bất kỳ lúc nào để nhận đủ XP).
+                {isEn ? (
+                  <>
+                    You marked this exercise as <b>skipped</b> (you can still solve and click Check anytime to earn full XP).
+                  </>
+                ) : (
+                  <>
+                    Bạn đã đánh dấu <b>bỏ qua</b> bài này (vẫn có thể làm và bấm Chấm bài bất kỳ lúc nào để nhận đủ XP).
+                  </>
+                )}
               </span>
               {nextEx ? (
                 <Btn variant="primary" onClick={() => go({ name: 'exercise', code: nextEx.code })}>
-                  Sang bài tiếp: {nextEx.code} <ArrowRight className="h-3.5 w-3.5" />
+                  {isEn ? `Next: ${nextEx.code}` : `Sang bài tiếp: ${nextEx.code}`} <ArrowRight className="h-3.5 w-3.5" />
                 </Btn>
               ) : (
                 <Btn variant="primary" onClick={() => go({ name: 'module', id: mod.id })}>
-                  Về module {mod.id}
+                  {isEn ? `Back to module ${mod.id}` : `Về module ${mod.id}`}
                 </Btn>
               )}
             </Callout>
@@ -221,38 +274,48 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
           <PyCodeEditor ref={editor} value={text} onChange={setText} onRun={run} onSubmit={ex.webGrade ? check : undefined} />
           <div className="flex flex-wrap gap-2">
             <Btn variant="primary" onClick={check} disabled={!!busy || !ex.webGrade}>
-              <CheckCircle2 className="h-4 w-4" /> {busy === 'check' ? 'Đang chấm…' : 'Chấm bài'} <kbd className="ml-1 hidden rounded bg-black/20 px-1 text-[10px] sm:inline">⌘↵</kbd>
+              <CheckCircle2 className="h-4 w-4" /> {busy === 'check' ? (isEn ? 'Checking…' : 'Đang chấm…') : isEn ? 'Check' : 'Chấm bài'}{' '}
+              <kbd className="ml-1 hidden rounded bg-black/20 px-1 text-[10px] sm:inline">⌘↵</kbd>
             </Btn>
             <Btn onClick={run} disabled={!!busy}>
-              <Play className="h-4 w-4" /> {busy === 'run' ? 'Đang chạy…' : 'Chạy thử'} <kbd className="ml-1 hidden rounded bg-black/30 px-1 text-[10px] sm:inline">⇧↵</kbd>
+              <Play className="h-4 w-4" /> {busy === 'run' ? (isEn ? 'Running…' : 'Đang chạy…') : isEn ? 'Run' : 'Chạy thử'}{' '}
+              <kbd className="ml-1 hidden rounded bg-black/30 px-1 text-[10px] sm:inline">⇧↵</kbd>
             </Btn>
             <Btn onClick={() => (ex.hints.length ? revealHint(ex.id, ex.hints.length) : undefined)} disabled={!ex.hints.length || hintsShown >= ex.hints.length}>
-              <Lightbulb className="h-4 w-4" /> Gợi ý ({hintsShown}/{ex.hints.length})
+              <Lightbulb className="h-4 w-4" /> {isEn ? 'Hint' : 'Gợi ý'} ({hintsShown}/{ex.hints.length})
             </Btn>
             <Btn onClick={() => showSolution()}>
-              <Eye className="h-4 w-4" /> Lời giải
+              <Eye className="h-4 w-4" /> {isEn ? 'Solution' : 'Lời giải'}
             </Btn>
             <Btn
               onClick={() => {
-                if (confirm('Làm lại từ code khởi đầu? Bài đang viết sẽ bị thay.')) {
+                if (confirm(isEn ? 'Reset to starter code? Your current draft will be replaced.' : 'Làm lại từ code khởi đầu? Bài đang viết sẽ bị thay.')) {
                   resetExercise(ex.id);
                   setText(ex.starter);
                   setOut(null);
                 }
               }}
             >
-              <RotateCcw className="h-4 w-4" /> Đặt lại
+              <RotateCcw className="h-4 w-4" /> {isEn ? 'Reset' : 'Đặt lại'}
             </Btn>
           </div>
 
           <details className="text-sm text-slate-400">
             <summary className="cursor-pointer text-sky-400">
-              Dữ liệu nhập cho <code>input()</code> (mỗi dòng một giá trị)
+              {isEn ? (
+                <>
+                  Input data for <code>input()</code> (one value per line)
+                </>
+              ) : (
+                <>
+                  Dữ liệu nhập cho <code>input()</code> (mỗi dòng một giá trị)
+                </>
+              )}
             </summary>
             <textarea
               value={stdin}
               onChange={(e) => setStdin(e.target.value)}
-              placeholder={'Ví dụ:\nAn\n20'}
+              placeholder={isEn ? 'Example:\nAlice\n20' : 'Ví dụ:\nAn\n20'}
               className="mt-2 min-h-[56px] w-full rounded-lg border border-slate-700 bg-slate-950 p-2 font-mono text-[13px] text-slate-200 outline-none focus:border-emerald-500/70"
             />
           </details>
@@ -260,7 +323,7 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
           {!py.ready && (busy || py.text) && (
             <div className="flex items-center gap-2 text-xs text-slate-400">
               <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-600 border-t-emerald-400" />
-              {py.text || 'Đang khởi động Python…'}
+              {py.text || (isEn ? 'Starting Python…' : 'Đang khởi động Python…')}
             </div>
           )}
           {error && <Callout tone="bad">{error}</Callout>}
@@ -270,21 +333,31 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
             <div className="space-y-3">
               <Callout tone={out.ok ? 'ok' : 'warn'}>
                 <b>
-                  Đạt {out.passed}/{out.total}
+                  {isEn ? 'Passed' : 'Đạt'} {out.passed}/{out.total}
                 </b>
-                {out.ok ? (out.first ? ` 🎉 +${out.xp} XP (lần chấm thứ ${out.attempts})` : ' · vẫn đạt') : ' · sửa code rồi chấm lại'}
+                {out.ok
+                  ? out.first
+                    ? isEn
+                      ? ` 🎉 +${out.xp} XP (attempt #${out.attempts})`
+                      : ` 🎉 +${out.xp} XP (lần chấm thứ ${out.attempts})`
+                    : isEn
+                      ? ' · still passing'
+                      : ' · vẫn đạt'
+                  : isEn
+                    ? ' · fix your code and check again'
+                    : ' · sửa code rồi chấm lại'}
               </Callout>
               <GradeOutput result={out.result} />
               {out.ok && (
                 <div className="flex flex-wrap gap-2">
-                  <Btn onClick={() => showSolution()}>Xem lời giải mẫu để so sánh</Btn>
+                  <Btn onClick={() => showSolution()}>{isEn ? 'View sample solution to compare' : 'Xem lời giải mẫu để so sánh'}</Btn>
                   {nextEx ? (
                     <Btn variant="primary" onClick={() => go({ name: 'exercise', code: nextEx.code })}>
-                      Bài tiếp theo: {nextEx.code}
+                      {isEn ? `Next exercise: ${nextEx.code}` : `Bài tiếp theo: ${nextEx.code}`}
                     </Btn>
                   ) : (
                     <Btn variant="primary" onClick={() => go({ name: 'module', id: mod.id })}>
-                      Về module {mod.id}
+                      {isEn ? `Back to module ${mod.id}` : `Về module ${mod.id}`}
                     </Btn>
                   )}
                 </div>

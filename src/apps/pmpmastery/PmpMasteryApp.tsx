@@ -12,6 +12,7 @@ import { PmpCanvasView } from '@/features/pmp-course/views/PmpCanvasView';
 import { PmpDecisionTreeView } from '@/features/pmp-course/views/PmpDecisionTreeView';
 import { PmpLookupView } from '@/features/pmp-course/views/PmpLookupView';
 import { buildPmpScaleLessons } from '@/features/devops-course/scale/courseLessonBuilder';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
 import { ScaleCommandPalette } from '@/components/scale-workbench/ScaleCommandPalette';
 import { PMP_BLUEPRINTS, PMP_LEVEL_TITLES } from './data/pmpScaleCurator';
 import { PmpHeader } from './components/PmpHeader';
@@ -40,10 +41,11 @@ export const PmpMasteryApp: React.FC<PmpMasteryAppProps> = ({ windowId }) => {
 
   const { data: cur } = usePmpCurriculum();
   const { data: linksMap } = usePmpLinks();
+  const enOverlay = useCourseEnOverlay('pmp');
 
   const scaleLessons = useMemo(
-    () => (cur ? buildPmpScaleLessons(cur, PMP_LEVEL_TITLES, PMP_BLUEPRINTS) : []),
-    [cur]
+    () => (cur ? buildPmpScaleLessons(cur, PMP_LEVEL_TITLES, PMP_BLUEPRINTS, enOverlay) : []),
+    [cur, enOverlay]
   );
 
   const glossaryItems = useMemo(

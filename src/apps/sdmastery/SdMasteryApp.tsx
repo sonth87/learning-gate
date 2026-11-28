@@ -6,6 +6,7 @@ import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { SdLearnShell } from '@/features/sysdesign-course/SdLearnShell';
 import { useSdCurriculum, useSdSims } from '@/features/sysdesign-course/data';
 import { buildSdScaleLessons } from '@/features/sysdesign-course/scale/sdLessonBuilder';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
 import { useSdNav, useSdProgress } from '@/features/sysdesign-course/store';
 import { ScaleCommandPalette } from '@/components/scale-workbench/ScaleCommandPalette';
 import { TermPopover } from '@/components/common/TermPopover';
@@ -42,7 +43,8 @@ export const SdMasteryApp: React.FC<SdMasteryAppProps> = ({ windowId }) => {
 
   const { data: cur } = useSdCurriculum();
   const { data: sims } = useSdSims();
-  const scaleLessons = useMemo(() => (cur ? buildSdScaleLessons(cur, sims) : []), [cur, sims]);
+  const enOverlay = useCourseEnOverlay('sysdesign');
+  const scaleLessons = useMemo(() => (cur ? buildSdScaleLessons(cur, sims, enOverlay) : []), [cur, sims, enOverlay]);
 
   useEffect(() => {
     hydrateSd();

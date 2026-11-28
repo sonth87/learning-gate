@@ -7,6 +7,7 @@ import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { DevOpsCourseApp } from '@/features/devops-course/DevOpsCourseApp';
 import { useCourseCurriculum } from '@/features/devops-course/data';
 import { buildDevOpsScaleLessons } from '@/features/devops-course/scale/courseLessonBuilder';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
 import { useKubeNav, useKubeProgress } from '@/features/devops-course/store';
 import type { RelatedToolLink } from '@/features/devops-course/types';
 import { ScaleCommandPalette } from '@/components/scale-workbench/ScaleCommandPalette';
@@ -44,12 +45,13 @@ export const KubeMasteryApp: React.FC<KubeMasteryAppProps> = ({ windowId }) => {
   const setExpandedLevel = useWorkbenchStore((s) => s.setExpandedLevel);
 
   const { data: cur } = useCourseCurriculum('kube');
+  const enOverlay = useCourseEnOverlay('kube');
   const scaleLessons = useMemo(
     () =>
       cur
-        ? buildDevOpsScaleLessons('kube', cur, KUBE_LEVEL_TITLES, KUBE_BLUEPRINTS)
+        ? buildDevOpsScaleLessons('kube', cur, KUBE_LEVEL_TITLES, KUBE_BLUEPRINTS, enOverlay)
         : [],
-    [cur]
+    [cur, enOverlay]
   );
 
   useEffect(() => {

@@ -15,6 +15,8 @@ import { useCourseCatalog, useCourseCurriculum } from '../data';
 import { exStatus } from '../logic';
 import { COURSE_NAV_STORES, COURSE_PROGRESS_STORES } from '../store';
 import { useCourseMeta } from '../context';
+import { useCourseEnOverlay } from '@/data/i18n/loader';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { dryRunExercise, executeDiagnosticCommand, gradeDevOpsExercise } from '../engine/gradeEngine';
 import type { GradeResult, RunResult, SimWorldState } from '../types';
 import { ConfigCodeView, CourseInline, CourseMarkdown } from '../components/CourseMarkdown';
@@ -38,6 +40,8 @@ type Output =
 
 export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
   const { courseId, accent } = useCourseMeta();
+  const lang = useWorkbenchStore((s) => s.language);
+  const enOverlay = useCourseEnOverlay(courseId);
   const { data: cur } = useCourseCurriculum(courseId);
   const { data: cat } = useCourseCatalog(courseId);
   const progressStore = COURSE_PROGRESS_STORES[courseId];
@@ -107,11 +111,23 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
   }, [progressStore]);
 
   if (!cur) return <Spinner />;
-  if (!ex) return <div className="p-6 text-slate-400">Không tìm thấy bài thực hành {exCode}.</div>;
+  if (!ex) {
+    return (
+      <div className="p-6 text-slate-400">
+        {lang === 'en' ? `Exercise ${exCode} not found.` : `Không tìm thấy bài thực hành ${exCode}.`}
+      </div>
+    );
+  }
 
   const status = exStatus(s, ex.id);
   const refItem = ex.ref && cat ? cat.items.find((i) => i.path === ex.ref) : undefined;
   const mod = cur.modules.find((m) => m.id === ex.module)!;
+  const modOv = lang === 'en' ? enOverlay?.modules?.[mod.id] : undefined;
+  const exOv = modOv?.exercises?.[ex.id];
+  const modTitle = modOv?.titleEn ?? mod.title;
+  const exTitle = exOv?.titleEn ?? ex.title;
+  const exPrompt = exOv?.promptEn ?? ex.prompt;
+  const exHints = exOv?.hintsEn ?? ex.hints;
   const idx = mod.exercises.findIndex((e) => e.id === ex.id);
   const nextEx = mod.exercises[idx + 1];
   const hintsShown = rec?.hints ?? 0;
@@ -150,7 +166,9 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
       ...prev,
       {
         cmd: c,
-        out: [res.stdout, res.stderr].filter(Boolean).join('\n') || '(hoàn tất, không có output)',
+        out:
+          [res.stdout, res.stderr].filter(Boolean).join('\n') ||
+          (lang === 'en' ? '(completed, no output)' : '(hoàn tất, không có output)'),
         isErr: res.exitCode !== 0,
       },
     ]);
@@ -164,7 +182,7 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
       <div className="mb-4 space-y-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CourseBtn accent={accent} onClick={back}>
-            <ArrowLeft className="h-4 w-4" /> Quay lại
+            <ArrowLeft className="h-4 w-4" /> {lang === 'en' ? 'Back' : 'Quay lại'}
           </CourseBtn>
           <div className="flex flex-wrap items-center gap-2">
             <Stars n={ex.difficulty} />
@@ -180,12 +198,20 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
               }
             >
               {status === 'passed'
-                ? 'đã đạt'
+                ? lang === 'en'
+                  ? 'passed'
+                  : 'đã đạt'
                 : status === 'skipped'
-                  ? 'đã bỏ qua'
+                  ? lang === 'en'
+                    ? 'skipped'
+                    : 'đã bỏ qua'
                   : status === 'started'
-                    ? 'đang làm'
-                    : 'chưa làm'}
+                    ? lang === 'en'
+                      ? 'in progress'
+                      : 'đang làm'
+                    : lang === 'en'
+                      ? 'to do'
+                      : 'chưa làm'}
             </Pill>
             {status !== 'passed' && (
               <CourseBtn
@@ -193,17 +219,21 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
                 onClick={() => progressStore.getState().toggleSkipExercise(ex.id)}
                 title={
                   status === 'skipped'
-                    ? 'Khôi phục bài thực hành này về trạng thái chưa hoàn thành'
-                    : 'Đánh dấu bỏ qua nếu bạn đã làm hoặc đã nắm vững phần này'
+                    ? lang === 'en'
+                      ? 'Restore this exercise to incomplete'
+                      : 'Khôi phục bài thực hành này về trạng thái chưa hoàn thành'
+                    : lang === 'en'
+                      ? 'Mark as skipped if you already completed or mastered this topic'
+                      : 'Đánh dấu bỏ qua nếu bạn đã làm hoặc đã nắm vững phần này'
                 }
               >
                 {status === 'skipped' ? (
                   <>
-                    <Undo2 className="h-3.5 w-3.5" /> Hoàn tác bỏ qua
+                    <Undo2 className="h-3.5 w-3.5" /> {lang === 'en' ? 'Undo skip' : 'Hoàn tác bỏ qua'}
                   </>
                 ) : (
                   <>
-                    <SkipForward className="h-3.5 w-3.5" /> Bỏ qua bài này
+                    <SkipForward className="h-3.5 w-3.5" /> {lang === 'en' ? 'Skip exercise' : 'Bỏ qua bài này'}
                   </>
                 )}
               </CourseBtn>
@@ -212,10 +242,10 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
         </div>
         <div className="min-w-0">
           <div className="text-xs text-slate-500">
-            {mod.id} · {mod.title}
+            {mod.id} · {modTitle}
           </div>
           <h1 className="break-words text-xl font-bold text-white sm:text-2xl">
-            <span className={cn('font-mono', codeTone)}>{ex.code}</span> · {ex.title}
+            <span className={cn('font-mono', codeTone)}>{ex.code}</span> · {exTitle}
           </h1>
         </div>
       </div>
@@ -224,7 +254,7 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
         {/* ------- Đề bài & Khung chẩn đoán ------- */}
         <div className="min-w-0 space-y-4">
           <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:p-5">
-            <CourseMarkdown source={ex.prompt} accent={accent} />
+            <CourseMarkdown source={exPrompt} accent={accent} />
             {ex.tags.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {ex.tags.map((t) => (
@@ -234,7 +264,7 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
             )}
             {refItem && (
               <div className="mt-3 flex flex-wrap items-center gap-1.5 text-sm text-slate-400">
-                <span>📖 Cấu hình thực tế liên quan:</span>
+                <span>{lang === 'en' ? '📖 Related real-world config:' : '📖 Cấu hình thực tế liên quan:'}</span>
                 <button
                   type="button"
                   className="inline-flex min-h-[44px] items-center rounded-lg px-2 text-sky-400 underline underline-offset-2 hover:bg-slate-800/60 cursor-pointer"
@@ -250,7 +280,8 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
             <div className="rounded-xl border border-slate-700 bg-slate-950 p-3.5">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-300">
-                  <TerminalIcon className="h-4 w-4" aria-hidden="true" /> Terminal chẩn đoán trạng thái lỗi
+                  <TerminalIcon className="h-4 w-4" aria-hidden="true" />{' '}
+                  {lang === 'en' ? 'Error State Diagnostic Terminal' : 'Terminal chẩn đoán trạng thái lỗi'}
                 </div>
                 <button
                   type="button"
@@ -262,7 +293,7 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
                   }}
                   className="inline-flex min-h-[44px] sm:min-h-0 items-center px-2 text-xs text-slate-400 underline hover:text-slate-200 cursor-pointer"
                 >
-                  Đặt lại cụm
+                  {lang === 'en' ? 'Reset cluster' : 'Đặt lại cụm'}
                 </button>
               </div>
               {ex.spec.kind === 'troubleshoot' && ex.spec.diagnosticSampleCommands && ex.spec.diagnosticSampleCommands.length > 0 && (
@@ -301,12 +332,16 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
                 <input
                   value={diagCmd}
                   onChange={(e) => setDiagCmd(e.target.value)}
-                  placeholder="Gõ lệnh kiểm tra / chẩn đoán (vd: kubectl get pods, kubectl describe pod ...)"
-                  aria-label="Lệnh chẩn đoán"
+                  placeholder={
+                    lang === 'en'
+                      ? 'Type a check / diagnostic command (e.g. kubectl get pods, kubectl describe pod ...)'
+                      : 'Gõ lệnh kiểm tra / chẩn đoán (vd: kubectl get pods, kubectl describe pod ...)'
+                  }
+                  aria-label={lang === 'en' ? 'Diagnostic command' : 'Lệnh chẩn đoán'}
                   className="min-h-[44px] sm:min-h-[36px] min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 font-mono text-xs text-slate-100 outline-none focus:border-sky-500/70"
                 />
                 <CourseBtn type="submit" accent={accent}>
-                  Chạy
+                  {lang === 'en' ? 'Run' : 'Chạy'}
                 </CourseBtn>
               </form>
             </div>
@@ -314,9 +349,13 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
 
           {hintsShown > 0 && (
             <div className="space-y-2">
-              {ex.hints.slice(0, hintsShown).map((h, i) => (
+              {exHints.slice(0, hintsShown).map((h, i) => (
                 <Callout key={i} tone="warn">
-                  💡 <b>Gợi ý {i + 1}/{ex.hints.length}:</b> <CourseInline text={h} accent={accent} />
+                  💡{' '}
+                  <b>
+                    {lang === 'en' ? `Hint ${i + 1}/${exHints.length}:` : `Gợi ý ${i + 1}/${exHints.length}:`}
+                  </b>{' '}
+                  <CourseInline text={h} accent={accent} />
                 </Callout>
               ))}
             </div>
@@ -324,16 +363,30 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
 
           {solution === 'locked' && (
             <Callout tone="warn">
-              Bạn mới chấm {rec?.attempts ?? 0} lần. Hãy tự thử ít nhất 3 lần — hoặc{' '}
-              <button type="button" className="underline cursor-pointer" onClick={() => showSolution(true)}>
-                xem lời giải luôn (XP khi đạt chỉ còn 10)
-              </button>
-              .
+              {lang === 'en' ? (
+                <>
+                  You have only graded {rec?.attempts ?? 0} time(s). Try at least 3 times — or{' '}
+                  <button type="button" className="underline cursor-pointer" onClick={() => showSolution(true)}>
+                    reveal solution anyway (XP on pass reduced to 10)
+                  </button>
+                  .
+                </>
+              ) : (
+                <>
+                  Bạn mới chấm {rec?.attempts ?? 0} lần. Hãy tự thử ít nhất 3 lần — hoặc{' '}
+                  <button type="button" className="underline cursor-pointer" onClick={() => showSolution(true)}>
+                    xem lời giải luôn (XP khi đạt chỉ còn 10)
+                  </button>
+                  .
+                </>
+              )}
             </Callout>
           )}
           {solution === 'shown' && (
             <div>
-              <h3 className="mb-1 text-sm font-semibold text-white">Lời giải mẫu</h3>
+              <h3 className="mb-1 text-sm font-semibold text-white">
+                {lang === 'en' ? 'Sample Solution' : 'Lời giải mẫu'}
+              </h3>
               <ConfigCodeView code={ex.solution} language={ex.language} numbered />
             </div>
           )}
@@ -344,16 +397,25 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
           {status === 'skipped' && (
             <Callout tone="info" className="flex flex-wrap items-center justify-between gap-2">
               <span>
-                Bạn đã đánh dấu <b>bỏ qua</b> bài này (vẫn có thể làm và bấm Chấm bài bất kỳ lúc nào để nhận đủ XP).
+                {lang === 'en' ? (
+                  <>
+                    You marked this exercise as <b>skipped</b> (you can still complete and grade it anytime for full XP).
+                  </>
+                ) : (
+                  <>
+                    Bạn đã đánh dấu <b>bỏ qua</b> bài này (vẫn có thể làm và bấm Chấm bài bất kỳ lúc nào để nhận đủ XP).
+                  </>
+                )}
               </span>
               <div className="flex flex-wrap items-center gap-2">
                 {nextEx ? (
                   <CourseBtn variant="primary" accent={accent} onClick={() => go({ name: 'exercise', code: nextEx.code })}>
-                    Sang bài tiếp: {nextEx.code} <ArrowRight className="h-3.5 w-3.5" />
+                    {lang === 'en' ? `Next exercise: ${nextEx.code}` : `Sang bài tiếp: ${nextEx.code}`}{' '}
+                    <ArrowRight className="h-3.5 w-3.5" />
                   </CourseBtn>
                 ) : (
                   <CourseBtn variant="primary" accent={accent} onClick={() => go({ name: 'module', id: mod.id })}>
-                    Về module {mod.id}
+                    {lang === 'en' ? `Back to module ${mod.id}` : `Về module ${mod.id}`}
                   </CourseBtn>
                 )}
               </div>
@@ -376,23 +438,29 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
           />
           <div className="flex flex-wrap gap-2">
             <CourseBtn variant="primary" accent={accent} onClick={check} disabled={!ex.webGrade}>
-              <CheckCircle2 className="h-4 w-4" /> Chấm bài{' '}
+              <CheckCircle2 className="h-4 w-4" /> {lang === 'en' ? 'Grade' : 'Chấm bài'}{' '}
               <kbd className="ml-1 hidden rounded bg-black/20 px-1 text-[10px] sm:inline">⌘↵</kbd>
             </CourseBtn>
             <CourseBtn accent={accent} onClick={run}>
               <Play className="h-4 w-4" />{' '}
-              {ex.language === 'shell' || ex.language === 'redis' ? 'Chạy thử' : 'Kiểm tra cú pháp'}{' '}
+              {ex.language === 'shell' || ex.language === 'redis'
+                ? lang === 'en'
+                  ? 'Dry Run'
+                  : 'Chạy thử'
+                : lang === 'en'
+                  ? 'Check Syntax'
+                  : 'Kiểm tra cú pháp'}{' '}
               <kbd className="ml-1 hidden rounded bg-black/30 px-1 text-[10px] sm:inline">⇧↵</kbd>
             </CourseBtn>
             <CourseBtn
               accent={accent}
-              onClick={() => (ex.hints.length ? progressStore.getState().revealHint(ex.id, ex.hints.length) : undefined)}
-              disabled={!ex.hints.length || hintsShown >= ex.hints.length}
+              onClick={() => (exHints.length ? progressStore.getState().revealHint(ex.id, exHints.length) : undefined)}
+              disabled={!exHints.length || hintsShown >= exHints.length}
             >
-              <Lightbulb className="h-4 w-4" /> Gợi ý ({hintsShown}/{ex.hints.length})
+              <Lightbulb className="h-4 w-4" /> {lang === 'en' ? 'Hint' : 'Gợi ý'} ({hintsShown}/{exHints.length})
             </CourseBtn>
             <CourseBtn accent={accent} onClick={() => showSolution()}>
-              <Eye className="h-4 w-4" /> Lời giải
+              <Eye className="h-4 w-4" /> {lang === 'en' ? 'Solution' : 'Lời giải'}
             </CourseBtn>
             <CourseBtn
               accent={accent}
@@ -403,7 +471,7 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
                 setOut(null);
               }}
             >
-              <RotateCcw className="h-4 w-4" /> Đặt lại
+              <RotateCcw className="h-4 w-4" /> {lang === 'en' ? 'Reset' : 'Đặt lại'}
             </CourseBtn>
           </div>
 
@@ -414,27 +482,33 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
             <div className="space-y-3">
               <Callout tone={out.ok ? 'ok' : 'warn'}>
                 <b>
-                  Đạt {out.passed}/{out.total} kiểm tra
+                  {lang === 'en' ? `Passed ${out.passed}/${out.total} checks` : `Đạt ${out.passed}/${out.total} kiểm tra`}
                 </b>
                 {out.ok
                   ? out.first
-                    ? ` 🎉 +${out.xp} XP (lần chấm thứ ${out.attempts})`
-                    : ' · vẫn đạt'
-                  : ' · xem chi tiết điều kiện chưa thoả bên dưới rồi chấm lại'}
+                    ? lang === 'en'
+                      ? ` 🎉 +${out.xp} XP (attempt #${out.attempts})`
+                      : ` 🎉 +${out.xp} XP (lần chấm thứ ${out.attempts})`
+                    : lang === 'en'
+                      ? ' · still passing'
+                      : ' · vẫn đạt'
+                  : lang === 'en'
+                    ? ' · see failed checks below and grade again'
+                    : ' · xem chi tiết điều kiện chưa thoả bên dưới rồi chấm lại'}
               </Callout>
               <CourseGradeOutput result={out.result} accent={accent} onGoto={(n) => editor.current?.gotoLine(n)} />
               {out.ok && (
                 <div className="flex flex-wrap gap-2">
                   <CourseBtn accent={accent} onClick={() => showSolution(true)}>
-                    Xem lời giải mẫu để đối chiếu
+                    {lang === 'en' ? 'View sample solution to compare' : 'Xem lời giải mẫu để đối chiếu'}
                   </CourseBtn>
                   {nextEx ? (
                     <CourseBtn variant="primary" accent={accent} onClick={() => go({ name: 'exercise', code: nextEx.code })}>
-                      Bài tiếp theo: {nextEx.code}
+                      {lang === 'en' ? `Next exercise: ${nextEx.code}` : `Bài tiếp theo: ${nextEx.code}`}
                     </CourseBtn>
                   ) : (
                     <CourseBtn variant="primary" accent={accent} onClick={() => go({ name: 'module', id: mod.id })}>
-                      Về module {mod.id}
+                      {lang === 'en' ? `Back to module ${mod.id}` : `Về module ${mod.id}`}
                     </CourseBtn>
                   )}
                 </div>
